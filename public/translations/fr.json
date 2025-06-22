@@ -1,0 +1,214 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "export": "Exporter",
+    "import": "Importer",
+    "download": "Télécharger",
+    "upload": "Téléverser",
+    "share": "Partager",
+    "copy": "Copier",
+    "paste": "Coller",
+    "cut": "Couper",
+    "undo": "Annuler",
+    "redo": "Refaire",
+    "refresh": "Actualiser",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "select": "Sélectionner",
+    "selectAll": "Tout sélectionner",
+    "clear": "Effacer",
+    "reset": "Réinitialiser",
+    "apply": "Appliquer",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "submit": "Soumettre",
+    "send": "Envoyer",
+    "receive": "Recevoir",
+    "connect": "Connecter",
+    "disconnect": "Déconnecter",
+    "online": "En ligne",
+    "offline": "Hors ligne"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "aiHealthCoach": "Coach Santé IA",
+    "researchAssistant": "Assistant de Recherche",
+    "virtualAdvisor": "Conseiller Virtuel",
+    "predictiveAnalytics": "Analyses Prédictives",
+    "compoundMixer": "Mélangeur de Composés",
+    "research": "Recherche",
+    "community": "Communauté",
+    "learn": "Apprendre",
+    "personalization": "Personnalisation",
+    "telemedicine": "Télémédecine",
+    "marketplace": "Marché",
+    "labTesting": "Tests de Laboratoire",
+    "clinicalTrials": "Essais Cliniques",
+    "enterprise": "Entreprise",
+    "videoConference": "Visioconférence",
+    "chat": "Chat",
+    "pricing": "Tarifs",
+    "account": "Compte"
+  },
+  "hero": {
+    "title": "Plateforme de Recherche Anti-Âge Avancée",
+    "subtitle": "Découvrez des solutions anti-âge sûres avec des insights alimentés par l'IA et une surveillance de sécurité complète.",
+    "cta": "Commencer",
+    "learnMore": "En savoir plus"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "welcome": "Bienvenue",
+    "healthScore": "Score de Santé",
+    "biomarkers": "Biomarqueurs",
+    "recommendations": "Recommandations",
+    "progress": "Progrès",
+    "goals": "Objectifs",
+    "achievements": "Réalisations"
+  },
+  "aiHealthCoach": {
+    "title": "Coach Santé IA",
+    "subtitle": "Recommandations de santé personnalisées alimentées par une IA avancée",
+    "askQuestion": "Posez une question à votre coach santé...",
+    "healthAnalysis": "Analyse de Santé",
+    "protocolDesign": "Conception de Protocole",
+    "realtimeSupport": "Support en Temps Réel",
+    "analyzeHealthData": "Analyser Mes Données de Santé",
+    "createProtocol": "Créer un Protocole de Longévité",
+    "safetyCheck": "Vérification de Sécurité des Suppléments",
+    "researchInsights": "Dernières Insights de Recherche"
+  },
+  "research": {
+    "title": "Hub de Recherche",
+    "subtitle": "Accédez aux dernières recherches sur la longévité et aux études cliniques",
+    "searchPapers": "Rechercher des Articles",
+    "clinicalTrials": "Essais Cliniques",
+    "compounds": "Composés",
+    "mechanisms": "Mécanismes"
+  },
+  "mixer": {
+    "title": "Mélangeur de Composés",
+    "subtitle": "Créez des combinaisons de composés sûres avec une surveillance IA",
+    "addCompound": "Ajouter un Composé",
+    "safetyCheck": "Vérification de Sécurité",
+    "interactions": "Interactions",
+    "dosage": "Dosage"
+  },
+  "community": {
+    "title": "Communauté",
+    "subtitle": "Connectez-vous avec d'autres passionnés de longévité",
+    "discussions": "Discussions",
+    "experts": "Experts",
+    "groups": "Groupes",
+    "events": "Événements"
+  },
+  "pricing": {
+    "title": "Plans Tarifaires",
+    "subtitle": "Choisissez le plan parfait pour votre parcours de longévité",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "free": "Gratuit",
+    "premium": "Premium",
+    "professional": "Professionnel",
+    "elite": "Elite",
+    "features": "Fonctionnalités",
+    "compare": "Comparer les Plans",
+    "startFree": "Commencer l'Essai Gratuit"
+  },
+  "account": {
+    "title": "Compte",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "subscription": "Abonnement",
+    "billing": "Facturation",
+    "privacy": "Confidentialité",
+    "security": "Sécurité"
+  },
+  "footer": {
+    "copyright": "© 2025 AgeDefy AI - Une propriété de Kryst Investments LLC. Tous droits réservés. Cette application est à des fins éducatives uniquement et ne fournit pas de conseils médicaux.",
+    "about": "À propos",
+    "contact": "Contact",
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
+    "support": "Support"
+  },
+  "safety": {
+    "title": "Avertissement de Sécurité",
+    "disclaimer": "Cette application est uniquement à des fins éducatives et ne remplace pas les conseils médicaux professionnels.",
+    "warning": "Consultez toujours un professionnel de la santé avant de commencer tout nouveau supplément ou protocole de santé.",
+    "emergency": "En cas d'urgence médicale, appelez immédiatement les services d'urgence."
+  },
+  "enterprise": {
+    "title": "Solutions Entreprise",
+    "subtitle": "Plateforme de longévité de niveau entreprise pour les organisations de santé",
+    "features": "Fonctionnalités Entreprise",
+    "pricing": "Tarifs Entreprise",
+    "contact": "Nous Contacter"
+  },
+  "telemedicine": {
+    "title": "Télémédecine",
+    "subtitle": "Consultations virtuelles avec des experts en longévité",
+    "bookConsultation": "Réserver une Consultation",
+    "specialists": "Spécialistes",
+    "appointments": "Rendez-vous"
+  },
+  "marketplace": {
+    "title": "Marché",
+    "subtitle": "Produits et services de longévité premium",
+    "supplements": "Suppléments",
+    "devices": "Appareils",
+    "services": "Services",
+    "cart": "Panier"
+  },
+  "labTesting": {
+    "title": "Tests de Laboratoire",
+    "subtitle": "Tests de biomarqueurs complets pour l'optimisation de la santé",
+    "orderTests": "Commander des Tests",
+    "results": "Résultats",
+    "interpretation": "Interprétation"
+  },
+  "clinicalTrials": {
+    "title": "Essais Cliniques",
+    "subtitle": "Accédez aux derniers essais cliniques sur la longévité",
+    "findTrials": "Trouver des Essais",
+    "eligibility": "Éligibilité",
+    "participate": "Participer"
+  },
+  "videoConference": {
+    "title": "Visioconférence",
+    "subtitle": "Consultations vidéo sécurisées avec des professionnels de la santé",
+    "startCall": "Démarrer l'Appel",
+    "joinMeeting": "Rejoindre la Réunion",
+    "schedule": "Planifier"
+  },
+  "chat": {
+    "title": "Chat en Direct",
+    "subtitle": "Support en temps réel et discussions communautaires",
+    "sendMessage": "Envoyer un Message",
+    "online": "En ligne",
+    "typing": "En train de taper..."
+  },
+  "personalization": {
+    "title": "Personnalisation IA",
+    "subtitle": "Recommandations personnalisées basées sur vos données de santé uniques",
+    "healthProfile": "Profil de Santé",
+    "recommendations": "Recommandations",
+    "tracking": "Suivi"
+  }
+}

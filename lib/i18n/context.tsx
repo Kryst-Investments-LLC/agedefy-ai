@@ -42,7 +42,6 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error loading translations:', error);
-        // Fallback to empty object to prevent crashes
         setTranslations({});
       } finally {
         setIsLoading(false);
@@ -70,4 +69,19 @@ export function useLocale() {
     throw new Error('useLocale must be used within a LocaleProvider');
   }
   return context;
-} 
+}
+
+export function useTranslation() {
+  const { translations } = useLocale();
+  
+  const t = (key: string) => {
+    const keys = key.split('.');
+    let value = translations;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+  
+  return { t };
+}
