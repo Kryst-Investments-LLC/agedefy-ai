@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import {
   Menu,
   X,
@@ -98,6 +99,7 @@ export function Navigation() {
 
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            <LanguageSwitcher />
             <Link href="/pricing">
               <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -145,6 +147,9 @@ export function Navigation() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-gray-700 space-y-2">
+                <div className="px-3 py-2">
+                  <LanguageSwitcher />
+                </div>
                 <Link href="/pricing">
                   <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
                     <DollarSign className="h-4 w-4 mr-2" />

@@ -1,5 +1,5 @@
 export const defaultLocale = 'en';
-export const locales = ['en', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'zh', 'ko', 'ru'] as const;
+export const locales = ['en', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'zh', 'ko', 'ru', 'hi'] as const;
 export type Locale = typeof locales[number];
 
 export const localeNames: Record<Locale, string> = {
@@ -13,6 +13,7 @@ export const localeNames: Record<Locale, string> = {
   zh: '中文',
   ko: '한국어',
   ru: 'Русский',
+  hi: 'हिन्दी',
 };
 
 export const localeFlags: Record<Locale, string> = {
@@ -26,8 +27,9 @@ export const localeFlags: Record<Locale, string> = {
   zh: '🇨🇳',
   ko: '🇰🇷',
   ru: '🇷🇺',
+  hi: '🇮🇳',
 };
 
 export function isValidLocale(locale: string): locale is Locale {
   return locales.includes(locale as Locale);
-} 
+}    

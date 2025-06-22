@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { LocaleProvider } from "@/lib/i18n/context"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -41,7 +42,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#0f172a" />
       </head>
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        <LocaleProvider>
+          {children}
+        </LocaleProvider>
+      </body>
     </html>
   )
 }

@@ -9,6 +9,7 @@ import Link from "next/link"
 
 export function EnhancedHero() {
   const [currentFeature, setCurrentFeature] = useState(0)
+  const [particles, setParticles] = useState<Array<{left: string, top: string, delay: string, duration: string}>>([])
 
   const features = [
     { icon: Shield, text: "Safety-First Approach" },
@@ -27,6 +28,16 @@ export function EnhancedHero() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const generatedParticles = [...Array(30)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 3}s`,
+    }))
+    setParticles(generatedParticles)
+  }, [])
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900 overflow-hidden">
       {/* Enhanced animated background */}
@@ -38,15 +49,15 @@ export function EnhancedHero() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(30)].map((_, i) => (
+        {particles.map((particle, i) => (
           <div
             key={i}
             className="absolute w-2 h-2 bg-teal-400 rounded-full opacity-30 animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 3}s`,
+              left: particle.left,
+              top: particle.top,
+              animationDelay: particle.delay,
+              animationDuration: particle.duration,
             }}
           />
         ))}
@@ -94,8 +105,8 @@ export function EnhancedHero() {
           {/* Enhanced rotating feature highlight */}
           <div className="mb-8 h-8">
             <div className="flex items-center justify-center gap-2 text-teal-400 font-medium">
-              {React.createElement(features[currentFeature].icon, { className: "h-5 w-5" })}
-              <span>{features[currentFeature].text}</span>
+              {features[currentFeature] && React.createElement(features[currentFeature].icon, { className: "h-5 w-5" })}
+              <span>{features[currentFeature]?.text}</span>
             </div>
           </div>
         </div>

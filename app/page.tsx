@@ -1,3 +1,4 @@
+import { Navigation } from "@/components/navigation"
 import { EnhancedHero } from "@/components/enhanced-hero"
 import { Features } from "@/components/features"
 import { Testimonials } from "@/components/testimonials"
@@ -9,6 +10,7 @@ import { CookieConsent } from "@/components/cookie-consent"
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-900">
+      <Navigation />
       <EnhancedHero />
       <Stats />
       <Features />
