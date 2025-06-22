@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     "The world's most comprehensive anti-aging research platform. Discover safe compound combinations, understand complex research, and make informed longevity decisions with AI-powered insights.",
   keywords: "anti-aging, longevity, compounds, AI, research, safety, health, supplements, biomarkers",
-  authors: [{ name: "AgeDefy AI Team" }],
+  authors: [{ name: "AgeDefy AI Team - Kryst Investments LLC" }],
   openGraph: {
     title: "AgeDefy AI - Advanced Anti-Aging Research Platform",
     description: "Discover safe anti-aging solutions with AI-powered insights and comprehensive safety monitoring.",

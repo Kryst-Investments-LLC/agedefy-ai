@@ -83,7 +83,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2024 AgeDefy AI. All rights reserved. This app is for educational purposes only and does not provide
+            © 2025 AgeDefy AI - A property of Kryst Investments LLC. All rights reserved. This app is for educational purposes only and does not provide
             medical advice.
           </p>
         </div>

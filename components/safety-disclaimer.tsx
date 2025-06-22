@@ -176,7 +176,7 @@ export function SafetyDisclaimer() {
                     />
                     <label htmlFor="safety" className="text-sm text-gray-300 leading-relaxed">
                       I acknowledge the safety warnings and understand that I use this information at my own risk. I
-                      will not hold AgeDefy AI liable for any health outcomes.
+                      will not hold AgeDefy AI or Kryst Investments LLC liable for any health outcomes.
                     </label>
                   </div>
                 </div>
