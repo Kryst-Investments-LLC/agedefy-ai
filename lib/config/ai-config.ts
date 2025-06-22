@@ -48,17 +48,17 @@ export const getAIConfig = (): AIConfig => {
     providers: {
       openai: {
         enabled: process.env.NEXT_PUBLIC_ENABLE_CHATGPT === 'true',
-        apiKey: process.env.OPENAI_API_KEY,
+        ...(process.env.OPENAI_API_KEY && { apiKey: process.env.OPENAI_API_KEY }),
         model: 'gpt-4-turbo-preview',
       },
       grok: {
         enabled: process.env.NEXT_PUBLIC_ENABLE_GROK === 'true',
-        apiKey: process.env.GROK_API_KEY,
+        ...(process.env.GROK_API_KEY && { apiKey: process.env.GROK_API_KEY }),
         model: 'grok-beta',
       },
       anthropic: {
         enabled: process.env.NEXT_PUBLIC_ENABLE_ANTHROPIC === 'true',
-        apiKey: process.env.ANTHROPIC_API_KEY,
+        ...(process.env.ANTHROPIC_API_KEY && { apiKey: process.env.ANTHROPIC_API_KEY }),
         model: 'claude-3-sonnet-20240229',
       },
     },
@@ -82,4 +82,4 @@ export const isFeatureEnabled = (feature: keyof AIConfig['features']): boolean =
 export const isProviderEnabled = (provider: keyof AIConfig['providers']): boolean => {
   const config = getAIConfig();
   return config.providers[provider].enabled;
-}; 
+};    

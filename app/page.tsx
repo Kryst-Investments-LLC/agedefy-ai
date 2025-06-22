@@ -6,6 +6,7 @@ import { Stats } from "@/components/stats"
 import { Newsletter } from "@/components/newsletter"
 import { Footer } from "@/components/footer"
 import { CookieConsent } from "@/components/cookie-consent"
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 
 export default function HomePage() {
   return (
@@ -18,6 +19,7 @@ export default function HomePage() {
       <Newsletter />
       <Footer />
       <CookieConsent />
+      <PWAInstallPrompt />
     </div>
   )
 }

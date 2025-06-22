@@ -1,0 +1,68 @@
+{
+  "name": "AgeDefy AI - Advanced Anti-Aging Research Platform",
+  "short_name": "AgeDefy AI",
+  "description": "AI-powered longevity platform with multi-provider intelligence, research-backed protocols, and comprehensive health optimization",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-narrow.png", 
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Health Coach",
+      "short_name": "AI Coach",
+      "description": "Get personalized health recommendations",
+      "url": "/ai-coach",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Research Hub",
+      "short_name": "Research",
+      "description": "Access latest longevity research",
+      "url": "/research",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Health Dashboard",
+      "short_name": "Dashboard", 
+      "description": "Track your health metrics",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "scope": "/",
+  "id": "agedefy-ai-pwa"
+}

@@ -28,12 +28,12 @@ const features = [
   },
   {
     icon: Brain,
-    title: "AI Prediction Engine",
+    title: "AI Ensemble Intelligence",
     description:
-      "Machine learning models predict outcomes with confidence scores, biomarker impacts, and timeline projections.",
-    userFriendly: "See results as simple charts and graphs with plain-English explanations of what to expect.",
-    benefits: ["95% accuracy rate", "Confidence scoring", "Visual predictions"],
-    complexity: "Intermediate",
+      "Multi-provider AI system combining OpenAI, Grok, and Anthropic for superior insights with cross-validation and enhanced accuracy.",
+    userFriendly: "Get the best of all AI systems working together - like having multiple expert opinions for every recommendation.",
+    benefits: ["Multi-AI validation", "Enhanced accuracy", "Redundant safety"],
+    complexity: "Automatic",
     category: "AI Technology",
   },
   {
@@ -167,13 +167,13 @@ export function Features() {
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-white mb-4">Comprehensive Anti-Aging Platform</h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">
-            Advanced features designed for everyone - from complete beginners to longevity experts
+            Powered by <span className="bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent font-semibold">AI Ensemble Intelligence</span> - advanced features designed for everyone
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Badge className="bg-green-600/20 text-green-300 border-green-500/20">Beginner Friendly</Badge>
-            <Badge className="bg-blue-600/20 text-blue-300 border-blue-500/20">AI Powered</Badge>
+            <Badge className="bg-purple-600/20 text-purple-300 border-purple-500/20">AI Ensemble Intelligence</Badge>
+            <Badge className="bg-blue-600/20 text-blue-300 border-blue-500/20">Multi-AI Powered</Badge>
             <Badge className="bg-red-600/20 text-red-300 border-red-500/20">Safety First</Badge>
-            <Badge className="bg-purple-600/20 text-purple-300 border-purple-500/20">Expert Approved</Badge>
+            <Badge className="bg-green-600/20 text-green-300 border-green-500/20">Beginner Friendly</Badge>
           </div>
         </div>
 

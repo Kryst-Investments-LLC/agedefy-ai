@@ -93,8 +93,10 @@ export function EnhancedHero() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 mb-4 max-w-4xl mx-auto">
-            AI-powered personalization, medical supervision, verified compounds, and advanced testing - all in one
-            platform
+            <span className="bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent font-semibold">
+              AI Ensemble Intelligence
+            </span>{" "}
+            powered by OpenAI, Grok & Anthropic - medical supervision, verified compounds, and advanced testing
           </p>
 
           <p className="text-lg text-gray-400 mb-8 max-w-3xl mx-auto">
@@ -140,8 +142,8 @@ export function EnhancedHero() {
               <div className="bg-teal-600 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Brain className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-teal-400 font-semibold mb-2">AI Personalization</h3>
-              <p className="text-gray-300 text-sm">Custom protocols based on your genetics, biomarkers, and goals</p>
+              <h3 className="text-teal-400 font-semibold mb-2">AI Ensemble Intelligence</h3>
+              <p className="text-gray-300 text-sm">Multi-AI system combining OpenAI, Grok & Anthropic for superior insights</p>
             </div>
 
             <div className="text-center">
@@ -163,11 +165,11 @@ export function EnhancedHero() {
 
           <div className="mt-6 pt-6 border-t border-gray-700">
             <div className="flex flex-wrap justify-center gap-3">
-              <Badge className="bg-green-600/20 text-green-300 border-green-500/20">
-                Complete Healthcare Ecosystem
+              <Badge className="bg-purple-600/20 text-purple-300 border-purple-500/20">
+                AI Ensemble Intelligence
               </Badge>
               <Badge className="bg-blue-600/20 text-blue-300 border-blue-500/20">Research-Grade Quality</Badge>
-              <Badge className="bg-purple-600/20 text-purple-300 border-purple-500/20">FDA Compliant</Badge>
+              <Badge className="bg-green-600/20 text-green-300 border-green-500/20">FDA Compliant</Badge>
               <Badge className="bg-orange-600/20 text-orange-300 border-orange-500/20">Clinical Trial Access</Badge>
             </div>
           </div>

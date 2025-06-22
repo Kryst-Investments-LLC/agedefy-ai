@@ -193,6 +193,10 @@ export function UserDashboard() {
                 <div>
                   <p className="text-2xl font-bold text-white">8.2</p>
                   <p className="text-gray-400 text-sm">Health Score</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-xs text-green-400">+0.3 this week</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -424,6 +428,49 @@ export function UserDashboard() {
             </CardContent>
           </Card>
 
+          {/* Health Score Breakdown */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Health Score Breakdown
+              </CardTitle>
+              <CardDescription>Your comprehensive longevity metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Longevity Score</span>
+                  <div className="flex items-center gap-2">
+                    <Progress value={85} className="w-16" />
+                    <span className="text-white font-medium">8.5</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Optimization Score</span>
+                  <div className="flex items-center gap-2">
+                    <Progress value={78} className="w-16" />
+                    <span className="text-white font-medium">7.8</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Consistency Score</span>
+                  <div className="flex items-center gap-2">
+                    <Progress value={82} className="w-16" />
+                    <span className="text-white font-medium">8.2</span>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-gray-600">
+                  <div className="flex justify-between items-center">
+                    <span className="text-teal-300 font-medium">Overall Health Score</span>
+                    <span className="text-2xl font-bold text-teal-300">8.2</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Level 8 - Advanced Optimizer</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Actions */}
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
@@ -459,6 +506,11 @@ export function UserDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Health Score Analytics */}
+          <div className="md:col-span-2">
+            <HealthScoreAnalytics />
+          </div>
         </div>
       </div>
     </div>
