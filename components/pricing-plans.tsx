@@ -213,6 +213,23 @@ const addOnServices = [
 
 const enterprisePlans = [
   {
+    id: "b2b-pilot",
+    name: "B2B Pilot Program",
+    description: "Early access program for enterprise partners",
+    price: "50% Off",
+    icon: Users,
+    features: [
+      "Multi-tenant architecture",
+      "Enterprise admin dashboard",
+      "Bulk user management",
+      "Advanced analytics & reporting",
+      "Priority support & training",
+      "Custom integrations",
+      "White-label options",
+      "HIPAA compliance",
+    ],
+  },
+  {
     id: "clinic",
     name: "Longevity Clinic",
     description: "Complete platform for longevity clinics and practitioners",

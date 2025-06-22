@@ -36,6 +36,9 @@ const navigation = [
   { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
   { name: "Lab Testing", href: "/lab-testing", icon: Microscope, badge: "New" },
   { name: "Clinical Trials", href: "/clinical-trials", icon: Calendar, badge: "Research" },
+  { name: "Enterprise", href: "/enterprise", icon: Users, badge: "B2B" },
+  { name: "Video Conference", href: "/video-conference", icon: Calendar, badge: "New" },
+  { name: "Chat", href: "/chat", icon: Users, badge: "Live" },
 ]
 
 export function Navigation() {
