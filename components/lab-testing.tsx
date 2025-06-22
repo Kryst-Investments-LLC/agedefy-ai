@@ -550,7 +550,7 @@ export function LabTesting() {
                       <div>
                         <h4 className="text-white font-medium mb-2">Key Findings:</h4>
                         <div className="space-y-1">
-                          {result.keyFindings.map((finding, idx) => (
+                          {result.keyFindings?.map((finding, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-sm text-gray-300">
                               <CheckCircle className="h-4 w-4 text-green-400" />
                               <span>{finding}</span>
@@ -562,7 +562,7 @@ export function LabTesting() {
                       <div>
                         <h4 className="text-white font-medium mb-2">Recommended Actions:</h4>
                         <div className="space-y-1">
-                          {result.actionItems.map((action, idx) => (
+                          {result.actionItems?.map((action, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-sm text-gray-300">
                               <AlertCircle className="h-4 w-4 text-blue-400" />
                               <span>{action}</span>

@@ -22,7 +22,7 @@ import {
   Calendar,
   TestTube,
   Microscope,
-  Flask,
+  Beaker,
   Syringe
 } from 'lucide-react'
 
@@ -102,7 +102,7 @@ export function ClinicalDrugPipeline() {
   const getPhaseIcon = (phase: string) => {
     switch (phase) {
       case 'preclinical': return <TestTube className="w-4 h-4" />
-      case 'phase1': return <Flask className="w-4 h-4" />
+      case 'phase1': return <Beaker className="w-4 h-4" />
       case 'phase2': return <Microscope className="w-4 h-4" />
       case 'phase3': return <Syringe className="w-4 h-4" />
       case 'approved': return <CheckCircle className="w-4 h-4" />
@@ -254,7 +254,7 @@ export function ClinicalDrugPipeline() {
               onClick={() => setSelectedPhase('phase1')}
               className="flex items-center gap-1"
             >
-              <Flask className="w-3 h-3" />
+              <Beaker className="w-3 h-3" />
               Phase 1
             </Button>
             <Button
@@ -471,4 +471,4 @@ export function ClinicalDrugPipeline() {
       </Card>
     </div>
   )
-} 
+}    

@@ -265,7 +265,7 @@ export function CompoundMixer() {
     setSelectedCompounds(selectedCompounds.filter((c) => c.id !== id))
   }
 
-  const updateDose = (id: number, dose: number) => {
+  const updateDose = (id: number, dose: number[]) => {
     setSelectedCompounds(selectedCompounds.map((c) => (c.id === id ? { ...c, dose: dose[0] } : c)))
   }
 
@@ -286,7 +286,7 @@ export function CompoundMixer() {
         "Monitor for any unusual symptoms",
       ],
       synergies: selectedCompounds.filter((c) =>
-        c.synergies.some((s) => selectedCompounds.some((sc) => sc.name.includes(s))),
+        c.synergies.some((s: string) => selectedCompounds.some((sc) => sc.name.includes(s))),
       ),
       warnings: selectedCompounds.flatMap((c) => c.warnings).slice(0, 3),
     })

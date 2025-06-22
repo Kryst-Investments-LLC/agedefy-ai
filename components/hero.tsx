@@ -85,8 +85,8 @@ export function Hero() {
           {/* Rotating feature highlight */}
           <div className="mb-8 h-8">
             <div className="flex items-center justify-center gap-2 text-teal-400 font-medium">
-              {React.createElement(features[currentFeature].icon, { className: "h-5 w-5" })}
-              <span>{features[currentFeature].text}</span>
+              {features[currentFeature] && React.createElement(features[currentFeature].icon, { className: "h-5 w-5" })}
+              <span>{features[currentFeature]?.text}</span>
             </div>
           </div>
         </div>

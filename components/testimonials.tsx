@@ -132,33 +132,33 @@ export function Testimonials() {
                 <Quote className="h-12 w-12 text-teal-400 flex-shrink-0 opacity-50" />
                 <div className="flex-1">
                   <div className="flex mb-4">
-                    {[...Array(currentTestimonial.rating)].map((_, i) => (
+                    {[...Array(currentTestimonial?.rating || 0)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
 
-                  <p className="text-gray-300 text-lg leading-relaxed mb-6 italic">"{currentTestimonial.content}"</p>
+                  <p className="text-gray-300 text-lg leading-relaxed mb-6 italic">"{currentTestimonial?.content}"</p>
 
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-white font-semibold">{currentTestimonial.name}</p>
-                          {currentTestimonial.verified && (
+                          <p className="text-white font-semibold">{currentTestimonial?.name}</p>
+                          {currentTestimonial?.verified && (
                             <Badge className="bg-blue-600/20 text-blue-300 border-blue-500/20 text-xs">Verified</Badge>
                           )}
                         </div>
-                        <p className="text-teal-400 text-sm">{currentTestimonial.role}</p>
-                        <p className="text-gray-500 text-sm">{currentTestimonial.location}</p>
+                        <p className="text-teal-400 text-sm">{currentTestimonial?.role}</p>
+                        <p className="text-gray-500 text-sm">{currentTestimonial?.location}</p>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <Badge className="bg-teal-600/20 text-teal-300 border-teal-500/20 mb-1">
-                        {currentTestimonial.category}
+                        {currentTestimonial?.category}
                       </Badge>
-                      <p className="text-gray-400 text-sm">{currentTestimonial.compound}</p>
-                      <p className="text-green-400 text-sm font-medium">{currentTestimonial.result}</p>
+                      <p className="text-gray-400 text-sm">{currentTestimonial?.compound}</p>
+                      <p className="text-green-400 text-sm font-medium">{currentTestimonial?.result}</p>
                     </div>
                   </div>
                 </div>

@@ -44,7 +44,7 @@ export function Stats() {
       return setInterval(() => {
         setCounters((prev) => {
           const newCounters = [...prev]
-          if (newCounters[index] < stat.value) {
+          if (newCounters[index] !== undefined && newCounters[index] < stat.value) {
             newCounters[index] = Math.min(newCounters[index] + increment, stat.value)
           }
           return newCounters
@@ -76,7 +76,7 @@ export function Stats() {
                   <stat.icon className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-3xl font-bold text-white mb-1">
-                  {Math.floor(counters[index]).toLocaleString()}
+                  {Math.floor(counters[index] || 0).toLocaleString()}
                   {stat.suffix}
                 </div>
                 <div className="text-teal-400 font-medium mb-2">{stat.label}</div>
