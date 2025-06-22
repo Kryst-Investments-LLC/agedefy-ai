@@ -22,6 +22,10 @@ import {
   Calendar,
   DollarSign,
   User,
+  TrendingUp,
+  Scale,
+  Server,
+  MessageSquare,
 } from "lucide-react"
 
 const navigation = [
@@ -39,6 +43,11 @@ const navigation = [
   { name: "Enterprise", href: "/enterprise", icon: Users, badge: "B2B" },
   { name: "Video Conference", href: "/video-conference", icon: Calendar, badge: "New" },
   { name: "Chat", href: "/chat", icon: Users, badge: "Live" },
+  { name: "User Acquisition", href: "/user-acquisition", icon: TrendingUp, badge: "Analytics" },
+  { name: "Tech Validation", href: "/technology-validation", icon: Shield, badge: "AI" },
+  { name: "Compliance", href: "/regulatory-compliance", icon: Scale, badge: "Global" },
+  { name: "Scalability", href: "/scalability", icon: Server, badge: "10M+" },
+  { name: "Feedback System", href: "/feedback-system", icon: MessageSquare, badge: "Live" },
 ]
 
 export function Navigation() {
