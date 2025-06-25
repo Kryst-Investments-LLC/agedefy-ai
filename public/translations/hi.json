@@ -296,5 +296,21 @@
     "subscribe": "सब्सक्राइब करें",
     "email": "ईमेल पता",
     "copyright": "© 2025 AgeDefy AI - Kryst Investments LLC की संपत्ति। सभी अधिकार सुरक्षित।"
+  },
+  "advancedFeatures": {
+    "biomarkerTracking": "उन्नत बायोमार्कर ट्रैकिंग",
+    "genomicAnalysis": "जीनोमिक और एपिजेनोमिक विश्लेषण",
+    "personalizedMedicine": "व्यक्तिगत चिकित्सा योजनाएं",
+    "diseasePrevention": "एआई-संचालित रोग रोकथाम",
+    "learningSystem": "निरंतर शिक्षा प्रणाली",
+    "vrArEducation": "वीआर/एआर स्वास्थ्य शिक्षा",
+    "blockchainSecurity": "ब्लॉकचेन डेटा सुरक्षा",
+    "iotIntegration": "आईओटी डिवाइस एकीकरण",
+    "mentalHealth": "मानसिक स्वास्थ्य अनुकूलन",
+    "sustainability": "स्थिरता अंतर्दृष्टि",
+    "userContent": "उपयोगकर्ता-जनित सामग्री",
+    "gamification": "गेमिफिकेशन",
+    "healthRecords": "स्वास्थ्य रिकॉर्ड एकीकरण",
+    "dataVisualization": "उन्नत डेटा विज़ुअलाइज़ेशन"
   }
 }

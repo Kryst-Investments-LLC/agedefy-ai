@@ -297,4 +297,21 @@
     "email": "Email address",
     "copyright": "© 2025 AgeDefy AI - A property of Kryst Investments LLC. All rights reserved."
   }
+  },
+  "advancedFeatures": {
+    "biomarkerTracking": "Advanced Biomarker Tracking",
+    "genomicAnalysis": "Genomic & Epigenomic Analysis",
+    "personalizedMedicine": "Personalized Medicine Plans",
+    "diseasePrevention": "AI-Driven Disease Prevention",
+    "learningSystem": "Continuous Learning System",
+    "vrArEducation": "VR/AR Health Education",
+    "blockchainSecurity": "Blockchain Data Security",
+    "iotIntegration": "IoT Device Integration",
+    "mentalHealth": "Mental Health Optimization",
+    "sustainability": "Sustainability Insights",
+    "userContent": "User-Generated Content",
+    "gamification": "Gamification",
+    "healthRecords": "Health Record Integration",
+    "dataVisualization": "Advanced Data Visualization"
+  }
 }  

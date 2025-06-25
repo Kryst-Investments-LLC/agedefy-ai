@@ -210,5 +210,21 @@
     "healthProfile": "Profil de Santé",
     "recommendations": "Recommandations",
     "tracking": "Suivi"
+  },
+  "advancedFeatures": {
+    "biomarkerTracking": "Suivi Avancé des Biomarqueurs",
+    "genomicAnalysis": "Analyse Génomique et Épigénomique",
+    "personalizedMedicine": "Plans de Médecine Personnalisée",
+    "diseasePrevention": "Prévention des Maladies par IA",
+    "learningSystem": "Système d'Apprentissage Continu",
+    "vrArEducation": "Éducation Santé VR/AR",
+    "blockchainSecurity": "Sécurité des Données Blockchain",
+    "iotIntegration": "Intégration d'Appareils IoT",
+    "mentalHealth": "Optimisation de la Santé Mentale",
+    "sustainability": "Aperçus de Durabilité",
+    "userContent": "Contenu Généré par les Utilisateurs",
+    "gamification": "Gamification",
+    "healthRecords": "Intégration des Dossiers de Santé",
+    "dataVisualization": "Visualisation de Données Avancée"
   }
 }
