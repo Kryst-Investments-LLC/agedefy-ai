@@ -1,15 +1,13 @@
 "use client"
 
-import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, LineChart, PieChart, TrendingUp, Download, Share, Filter, Eye } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
+import React, { useState } from "react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export function AdvancedDataVisualization() {
-  const { t } = useTranslation()
   const [selectedChart, setSelectedChart] = useState("biomarker-trends")
 
   const visualizationTypes = [

@@ -1,16 +1,14 @@
 "use client"
 
+import { Stethoscope, Pill, Calendar, Video, FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Stethoscope, Pill, Calendar, Video, FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
-
 export function PersonalizedMedicinePlans() {
-  const { t } = useTranslation()
   const [activeProtocol, setActiveProtocol] = useState("longevity-basic")
 
   const protocols = [
@@ -157,7 +155,7 @@ export function PersonalizedMedicinePlans() {
                             <div className="text-white font-medium">{supplement.name}</div>
                             <div className="text-sm text-gray-400">{supplement.dosage} • {supplement.timing}</div>
                           </div>
-                          <Badge className={getStatusColor(supplement.status)} size="sm">
+                          <Badge className={getStatusColor(supplement.status)}>
                             {supplement.status}
                           </Badge>
                         </div>

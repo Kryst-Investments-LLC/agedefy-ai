@@ -1,16 +1,14 @@
 "use client"
 
+import { Shield, Lock, Key, Database, CheckCircle, AlertTriangle, Coins, Users } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Lock, Key, Database, CheckCircle, AlertTriangle, Coins, Users } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
-
 export function BlockchainDataSecurity() {
-  const { t } = useTranslation()
   const [walletConnected, setWalletConnected] = useState(false)
 
   const securityFeatures = [

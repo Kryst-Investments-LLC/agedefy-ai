@@ -1,16 +1,14 @@
 "use client"
 
+import { FileText, Hospital, Shield, Download, Upload, Link, CheckCircle, AlertTriangle } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, Hospital, Shield, Download, Upload, Link, CheckCircle, AlertTriangle } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
-
 export function HealthRecordIntegration() {
-  const { t } = useTranslation()
   const [selectedProvider, setSelectedProvider] = useState("epic")
 
   const connectedProviders = [

@@ -1,15 +1,13 @@
 "use client"
 
-import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, Heart, MessageSquare, Share, Star, Camera, Video, FileText } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
+import React, { useState } from "react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export function UserGeneratedContent() {
-  const { t } = useTranslation()
   const [selectedPost, setSelectedPost] = useState("transformation-story")
 
   const communityPosts = [

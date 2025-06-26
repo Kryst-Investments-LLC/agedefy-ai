@@ -1,16 +1,14 @@
 "use client"
 
+import { Brain, BookOpen, TrendingUp, Target, Zap, CheckCircle, Clock, Award } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Brain, BookOpen, TrendingUp, Target, Zap, CheckCircle, Clock, Award } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
-
 export function ContinuousLearningSystem() {
-  const { t } = useTranslation()
   const [selectedCourse, setSelectedCourse] = useState("longevity-fundamentals")
 
   const learningPaths = [

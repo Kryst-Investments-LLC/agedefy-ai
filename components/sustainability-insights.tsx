@@ -1,16 +1,14 @@
 "use client"
 
+import { Leaf, Recycle, Droplets, Zap, TreePine, Globe, TrendingUp, Award } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Leaf, Recycle, Droplets, Zap, TreePine, Globe, TrendingUp, Award } from "lucide-react"
-import { useTranslation } from "@/lib/i18n/context"
-
 export function SustainabilityInsights() {
-  const { t } = useTranslation()
   const [selectedMetric, setSelectedMetric] = useState("carbon-footprint")
 
   const sustainabilityMetrics = [
@@ -358,7 +356,7 @@ export function SustainabilityInsights() {
                       <div className="space-y-2">
                         {goal.actions.map((action, idx) => (
                           <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <div className="w-2 h-2 bg-green-400 rounded-full" />
                             <span className="text-sm text-gray-300">{action}</span>
                           </div>
                         ))}
