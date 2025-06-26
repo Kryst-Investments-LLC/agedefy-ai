@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getAIConfig } from '@/lib/config/ai-config';
+import { rateLimiter, getClientIdentifier, sanitizeInput } from '@/lib/middleware/security';
 import { validateAIRequest } from '@/lib/schemas/api-schemas';
 import { createErrorResponse, handleAPIError, createValidationErrorResponse } from '@/lib/utils/error-handling';
-import { rateLimiter, getClientIdentifier, sanitizeInput } from '@/lib/middleware/security';
 
 export interface AIProvider {
   name: string;
@@ -11,9 +12,9 @@ export interface AIProvider {
   model: string;
   endpoint: string;
   headers: Record<string, string>;
-  requestBody: (prompt: string, maxResults: number) => any;
-  extractContent: (data: any) => string;
-  calculateCost: (data: any) => number;
+  requestBody: (prompt: string, maxResults: number) => Record<string, unknown>;
+  extractContent: (data: unknown) => string;
+  calculateCost: (data: unknown) => number;
 }
 
 export const createAIRouteHandler = (provider: AIProvider) => {

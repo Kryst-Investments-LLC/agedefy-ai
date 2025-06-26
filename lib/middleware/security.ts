@@ -47,7 +47,7 @@ setInterval(() => {
 export const getClientIdentifier = (request: Request): string => {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
-  const remoteAddr = forwarded?.split(',')[0] || realIp || 'unknown';
+  const remoteAddr = forwarded?.split(',')[0] ?? realIp ?? 'unknown';
   return remoteAddr;
 };
 

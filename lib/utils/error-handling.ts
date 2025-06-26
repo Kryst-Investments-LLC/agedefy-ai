@@ -8,7 +8,8 @@ export interface APIError {
 
 export const createErrorResponse = (message: string, status: number, code?: string) => {
   const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] API Error (${status}): ${message}${code ? ` [${code}]` : ''}`);
+  const codeText = code ? ` [${code}]` : '';
+  console.error(`[${timestamp}] API Error (${status}): ${message}${codeText}`);
   
   return NextResponse.json(
     { 
