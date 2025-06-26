@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!config.providers.grok.apiKey) {
+    const apiKey = config.providers.grok.apiKey;
+    if (!apiKey || apiKey === '') {
       return NextResponse.json(
         { error: 'Grok API key not configured' },
         { status: 500 }
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.providers.grok.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: string; message?: string };
       // eslint-disable-next-line no-console
       console.error('Grok API error:', error);
       return NextResponse.json(
@@ -63,8 +64,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content ?? 'No response generated';
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    const content = data.choices?.[0]?.message?.content ?? 'No response generated';
     
     // Calculate approximate cost (placeholder - adjust based on actual Grok pricing)
     const inputTokens = data.usage?.prompt_tokens ?? 0;
@@ -87,4 +91,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}        
+}              

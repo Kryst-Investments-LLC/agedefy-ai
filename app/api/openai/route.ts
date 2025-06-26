@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!config.providers.openai.apiKey) {
+    const apiKey = config.providers.openai.apiKey;
+    if (!apiKey || apiKey === '') {
       return NextResponse.json(
         { error: 'OpenAI API key not configured' },
         { status: 500 }
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.providers.openai.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: string; message?: string };
       // eslint-disable-next-line no-console
       console.error('OpenAI API error:', error);
       return NextResponse.json(
@@ -61,8 +62,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content ?? 'No response generated';
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    const content = data.choices?.[0]?.message?.content ?? 'No response generated';
     
     // Calculate approximate cost (GPT-4 Turbo pricing)
     const inputTokens = data.usage?.prompt_tokens ?? 0;
@@ -85,4 +89,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}        
+}              

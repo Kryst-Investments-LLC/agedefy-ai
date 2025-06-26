@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = config.providers.anthropic.apiKey;
-    if (!apiKey || apiKey.length === 0) {
+    if (!apiKey || apiKey === '') {
       return NextResponse.json(
         { error: 'Anthropic API key not configured' },
         { status: 500 }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: string; message?: string };
       // eslint-disable-next-line no-console
       console.error('Anthropic API error:', error);
       return NextResponse.json(
@@ -58,8 +58,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    const content = data.content[0]?.text ?? 'No response generated';
+    const data = await response.json() as {
+      content?: Array<{ text?: string }>;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+    const content = data.content?.[0]?.text ?? 'No response generated';
     
     // Calculate approximate cost (Claude 3 Sonnet pricing)
     const inputTokens = data.usage?.input_tokens ?? 0;
@@ -82,4 +85,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}                    
+}                          
