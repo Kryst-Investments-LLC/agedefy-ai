@@ -200,7 +200,7 @@ class AIService {
     ];
 
     return {
-      recommendation: recommendations[Math.floor(Math.random() * recommendations.length)],
+      recommendation: recommendations[Math.floor(Math.random() * recommendations.length)] || 'No recommendation available',
       reasoning: 'Based on comprehensive biomarker analysis and longevity research',
       confidence: 0.75,
       sources: ['Mock Analysis - Enable AI features for real recommendations'],
@@ -217,7 +217,7 @@ class AIService {
     ];
 
     return {
-      content: mockResponses[Math.floor(Math.random() * mockResponses.length)],
+      content: mockResponses[Math.floor(Math.random() * mockResponses.length)] || 'No response available',
       provider: 'Mock AI',
       model: 'mock-model',
       timestamp: new Date(),
@@ -234,4 +234,4 @@ class AIService {
   }
 }
 
-export const aiService = new AIService(); 
+export const aiService = new AIService();  

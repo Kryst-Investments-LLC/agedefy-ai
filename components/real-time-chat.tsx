@@ -164,7 +164,7 @@ const mockOnlineUsers: OnlineUser[] = [
 ];
 
 export function RealTimeChat() {
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoom>(mockChatRooms[0]);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoom>(mockChatRooms[0] || mockChatRooms.find(() => true)!);
   const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
   const [newMessage, setNewMessage] = useState('');
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>(mockOnlineUsers);

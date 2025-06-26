@@ -138,7 +138,7 @@ class MLPersonalizationService {
       expectedImprovement: {
         'energy': baselineHealth < 0.7 ? 0.25 : 0.15,
         'cognitive': userProfile.geneticMarkers.includes('ApoE4') ? 0.35 : 0.20,
-        'metabolic': userProfile.biomarkers['HbA1c'] > 5.5 ? 0.30 : 0.15,
+        'metabolic': userProfile.biomarkers?.['HbA1c'] && userProfile.biomarkers['HbA1c'] > 5.5 ? 0.30 : 0.15,
         'longevity': 0.12
       },
       timeToResults: {
@@ -162,15 +162,15 @@ class MLPersonalizationService {
     if (clusters.length > 0) {
       const primaryCluster = clusters[0];
       
-      for (const intervention of primaryCluster.successfulInterventions.slice(0, 3)) {
+      for (const intervention of primaryCluster?.successfulInterventions?.slice(0, 3) || []) {
         recommendations.push({
           id: `cluster-${intervention.toLowerCase().replace(/\s+/g, '-')}`,
           type: this.categorizeIntervention(intervention),
           title: `Personalized ${intervention} Protocol`,
-          description: `Based on your similarity to ${primaryCluster.clusterName} (${Math.round(primaryCluster.similarity * 100)}% match)`,
+          description: `Based on your similarity to ${primaryCluster?.clusterName || 'similar users'} (${Math.round((primaryCluster?.similarity || 0) * 100)}% match)`,
           reasoning: `Users with similar profiles to yours have seen significant benefits from ${intervention}. Your genetic markers and lifestyle patterns align with this cluster's success factors.`,
-          confidence: primaryCluster.similarity,
-          priority: primaryCluster.similarity > 0.8 ? 'high' : 'medium',
+          confidence: primaryCluster?.similarity || 0,
+          priority: (primaryCluster?.similarity || 0) > 0.8 ? 'high' : 'medium',
           category: this.getInterventionCategory(intervention),
           expectedOutcome: outcomes.expectedImprovement[this.mapToOutcomeKey(intervention)] ? 
             `${Math.round(outcomes.expectedImprovement[this.mapToOutcomeKey(intervention)] * 100)}% improvement` : 
@@ -178,9 +178,9 @@ class MLPersonalizationService {
           timeframe: `${outcomes.timeToResults[this.mapToOutcomeKey(intervention)] || 8} weeks`,
           riskLevel: this.assessRiskLevel(intervention, userProfile),
           evidenceLevel: 'strong',
-          personalizedFactors: primaryCluster.commonTraits.filter(trait => 
+          personalizedFactors: primaryCluster?.commonTraits?.filter(trait => 
             this.userHasTrait(userProfile, trait)
-          )
+          ) || []
         });
       }
     }
@@ -272,7 +272,7 @@ class MLPersonalizationService {
     if (userProfile.geneticMarkers.includes('ApoE4')) {
       risks.push('Alzheimer\'s genetic risk');
     }
-    if (userProfile.biomarkers['CRP'] > 3) {
+    if (userProfile.biomarkers?.['CRP'] && userProfile.biomarkers['CRP'] > 3) {
       risks.push('Chronic inflammation');
     }
     if (userProfile.lifestyle.stress > 7) {
@@ -361,7 +361,7 @@ class MLPersonalizationService {
   private async generateBiomarkerRecommendations(userProfile: UserProfile): Promise<PersonalizedRecommendation[]> {
     const recommendations: PersonalizedRecommendation[] = [];
     
-    if (userProfile.biomarkers['HbA1c'] > 5.7) {
+    if (userProfile.biomarkers?.['HbA1c'] && userProfile.biomarkers['HbA1c'] > 5.7) {
       recommendations.push({
         id: 'glucose-optimization',
         type: 'lifestyle',
