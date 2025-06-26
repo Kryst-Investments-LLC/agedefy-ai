@@ -1,10 +1,5 @@
 "use client"
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { 
   Clock, 
   TrendingUp, 
@@ -22,6 +17,12 @@ import {
   Dna,
   Timer
 } from 'lucide-react'
+import React, { useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 
 interface AgingClock {
   id: string
@@ -195,7 +196,7 @@ export function AdvancedAgingClocks() {
               <div className="flex items-center gap-3">
                 <Calendar className="w-8 h-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">{clocks[0]?.chronologicalAge || 0}</p>
+                  <p className="text-2xl font-bold">{clocks[0]?.chronologicalAge ?? 0}</p>
                   <p className="text-sm text-gray-600">Chronological Age</p>
                 </div>
               </div>
@@ -416,4 +417,4 @@ export function AdvancedAgingClocks() {
       </Card>
     </div>
   )
-}  
+}    

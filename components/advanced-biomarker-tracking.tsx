@@ -1,17 +1,17 @@
 "use client"
 
+import { Activity, Watch, Heart, Brain, Zap, TrendingUp, AlertTriangle } from "lucide-react"
 import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Activity, Watch, Smartphone, Heart, Brain, Zap, TrendingUp, AlertTriangle } from "lucide-react"
 import { useTranslation } from "@/lib/i18n/context"
 
 export function AdvancedBiomarkerTracking() {
-  const { t } = useTranslation()
-  const [connectedDevices, setConnectedDevices] = useState([
+  const [connectedDevices] = useState([
     { name: "Apple Watch Series 9", type: "smartwatch", connected: true, battery: 85 },
     { name: "Oura Ring Gen 3", type: "ring", connected: true, battery: 72 },
     { name: "Continuous Glucose Monitor", type: "cgm", connected: false, battery: 0 },
