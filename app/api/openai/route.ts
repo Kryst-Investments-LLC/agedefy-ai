@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const config = getAIConfig();
     
-    if (!config.providers.openai.enabled) {
+    if (config.providers.openai.enabled !== true) {
       return NextResponse.json(
         { error: 'OpenAI is not enabled' },
         { status: 400 }
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = config.providers.openai.apiKey;
-    if (!apiKey || apiKey === '') {
+    if (typeof apiKey !== 'string' || apiKey.length === 0) {
       return NextResponse.json(
         { error: 'OpenAI API key not configured' },
         { status: 500 }
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { query: string; context?: string; maxResults?: number };
     const { query, context, maxResults = 1 } = body;
 
-    const prompt = context 
+    const prompt = (typeof context === 'string' && context.length > 0) 
       ? `Context: ${context}\n\nQuery: ${query}\n\nPlease provide a comprehensive, scientifically accurate response focused on longevity and anti-aging research.`
       : `Query: ${query}\n\nPlease provide a comprehensive, scientifically accurate response focused on longevity and anti-aging research.`;
 
@@ -89,4 +89,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}              
+}                      
