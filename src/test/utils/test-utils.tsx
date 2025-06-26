@@ -1,6 +1,6 @@
-import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { ThemeProvider } from 'next-themes'
+import React, { ReactElement } from 'react'
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -59,14 +59,14 @@ export const mockAIResponse = {
   cost: 0.001
 }
 
-export const waitForLoadingToFinish = () => 
+export const waitForLoadingToFinish = async () => 
   new Promise(resolve => setTimeout(resolve, 100))
 
-export const mockApiResponse = (data: any, status = 200) => {
+export const mockApiResponse = async (data: any, status = 200) => {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
     status,
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(JSON.stringify(data))
+    json: async () => Promise.resolve(data),
+    text: async () => Promise.resolve(JSON.stringify(data))
   })
 }

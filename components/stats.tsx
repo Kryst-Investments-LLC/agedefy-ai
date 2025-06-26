@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, Users, BookOpen, Shield } from "lucide-react"
+import { useEffect, useState } from "react"
+
+import { Card, CardContent } from "@/components/ui/card"
 
 const stats = [
   {

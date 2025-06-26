@@ -1,6 +1,7 @@
 import React from "react"
-import { SustainabilityInsights } from "@/components/sustainability-insights"
+
 import { Navigation } from "@/components/navigation"
+import { SustainabilityInsights } from "@/components/sustainability-insights"
 
 export default function SustainabilityPage() {
   return (

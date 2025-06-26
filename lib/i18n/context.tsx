@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { defaultLocale, locales, type Locale } from './config';
+
+import { defaultLocale, locales  } from './config';
+import type {Locale} from './config';
 
 interface LocaleContextType {
   locale: Locale;

@@ -1,4 +1,5 @@
 import React from "react"
+
 import { AdvancedDataVisualization } from "@/components/advanced-data-visualization"
 import { Navigation } from "@/components/navigation"
 

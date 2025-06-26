@@ -1,13 +1,13 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Mail, CheckCircle, Zap, BookOpen, Users } from "lucide-react"
+import type React from "react"
+import { useState } from "react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 export function Newsletter() {
   const [email, setEmail] = useState("")
@@ -75,7 +75,7 @@ export function Newsletter() {
                   <Button type="submit" disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 px-8">
                     {isLoading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Subscribing...
                       </>
                     ) : (

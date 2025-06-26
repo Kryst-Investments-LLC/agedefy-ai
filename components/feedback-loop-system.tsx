@@ -1,11 +1,5 @@
 "use client"
 
-import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   MessageSquare,
   TrendingUp,
@@ -20,6 +14,13 @@ import {
   BookOpen,
   Settings,
 } from "lucide-react"
+import React, { useState } from "react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const feedbackChannels = [
   {
@@ -256,7 +257,7 @@ export function FeedbackLoopSystem() {
                         <h4 className="text-sm font-medium text-gray-300">Key Insights:</h4>
                         {channel.insights.map((insight, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                            <div className="w-1 h-1 bg-teal-400 rounded-full"></div>
+                            <div className="w-1 h-1 bg-teal-400 rounded-full" />
                             {insight}
                           </div>
                         ))}

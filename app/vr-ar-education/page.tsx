@@ -1,6 +1,7 @@
 import React from "react"
-import { VRARHealthEducation } from "@/components/vr-ar-health-education"
+
 import { Navigation } from "@/components/navigation"
+import { VRARHealthEducation } from "@/components/vr-ar-health-education"
 
 export default function VRAREducationPage() {
   return (

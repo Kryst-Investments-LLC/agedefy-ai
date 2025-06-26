@@ -1,11 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Smartphone,
   Watch,
@@ -20,6 +14,13 @@ import {
   Battery,
   FolderSyncIcon as Sync,
 } from "lucide-react"
+import { useState } from "react"
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 
 const supportedDevices = [
   {
@@ -254,13 +255,13 @@ export function WearableIntegration() {
                         ) : (
                           <Button
                             size="sm"
-                            onClick={() => connectDevice(device.id)}
+                            onClick={async () => connectDevice(device.id)}
                             disabled={isDeviceConnecting}
                             className="bg-teal-600 hover:bg-teal-700"
                           >
                             {isDeviceConnecting ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                                 Connecting...
                               </>
                             ) : (
@@ -341,7 +342,7 @@ export function WearableIntegration() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Apple Watch</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     <span className="text-green-400 text-sm">Active</span>
                   </div>
                 </div>
@@ -349,7 +350,7 @@ export function WearableIntegration() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Oura Ring</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     <span className="text-green-400 text-sm">Active</span>
                   </div>
                 </div>
@@ -357,7 +358,7 @@ export function WearableIntegration() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Health App</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full" />
                     <span className="text-yellow-400 text-sm">Pending</span>
                   </div>
                 </div>

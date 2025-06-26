@@ -1,4 +1,5 @@
 import React from "react"
+
 import { AIDrivenDiseasePrevention } from "@/components/ai-driven-disease-prevention"
 import { Navigation } from "@/components/navigation"
 

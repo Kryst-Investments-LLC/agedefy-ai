@@ -1,27 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { HealthScoreAnalytics } from "@/components/health-score-analytics"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Area,
-  AreaChart,
-} from "recharts"
 import {
   Activity,
   TrendingUp,
@@ -36,6 +14,29 @@ import {
   CheckCircle,
   Flame,
 } from "lucide-react"
+import { useState } from "react"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Area,
+  AreaChart,
+} from "recharts"
+
+import { HealthScoreAnalytics } from "@/components/health-score-analytics"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Mock user data
 const userData = {
@@ -195,7 +196,7 @@ export function UserDashboard() {
                   <p className="text-2xl font-bold text-white">8.2</p>
                   <p className="text-gray-400 text-sm">Health Score</p>
                   <div className="flex items-center gap-1 mt-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     <span className="text-xs text-green-400">+0.3 this week</span>
                   </div>
                 </div>

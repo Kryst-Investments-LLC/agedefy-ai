@@ -1,6 +1,7 @@
 import React from "react"
-import { PersonalizedMedicinePlans } from "@/components/personalized-medicine-plans"
+
 import { Navigation } from "@/components/navigation"
+import { PersonalizedMedicinePlans } from "@/components/personalized-medicine-plans"
 
 export default function PersonalizedMedicinePage() {
   return (

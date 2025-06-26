@@ -1,4 +1,5 @@
 import React from "react"
+
 import { MentalHealthOptimization } from "@/components/mental-health-optimization"
 import { Navigation } from "@/components/navigation"
 

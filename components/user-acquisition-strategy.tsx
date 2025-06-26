@@ -1,10 +1,5 @@
 "use client"
 
-import React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import {
   Users,
   Target,
@@ -19,6 +14,12 @@ import {
   UserPlus,
   BarChart3,
 } from "lucide-react"
+import React from "react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 
 const acquisitionChannels = [
   {
@@ -190,7 +191,7 @@ export function UserAcquisitionStrategy() {
                       <div className="space-y-2">
                         {channel.strategies.map((strategy, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-sm text-gray-300">
-                            <div className="w-1.5 h-1.5 bg-teal-400 rounded-full"></div>
+                            <div className="w-1.5 h-1.5 bg-teal-400 rounded-full" />
                             {strategy}
                           </div>
                         ))}

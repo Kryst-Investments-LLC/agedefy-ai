@@ -1,10 +1,5 @@
 "use client"
 
-import React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import {
   Shield,
   Lock,
@@ -19,6 +14,12 @@ import {
   Award,
   Clock,
 } from "lucide-react"
+import React from "react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 
 const complianceFrameworks = [
   {
@@ -397,7 +398,7 @@ export function RegulatoryCompliance() {
                     <div className="space-y-1">
                       {region.requirements.map((req, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                          <div className="w-1 h-1 bg-teal-400 rounded-full"></div>
+                          <div className="w-1 h-1 bg-teal-400 rounded-full" />
                           {req}
                         </div>
                       ))}

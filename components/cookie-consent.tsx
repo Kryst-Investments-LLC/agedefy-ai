@@ -1,10 +1,11 @@
 "use client"
 
+import { Cookie, Settings } from "lucide-react"
 import { useState, useEffect } from "react"
+
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Cookie, Settings } from "lucide-react"
 
 export function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false)

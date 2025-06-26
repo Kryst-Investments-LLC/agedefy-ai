@@ -1,6 +1,6 @@
 import { CompoundMixer } from "@/components/compound-mixer"
-import { SafetyDisclaimer } from "@/components/safety-disclaimer"
 import { Navigation } from "@/components/navigation"
+import { SafetyDisclaimer } from "@/components/safety-disclaimer"
 
 export default function MixerPage() {
   return (

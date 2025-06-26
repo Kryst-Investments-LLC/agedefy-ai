@@ -1,16 +1,17 @@
 "use client"
 
+import { Brain, MessageSquare, TrendingUp, Shield, Sparkles, Heart, Activity, Zap } from "lucide-react"
 import React, { useState } from "react"
+
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Brain, MessageSquare, TrendingUp, Shield, Sparkles, Heart, Activity, Zap } from "lucide-react"
 import { useTranslation } from "@/lib/i18n/context"
 
 export default function AICoachPage() {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
-  const [messages, setMessages] = useState([
+  const [isLoading, _setIsLoading] = useState(false)
+  const [messages, _setMessages] = useState([
     {
       type: "ai",
       content: "Hello! I'm your AI Health Coach. I can help you with personalized health recommendations, longevity protocols, and answer questions about anti-aging research. What would you like to know?"
@@ -113,7 +114,7 @@ export default function AICoachPage() {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                     ) : (
                       "Send"
                     )}

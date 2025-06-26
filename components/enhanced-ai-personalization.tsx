@@ -1,12 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { mlPersonalizationService, type PersonalizedRecommendation, type UserProfile } from '@/lib/services/ml-personalization-service';
 import {
   Brain,
   Dna,
@@ -25,6 +18,15 @@ import {
   Lightbulb,
   Cpu,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { mlPersonalizationService   } from '@/lib/services/ml-personalization-service';
+import type {PersonalizedRecommendation, UserProfile} from '@/lib/services/ml-personalization-service';
 
 const mockRecommendations = [
   {

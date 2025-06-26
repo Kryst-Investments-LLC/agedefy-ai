@@ -1,6 +1,7 @@
-import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import type React from "react"
+
 import { LocaleProvider } from "@/lib/i18n/context"
 import "./globals.css"
 

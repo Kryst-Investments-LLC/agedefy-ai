@@ -1,12 +1,12 @@
-import { Navigation } from "@/components/navigation"
+import { CookieConsent } from "@/components/cookie-consent"
 import { EnhancedHero } from "@/components/enhanced-hero"
 import { Features } from "@/components/features"
-import { Testimonials } from "@/components/testimonials"
-import { Stats } from "@/components/stats"
-import { Newsletter } from "@/components/newsletter"
 import { Footer } from "@/components/footer"
-import { CookieConsent } from "@/components/cookie-consent"
+import { Navigation } from "@/components/navigation"
+import { Newsletter } from "@/components/newsletter"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+import { Stats } from "@/components/stats"
+import { Testimonials } from "@/components/testimonials"
 
 export default function HomePage() {
   return (

@@ -1,6 +1,7 @@
 import React from "react"
-import { UserGeneratedContent } from "@/components/user-generated-content"
+
 import { Navigation } from "@/components/navigation"
+import { UserGeneratedContent } from "@/components/user-generated-content"
 
 export default function UserContentPage() {
   return (

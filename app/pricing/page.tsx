@@ -1,5 +1,5 @@
-import { PricingPlans } from "@/components/pricing-plans"
 import { Navigation } from "@/components/navigation"
+import { PricingPlans } from "@/components/pricing-plans"
 
 export default function PricingPage() {
   return (

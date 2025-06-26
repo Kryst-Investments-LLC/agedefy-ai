@@ -1,4 +1,5 @@
 import React from "react"
+
 import { ContinuousLearningSystem } from "@/components/continuous-learning-system"
 import { Navigation } from "@/components/navigation"
 

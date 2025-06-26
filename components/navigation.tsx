@@ -1,10 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import {
   Menu,
   X,
@@ -27,6 +22,13 @@ import {
   Server,
   MessageSquare,
 } from "lucide-react"
+import Link from "next/link"
+import { useState } from "react"
+
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },

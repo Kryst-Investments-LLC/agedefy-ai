@@ -1,4 +1,5 @@
 import React from "react"
+
 import { HealthRecordIntegration } from "@/components/health-record-integration"
 import { Navigation } from "@/components/navigation"
 

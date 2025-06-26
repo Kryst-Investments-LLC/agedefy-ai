@@ -1,5 +1,5 @@
-import { TelemedicineIntegration } from "@/components/telemedicine-integration"
 import { Navigation } from "@/components/navigation"
+import { TelemedicineIntegration } from "@/components/telemedicine-integration"
 
 export default function TelemedicinePage() {
   return (

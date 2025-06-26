@@ -1,11 +1,12 @@
 "use client"
 
+import { AlertTriangle, X, Shield, BookOpen, Users, Phone } from "lucide-react"
 import { useState, useEffect } from "react"
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertTriangle, X, Shield, BookOpen, Users, Phone } from "lucide-react"
 
 export function SafetyDisclaimer() {
   const [showDisclaimer, setShowDisclaimer] = useState(false)

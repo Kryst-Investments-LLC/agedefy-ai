@@ -1,5 +1,5 @@
-import { UserDashboard } from "@/components/user-dashboard"
 import { Navigation } from "@/components/navigation"
+import { UserDashboard } from "@/components/user-dashboard"
 
 export default function DashboardPage() {
   return (

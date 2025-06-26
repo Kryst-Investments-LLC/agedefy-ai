@@ -1,4 +1,5 @@
 import React from "react"
+
 import { Gamification } from "@/components/gamification"
 import { Navigation } from "@/components/navigation"
 
