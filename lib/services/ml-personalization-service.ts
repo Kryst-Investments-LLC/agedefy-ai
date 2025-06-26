@@ -76,6 +76,7 @@ class MLPersonalizationService {
       this.recommendationCache.set(cacheKey, recommendations);
       return recommendations;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('ML personalization failed, falling back to rule-based recommendations:', error);
       return this.generateRuleBasedRecommendations(userProfile);
     }
@@ -111,7 +112,7 @@ class MLPersonalizationService {
     dropoutRisk: number;
     engagementLevel: number;
   }> {
-    const adherenceScore = userProfile.history.adherence || 0.7;
+    const adherenceScore = userProfile.history.adherence ?? 0.7;
     const engagementFactors = [
       userProfile.healthGoals.length > 2 ? 0.8 : 0.6,
       userProfile.lifestyle.exercise !== 'sedentary' ? 0.9 : 0.5,
@@ -162,25 +163,25 @@ class MLPersonalizationService {
     if (clusters.length > 0) {
       const primaryCluster = clusters[0];
       
-      for (const intervention of primaryCluster?.successfulInterventions?.slice(0, 3) || []) {
+      for (const intervention of primaryCluster?.successfulInterventions?.slice(0, 3) ?? []) {
         recommendations.push({
           id: `cluster-${intervention.toLowerCase().replace(/\s+/g, '-')}`,
           type: this.categorizeIntervention(intervention),
           title: `Personalized ${intervention} Protocol`,
-          description: `Based on your similarity to ${primaryCluster?.clusterName || 'similar users'} (${Math.round((primaryCluster?.similarity || 0) * 100)}% match)`,
+          description: `Based on your similarity to ${primaryCluster?.clusterName ?? 'similar users'} (${Math.round((primaryCluster?.similarity ?? 0) * 100)}% match)`,
           reasoning: `Users with similar profiles to yours have seen significant benefits from ${intervention}. Your genetic markers and lifestyle patterns align with this cluster's success factors.`,
-          confidence: primaryCluster?.similarity || 0,
-          priority: (primaryCluster?.similarity || 0) > 0.8 ? 'high' : 'medium',
+          confidence: primaryCluster?.similarity ?? 0,
+          priority: (primaryCluster?.similarity ?? 0) > 0.8 ? 'high' : 'medium',
           category: this.getInterventionCategory(intervention),
           expectedOutcome: outcomes.expectedImprovement[this.mapToOutcomeKey(intervention)] ? 
             `${Math.round(outcomes.expectedImprovement[this.mapToOutcomeKey(intervention)] * 100)}% improvement` : 
             'Significant health optimization',
-          timeframe: `${outcomes.timeToResults[this.mapToOutcomeKey(intervention)] || 8} weeks`,
+          timeframe: `${outcomes.timeToResults[this.mapToOutcomeKey(intervention)] ?? 8} weeks`,
           riskLevel: this.assessRiskLevel(intervention, userProfile),
           evidenceLevel: 'strong',
           personalizedFactors: primaryCluster?.commonTraits?.filter(trait => 
             this.userHasTrait(userProfile, trait)
-          ) || []
+          ) ?? []
         });
       }
     }
@@ -416,6 +417,7 @@ class MLPersonalizationService {
     sideEffects?: string[];
     notes?: string;
   }): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log(`Updating feedback for user ${userId}, recommendation ${recommendationId}:`, feedback);
   }
 

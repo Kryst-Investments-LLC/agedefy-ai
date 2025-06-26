@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getAIConfig } from '@/lib/config/ai-config';
 
 export async function POST(request: NextRequest) {
@@ -12,14 +13,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!config.providers.anthropic.apiKey) {
+    const apiKey = config.providers.anthropic.apiKey;
+    if (!apiKey || apiKey.length === 0) {
       return NextResponse.json(
         { error: 'Anthropic API key not configured' },
         { status: 500 }
       );
     }
 
-    const { query, context, maxResults = 1 } = await request.json();
+    const body = await request.json() as { query: string; context?: string; maxResults?: number };
+    const { query, context, maxResults: _maxResults = 1 } = body;
 
     const prompt = context 
       ? `Context: ${context}\n\nQuery: ${query}\n\nPlease provide a comprehensive, scientifically accurate response focused on longevity and anti-aging research.`
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.providers.anthropic.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       },
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.json();
+      // eslint-disable-next-line no-console
       console.error('Anthropic API error:', error);
       return NextResponse.json(
         { error: 'Anthropic API request failed' },
@@ -55,11 +59,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || 'No response generated';
+    const content = data.content[0]?.text ?? 'No response generated';
     
     // Calculate approximate cost (Claude 3 Sonnet pricing)
-    const inputTokens = data.usage?.input_tokens || 0;
-    const outputTokens = data.usage?.output_tokens || 0;
+    const inputTokens = data.usage?.input_tokens ?? 0;
+    const outputTokens = data.usage?.output_tokens ?? 0;
     const cost = (inputTokens * 0.000003) + (outputTokens * 0.000015); // Approximate cost in USD
 
     return NextResponse.json({
@@ -67,14 +71,15 @@ export async function POST(request: NextRequest) {
       provider: 'Anthropic',
       model: config.providers.anthropic.model,
       cost: Math.round(cost * 100) / 100,
-      usage: data.usage,
+      usage: data.usage ?? {},
     });
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Anthropic route error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-} 
+}                    

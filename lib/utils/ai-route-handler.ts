@@ -59,6 +59,7 @@ export const createAIRouteHandler = (provider: AIProvider) => {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
+        // eslint-disable-next-line no-console
         console.error(`${provider.name} API error:`, error);
         return createErrorResponse(
           `${provider.name} API request failed`,

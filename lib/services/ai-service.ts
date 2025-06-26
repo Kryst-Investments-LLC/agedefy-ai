@@ -38,6 +38,7 @@ class AIService {
         return await this.getAnthropicRecommendation(userData);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('AI service failed, falling back to mock data:', error);
     }
 
@@ -58,6 +59,7 @@ class AIService {
         return await this.callAnthropic(query);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('AI research failed, falling back to mock data:', error);
     }
 
@@ -78,6 +80,7 @@ class AIService {
         return await this.callAnthropic({ query: userQuery, context });
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Virtual advisor failed, falling back to mock data:', error);
     }
 
@@ -200,7 +203,7 @@ class AIService {
     ];
 
     return {
-      recommendation: recommendations[Math.floor(Math.random() * recommendations.length)] || 'No recommendation available',
+      recommendation: recommendations[Math.floor(Math.random() * recommendations.length)] ?? 'No recommendation available',
       reasoning: 'Based on comprehensive biomarker analysis and longevity research',
       confidence: 0.75,
       sources: ['Mock Analysis - Enable AI features for real recommendations'],
@@ -217,7 +220,7 @@ class AIService {
     ];
 
     return {
-      content: mockResponses[Math.floor(Math.random() * mockResponses.length)] || 'No response available',
+      content: mockResponses[Math.floor(Math.random() * mockResponses.length)] ?? 'No response available',
       provider: 'Mock AI',
       model: 'mock-model',
       timestamp: new Date(),
@@ -234,4 +237,4 @@ class AIService {
   }
 }
 
-export const aiService = new AIService();  
+export const aiService = new AIService();      

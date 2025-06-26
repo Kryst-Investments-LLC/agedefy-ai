@@ -9,6 +9,7 @@ export interface APIError {
 export const createErrorResponse = (message: string, status: number, code?: string) => {
   const timestamp = new Date().toISOString();
   const codeText = code ? ` [${code}]` : '';
+  // eslint-disable-next-line no-console
   console.error(`[${timestamp}] API Error (${status}): ${message}${codeText}`);
   
   return NextResponse.json(
@@ -22,6 +23,7 @@ export const createErrorResponse = (message: string, status: number, code?: stri
 };
 
 export const handleAPIError = (error: unknown, context: string) => {
+  // eslint-disable-next-line no-console
   console.error(`[${new Date().toISOString()}] ${context} error:`, error);
   
   if (error instanceof Error) {

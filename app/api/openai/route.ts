@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getAIConfig } from '@/lib/config/ai-config';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { query, context, maxResults = 1 } = await request.json();
+    const body = await request.json() as { query: string; context?: string; maxResults?: number };
+    const { query, context, maxResults = 1 } = body;
 
     const prompt = context 
       ? `Context: ${context}\n\nQuery: ${query}\n\nPlease provide a comprehensive, scientifically accurate response focused on longevity and anti-aging research.`
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.json();
+      // eslint-disable-next-line no-console
       console.error('OpenAI API error:', error);
       return NextResponse.json(
         { error: 'OpenAI API request failed' },
@@ -59,11 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || 'No response generated';
+    const content = data.choices[0]?.message?.content ?? 'No response generated';
     
     // Calculate approximate cost (GPT-4 Turbo pricing)
-    const inputTokens = data.usage?.prompt_tokens || 0;
-    const outputTokens = data.usage?.completion_tokens || 0;
+    const inputTokens = data.usage?.prompt_tokens ?? 0;
+    const outputTokens = data.usage?.completion_tokens ?? 0;
     const cost = (inputTokens * 0.00001) + (outputTokens * 0.00003); // Approximate cost in USD
 
     return NextResponse.json({
@@ -71,14 +74,15 @@ export async function POST(request: NextRequest) {
       provider: 'OpenAI',
       model: config.providers.openai.model,
       cost: Math.round(cost * 100) / 100, // Round to 2 decimal places
-      usage: data.usage,
+      usage: data.usage ?? {},
     });
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('OpenAI route error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-} 
+}        

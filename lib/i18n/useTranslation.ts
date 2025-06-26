@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+
 import { useLocale } from './context';
 
 export function useTranslation() {
@@ -14,12 +15,14 @@ export function useTranslation() {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
+        // eslint-disable-next-line no-console
         console.warn(`Translation key not found: ${key}`);
         return key;
       }
     }
 
     if (typeof value !== 'string') {
+      // eslint-disable-next-line no-console
       console.warn(`Translation value is not a string: ${key}`);
       return key;
     }
@@ -35,4 +38,4 @@ export function useTranslation() {
   }, [translations]);
 
   return { t, locale };
-} 
+}  

@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { getAIConfig } from '@/lib/config/ai-config';
 import { createAIRouteHandler, AIProvider } from '@/lib/utils/ai-route-handler';
 
@@ -15,7 +14,7 @@ const createGrokProvider = (): AIProvider => {
       'Authorization': `Bearer ${config.providers.grok.apiKey}`,
       'Content-Type': 'application/json',
     },
-    requestBody: (prompt: string, maxResults: number) => ({
+    requestBody: (prompt: string, _maxResults: number) => ({
       model: config.providers.grok.model,
       messages: [
         {
@@ -29,12 +28,16 @@ const createGrokProvider = (): AIProvider => {
       ],
       max_tokens: 1000,
       temperature: 0.7,
-      n: maxResults,
+      n: 1,
     }),
-    extractContent: (data: any) => data.choices?.[0]?.message?.content || 'No response generated',
-    calculateCost: (data: any) => {
-      const inputTokens = data.usage?.prompt_tokens || 0;
-      const outputTokens = data.usage?.completion_tokens || 0;
+    extractContent: (data: unknown) => {
+      const response = data as { choices?: Array<{ message?: { content?: string } }> }
+      return response.choices?.[0]?.message?.content ?? 'No response generated'
+    },
+    calculateCost: (data: unknown) => {
+      const response = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } }
+      const inputTokens = response.usage?.prompt_tokens ?? 0;
+      const outputTokens = response.usage?.completion_tokens ?? 0;
       return (inputTokens * 0.00001) + (outputTokens * 0.00003);
     }
   };
