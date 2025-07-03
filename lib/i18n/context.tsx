@@ -2,13 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { defaultLocale, locales  } from './config';
-import type {Locale} from './config';
+import type { Locale } from './config';
+import { defaultLocale, locales } from './config';
 
 interface LocaleContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  translations: any;
+  translations: Record<string, unknown>;
   isLoading: boolean;
 }
 
@@ -16,7 +16,7 @@ const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
-  const [translations, setTranslations] = useState<any>({});
+  const [translations, setTranslations] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -78,11 +78,15 @@ export function useTranslation() {
   
   const t = (key: string) => {
     const keys = key.split('.');
-    let value = translations;
+    let value: unknown = translations;
     for (const k of keys) {
-      value = value?.[k];
+      if (value && typeof value === 'object' && k in value) {
+        value = (value as Record<string, unknown>)[k];
+      } else {
+        return key;
+      }
     }
-    return value || key;
+    return typeof value === 'string' ? value : key;
   };
   
   return { t };

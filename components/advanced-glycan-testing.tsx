@@ -5,13 +5,8 @@ import {
   TrendingUp, 
   TrendingDown, 
   Activity,
-  Target,
   Clock,
-  AlertCircle,
   CheckCircle,
-  Brain,
-  Heart,
-  Zap,
   Eye,
   BarChart3,
   Calendar,
@@ -38,7 +33,7 @@ interface GlycanMarker {
   healthImplications: string[]
 }
 
-interface GlycanTest {
+interface _GlycanTest {
   id: string
   date: string
   markers: GlycanMarker[]
@@ -399,4 +394,4 @@ export function AdvancedGlycanTesting() {
       </Card>
     </div>
   )
-} 
+}    

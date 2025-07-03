@@ -7,22 +7,17 @@ import {
   Activity,
   Target,
   Calendar,
-  AlertCircle,
   CheckCircle,
-  Brain,
   Heart,
-  Zap,
   Eye,
   BarChart3,
   Dna,
-  Timer
 } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 
 interface AgingClock {
   id: string
@@ -37,7 +32,7 @@ interface AgingClock {
   trend: 'improving' | 'stable' | 'declining'
 }
 
-interface ClockComparison {
+interface _ClockComparison {
   clock: AgingClock
   difference: number
   percentile: number
@@ -417,4 +412,4 @@ export function AdvancedAgingClocks() {
       </Card>
     </div>
   )
-}    
+}                        

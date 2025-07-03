@@ -1,8 +1,10 @@
+/* eslint-disable no-duplicate-imports */
 'use client';
 
 import React from 'react';
 
-import { locales, localeNames, localeFlags, type Locale } from '@/lib/i18n/config';
+import { locales, localeNames, localeFlags } from '@/lib/i18n/config';
+import type { Locale } from '@/lib/i18n/config';
 import { useLocale } from '@/lib/i18n/context';
 
 export function LanguageSwitcher() {
@@ -24,4 +26,4 @@ export function LanguageSwitcher() {
       </select>
     </div>
   );
-}      
+}                                                                                                                                                
