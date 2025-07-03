@@ -17,14 +17,14 @@ export interface HealthRecommendation {
 
 export interface ResearchQuery {
   query: string;
-  context?: string;
+  context?: string | Record<string, unknown> | undefined;
   maxResults?: number;
 }
 
 class AIService {
   private config = getAIConfig();
 
-  async getHealthRecommendation(userData: any): Promise<HealthRecommendation> {
+  async getHealthRecommendation(userData: Record<string, unknown>): Promise<HealthRecommendation> {
     if (!this.config.features.aiHealthCoach) {
       return this.getMockHealthRecommendation(userData);
     }
@@ -66,7 +66,7 @@ class AIService {
     return this.getMockResearchResponse(query);
   }
 
-  async getVirtualAdvisorResponse(userQuery: string, context?: any): Promise<AIResponse> {
+  async getVirtualAdvisorResponse(userQuery: string, context?: Record<string, unknown>): Promise<AIResponse> {
     if (!this.config.features.virtualAdvisor) {
       return this.getMockAdvisorResponse(userQuery);
     }
@@ -109,7 +109,7 @@ class AIService {
     };
   }
 
-  private async getOpenAIRecommendation(userData: any): Promise<HealthRecommendation> {
+  private async getOpenAIRecommendation(userData: Record<string, unknown>): Promise<HealthRecommendation> {
     const response = await this.callOpenAI({
       query: `Based on this user data: ${JSON.stringify(userData)}, provide a personalized health recommendation for longevity optimization.`,
     });
@@ -144,7 +144,7 @@ class AIService {
     };
   }
 
-  private async getGrokRecommendation(userData: any): Promise<HealthRecommendation> {
+  private async getGrokRecommendation(userData: Record<string, unknown>): Promise<HealthRecommendation> {
     const response = await this.callGrok({
       query: `Analyze this user's health data and provide longevity recommendations: ${JSON.stringify(userData)}`,
     });
@@ -179,7 +179,7 @@ class AIService {
     };
   }
 
-  private async getAnthropicRecommendation(userData: any): Promise<HealthRecommendation> {
+  private async getAnthropicRecommendation(userData: Record<string, unknown>): Promise<HealthRecommendation> {
     const response = await this.callAnthropic({
       query: `Provide health recommendations for longevity based on: ${JSON.stringify(userData)}`,
     });
@@ -193,7 +193,7 @@ class AIService {
   }
 
   // Mock Data Fallbacks
-  private getMockHealthRecommendation(userData: any): HealthRecommendation {
+  private getMockHealthRecommendation(_userData: Record<string, unknown>): HealthRecommendation {
     const recommendations = [
       'Consider implementing a time-restricted eating protocol (16:8) to optimize autophagy.',
       'Increase your NAD+ levels through supplementation with NMN or NR.',
@@ -237,4 +237,4 @@ class AIService {
   }
 }
 
-export const aiService = new AIService();      
+export const aiService = new AIService();                                    

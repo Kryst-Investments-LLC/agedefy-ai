@@ -1,6 +1,6 @@
 "use client"
 
-import { Dna, Brain, Heart, Shield, TrendingUp, CheckCircle, Clock } from "lucide-react"
+import { Dna, Brain, Shield, TrendingUp, CheckCircle, Clock } from "lucide-react"
 import React, { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"

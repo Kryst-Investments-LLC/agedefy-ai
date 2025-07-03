@@ -1,6 +1,6 @@
 "use client"
 
-import { Brain, BookOpen, TrendingUp, Target, Zap, CheckCircle, Clock, Award } from "lucide-react"
+import { Brain, BookOpen, TrendingUp, Target, CheckCircle, Clock, Award } from "lucide-react"
 import React, { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"

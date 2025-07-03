@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye, Brain, Heart, Microscope, Play, Headphones, Monitor, Smartphone } from "lucide-react"
+import { Eye, Brain, Microscope, Play, Headphones, Monitor, Smartphone } from "lucide-react"
 import React, { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"

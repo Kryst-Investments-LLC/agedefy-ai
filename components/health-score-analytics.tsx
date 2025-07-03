@@ -1,6 +1,6 @@
 'use client';
 
-import { Target, TrendingUp, Award, Calendar, Zap } from 'lucide-react';
+import { Target, TrendingUp, Award, Calendar } from 'lucide-react';
 import React from 'react';
 
 import { Badge } from '@/components/ui/badge';

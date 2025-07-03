@@ -1,6 +1,6 @@
 "use client"
 
-import { Trophy, Star, Target, Zap, Crown, Medal, Gift, Users } from "lucide-react"
+import { Trophy, Star, Target, Crown, Medal, Gift, Users } from "lucide-react"
 import React, { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
