@@ -1,0 +1,3 @@
+﻿parse:
+  - detect_intent
+  - extract_biomarker_terms

@@ -1,0 +1,8 @@
+﻿workflows:
+  - biomarker_interpretation_workflow
+
+workflowMap:
+  longevity.biomarker_context: biomarker_interpretation_workflow
+
+tools:
+  - analyze-biomarkers.ps1

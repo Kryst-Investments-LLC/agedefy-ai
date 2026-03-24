@@ -1,0 +1,11 @@
+﻿intent:
+  - longevity.biomarker_context
+  - longevity.healthspan_analysis
+
+workflows:
+  - biomarker_interpretation_workflow
+
+reasoning:
+  - map_biomarkers_to_domains
+  - detect_risk_markers
+  - interpret_age_related_signals

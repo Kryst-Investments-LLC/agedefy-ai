@@ -1,0 +1,4 @@
+﻿route:
+  - domain-agent
+  - business-agent
+  - law-awareness-agent
