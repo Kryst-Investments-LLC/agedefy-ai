@@ -1,0 +1,25 @@
+﻿name: Validate AI Agents
+
+on:
+  push:
+    paths:
+      - 'agents/**'
+      - 'tools/**'
+      - 'platform-dev.ps1'
+  pull_request:
+    paths:
+      - 'agents/**'
+      - 'tools/**'
+      - 'platform-dev.ps1'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate YAML
+        run: |
+          echo 'Validating agents and legal rules...'
+          # Hook in real validators here (PowerShell, Node, etc.)

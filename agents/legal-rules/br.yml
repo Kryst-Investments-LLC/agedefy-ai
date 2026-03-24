@@ -1,3 +1,40 @@
-﻿jurisdiction: br
+﻿jurisdiction:
+  code: "br"
+  name: "Brazil"
+
+applies_to:
+  - workflows
+  - forms
+  - recommendations
+  - calculations
+
+legal_domains:
+  - telemedicine_regulation
+  - supplement_legality
+  - biomarker_privacy
+  - clinician_licensing
+  - medical_device_rules
+
 rules:
-  - placeholder: true
+  - id: example_rule_1
+    description: "Describe a key legal constraint for this jurisdiction."
+    severity: high
+    category: general
+    when:
+      - "Describe the condition when this rule applies."
+    then:
+      - "Describe what must be enforced, blocked, or warned."
+
+  - id: example_rule_2
+    description: "Another important legal rule for this jurisdiction."
+    severity: medium
+    category: domain_specific
+    when:
+      - "Describe the triggering context."
+    then:
+      - "Describe the required platform behavior."
+
+notes: |
+  Add any jurisdiction-specific nuances, exceptions, or references here.
+  This file is a template and should be customized for real compliance.
+
