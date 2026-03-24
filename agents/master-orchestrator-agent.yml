@@ -1,4 +1,17 @@
-﻿route:
+route:
   - domain-agent
   - business-agent
   - law-awareness-agent
+
+sub_agents:
+  - name: ux-ui-agent
+  - name: design-system-agent
+  - name: brand-consistency-agent
+
+routing_rules:
+  - if: "request involves UI, UX, screens, flows, or user journeys"
+    route_to: "ux-ui-agent"
+  - if: "request involves components, tokens, spacing, typography, or design system"
+    route_to: "design-system-agent"
+  - if: "request involves tone, brand voice, naming, or visual identity"
+    route_to: "brand-consistency-agent"
