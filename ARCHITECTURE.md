@@ -1,9 +1,8 @@
 ﻿# agedefy AI Platform Architecture
 
-\\\	ext
+```text
 +-----------------------------+
 |  Enterprise Layer           |
-|  Kryst-Investments-LLC      |
 |  Repo: .github-private      |
 +--------------+--------------+
                |
@@ -11,7 +10,6 @@
 +-----------------------------+
 |  AI Platform Layer          |
 |  Repo: agedefy-AI            |
-|                             |
 |  - agents/                  |
 |  - tools/                   |
 |  - platform-dev.ps1         |
@@ -20,8 +18,6 @@
                v
 +-----------------------------+
 |  Product Layer              |
-|  Repo: agedefy         |
+|  Repo: TBD         |
 +-----------------------------+
-\\\
-
-This diagram shows how the AI platform sits between the enterprise layer and the product.
+```
