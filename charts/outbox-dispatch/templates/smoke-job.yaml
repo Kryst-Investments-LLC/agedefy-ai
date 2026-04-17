@@ -1,0 +1,63 @@
+{{- if .Values.smokeTest.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "outbox-dispatch.fullname" . }}-smoke
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "20"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: outbox-smoke
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - >-
+              pnpm outbox:smoke -- --batch-size {{ .Values.smokeTest.batchSize }}
+              --max-attempts {{ .Values.smokeTest.maxAttempts }}
+              --retry-delay-ms {{ .Values.smokeTest.retryDelayMs }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "outbox-dispatch.configMapName" . }}
+            - secretRef:
+                name: {{ include "outbox-dispatch.secretName" . }}
+{{- end }}
+
+{{- if .Values.helmTest.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "outbox-dispatch.fullname" . }}-smoke-test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: outbox-smoke-test
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - >-
+              pnpm outbox:smoke -- --batch-size {{ .Values.helmTest.batchSize }}
+              --max-attempts {{ .Values.helmTest.maxAttempts }}
+              --retry-delay-ms {{ .Values.helmTest.retryDelayMs }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "outbox-dispatch.configMapName" . }}
+            - secretRef:
+                name: {{ include "outbox-dispatch.secretName" . }}
+{{- end }}

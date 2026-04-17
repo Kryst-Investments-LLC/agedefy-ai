@@ -1,0 +1,22 @@
+fullnameOverride: biozephyra-outbox-dispatch
+
+image:
+  repository: biozephyra-outbox
+  tag: local
+
+config:
+  kafkaSsl: "false"
+
+secret:
+  create: true
+  existingSecret: ""
+  kafkaBrokers: biozephyra-kafka:9092
+
+# Automatic verification path: every install or upgrade seeds and dispatches once.
+smokeTest:
+  enabled: true
+
+# On-demand verification path: keep the Helm test job enabled so operators can run
+# `helm test outbox-dispatch` after the release is already deployed.
+helmTest:
+  enabled: true

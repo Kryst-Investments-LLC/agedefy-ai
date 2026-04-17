@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "outbox-dispatch.configMapName" . }}
+data:
+  OUTBOX_BROKER: {{ .Values.config.outboxBroker | quote }}
+  OUTBOX_BATCH_SIZE: {{ .Values.config.batchSize | quote }}
+  OUTBOX_POLL_INTERVAL_MS: {{ .Values.config.pollIntervalMs | quote }}
+  OUTBOX_MAX_ATTEMPTS: {{ .Values.config.maxAttempts | quote }}
+  OUTBOX_RETRY_DELAY_MS: {{ .Values.config.retryDelayMs | quote }}
+  OUTBOX_TENANT_ID: {{ .Values.config.tenantId | quote }}
+  KAFKA_CLIENT_ID: {{ .Values.config.kafkaClientId | quote }}
+  KAFKA_SSL: {{ .Values.config.kafkaSsl | quote }}
+  KAFKA_SASL_MECHANISM: {{ .Values.config.kafkaSaslMechanism | quote }}
+  PUBSUB_API_ENDPOINT: {{ .Values.config.pubsubApiEndpoint | quote }}

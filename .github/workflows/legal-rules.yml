@@ -1,0 +1,31 @@
+name: Legal Rules Validation
+
+on:
+  push:
+    paths:
+      - 'agents/**'
+      - 'tools/validate-legal-rules.ps1'
+  pull_request:
+    paths:
+      - 'agents/**'
+      - 'tools/validate-legal-rules.ps1'
+
+jobs:
+  validate-legal-rules:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: PowerShell/PowerShell@v1
+        with:
+          pwsh-version: '7.4.x'
+
+      - name: Validate legal rules (
+Biozephyra
+)
+        shell: pwsh
+        run: |
+          cd 
+          ./tools/validate-legal-rules.ps1

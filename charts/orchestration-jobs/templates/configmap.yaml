@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orchestration-jobs.configMapName" . }}
+data:
+  JOB_WORKER_BATCH_SIZE: {{ .Values.config.batchSize | quote }}
+  JOB_WORKER_POLL_INTERVAL_MS: {{ .Values.config.pollIntervalMs | quote }}
+  JOB_WORKER_MAX_ATTEMPTS: {{ .Values.config.maxAttempts | quote }}
+  JOB_WORKER_RETRY_DELAY_MS: {{ .Values.config.retryDelayMs | quote }}
+  JOB_WORKER_LEASE_MS: {{ .Values.config.leaseMs | quote }}
+  JOB_RETENTION_HOURS: {{ .Values.config.retentionHours | quote }}
+  JOB_TENANT_ID: {{ .Values.config.tenantId | quote }}

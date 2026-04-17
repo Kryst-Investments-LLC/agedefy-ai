@@ -1,0 +1,87 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/kryst-investments-llc/biozephyra-ai
+  tag: main
+  pullPolicy: IfNotPresent
+
+cron:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  backoffLimit: 1
+
+config:
+  outboxBroker: kafka
+  batchSize: "100"
+  pollIntervalMs: "5000"
+  maxAttempts: "5"
+  retryDelayMs: "30000"
+  tenantId: ""
+  kafkaClientId: biozephyra-outbox-dispatch-cronjob
+  kafkaSsl: "true"
+  kafkaSaslMechanism: plain
+  pubsubApiEndpoint: ""
+
+secret:
+  create: true
+  existingSecret: ""
+  databaseUrl: ""
+  kafkaBrokers: localhost:9092
+  kafkaSaslUsername: ""
+  kafkaSaslPassword: ""
+  pubsubProjectId: ""
+
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  auth:
+    username: Biozephyra
+    password: biozephyra-local-password
+    database: biozephyra_outbox
+  persistence:
+    size: 2Gi
+    storageClassName: ""
+
+databaseInit:
+  enabled: true
+  retries: 24
+  retryDelaySeconds: 5
+
+# Automatic verification path: when enabled, each install or upgrade seeds and
+# dispatches one verification event after the schema-init hook completes.
+smokeTest:
+  enabled: false
+  batchSize: 100
+  maxAttempts: 5
+  retryDelayMs: 0
+
+# On-demand verification path: keep this enabled to expose `helm test` as a
+# separate operator-triggered verification flow against the deployed release.
+helmTest:
+  enabled: true
+  batchSize: 100
+  maxAttempts: 5
+  retryDelayMs: 0
+
+sealedSecret:
+  enabled: false
+  encryptedData:
+    DATABASE_URL: ""
+    KAFKA_BROKERS: ""
+    KAFKA_SASL_USERNAME: ""
+    KAFKA_SASL_PASSWORD: ""
+    PUBSUB_PROJECT_ID: ""
+
+googleApplicationCredentials:
+  enabled: false
+  existingSecret: biozephyra-gcp-service-account
+  mountPath: /var/secrets/google
+  fileName: service-account.json

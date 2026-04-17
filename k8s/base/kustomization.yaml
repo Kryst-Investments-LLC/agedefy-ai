@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+  - outbox-postgres.yaml
+  - outbox-dispatch-cronjob.yaml
+
+secretGenerator:
+  - name: biozephyra-outbox-dispatch-secrets
+    envs:
+      - secrets/outbox-dispatch.env

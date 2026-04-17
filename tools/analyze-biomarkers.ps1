@@ -1,4 +1,4 @@
-﻿# AGEDEFY â€” BIOMARKER ANALYZER TOOL
+# Biozephyra â€” BIOMARKER ANALYZER TOOL
 param([string]$marker)
 
 Write-Output "Analyzing biomarker: "

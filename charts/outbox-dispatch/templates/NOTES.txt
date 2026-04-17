@@ -1,0 +1,9 @@
+Install or upgrade the outbox dispatcher CronJob with:
+
+  helm upgrade --install outbox-dispatch ./charts/outbox-dispatch
+
+Override broker secrets without storing them in values.yaml by setting:
+
+  --set secret.existingSecret=biozephyra-outbox-dispatch-secrets
+
+Or edit charts/outbox-dispatch/values.yaml before install.

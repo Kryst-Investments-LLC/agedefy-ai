@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: biozephyra-outbox-dispatch-config
+data:
+  OUTBOX_BROKER: kafka
+  KAFKA_SSL: "false"
+  KAFKA_CLIENT_ID: biozephyra-outbox-dispatch-minikube
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: biozephyra-outbox-dispatch
+spec:
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: outbox-dispatch
+              image: ghcr.io/kryst-investments-llc/finnexusai:main
+              imagePullPolicy: IfNotPresent

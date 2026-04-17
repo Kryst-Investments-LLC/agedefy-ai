@@ -1,0 +1,36 @@
+{{- if .Values.databaseInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "outbox-dispatch.fullname" . }}-db-init
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "10"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: outbox-db-init
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - >-
+              attempt=0;
+              until pnpm db:push:outbox; do
+                attempt=$((attempt + 1));
+                if [ "$attempt" -ge {{ .Values.databaseInit.retries }} ]; then
+                  exit 1;
+                fi;
+                sleep {{ .Values.databaseInit.retryDelaySeconds }};
+              done
+          envFrom:
+            - configMapRef:
+                name: {{ include "outbox-dispatch.configMapName" . }}
+            - secretRef:
+                name: {{ include "outbox-dispatch.secretName" . }}
+{{- end }}

@@ -1,0 +1,109 @@
+groups:
+  - name: biozephyra-api-availability
+    interval: 30s
+    rules:
+      - alert: ApiErrorRateHigh
+        expr: |
+          (
+            sum(rate(http_request_duration_ms_count{http_status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_request_duration_ms_count[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: P1
+          slo: api-availability
+        annotations:
+          summary: "API error rate exceeds 1% over 5 minutes"
+          description: "Current error rate: {{ $value | humanizePercentage }}"
+
+      - alert: ErrorBudgetBurnFast
+        expr: |
+          (
+            sum(increase(http_request_duration_ms_count{http_status_code=~"5.."}[1h]))
+            /
+            sum(increase(http_request_duration_ms_count[1h]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: P1
+          slo: api-availability
+        annotations:
+          summary: "Fast error budget burn: >10% of monthly budget consumed in 1 hour"
+
+  - name: biozephyra-latency
+    interval: 30s
+    rules:
+      - alert: ApiLatencyP99High
+        expr: |
+          histogram_quantile(0.99, rate(http_request_duration_ms_bucket{route!~"/api/ai/.*|/api/health"}[10m])) > 500
+        for: 10m
+        labels:
+          severity: P2
+          slo: api-latency
+        annotations:
+          summary: "API P99 latency exceeds 500ms for non-AI routes"
+          description: "Current P99: {{ $value }}ms"
+
+      - alert: AiProviderLatencyP95High
+        expr: |
+          histogram_quantile(0.95, rate(ai_request_latency_ms_bucket[10m])) > 5000
+        for: 10m
+        labels:
+          severity: P2
+          slo: ai-provider-latency
+        annotations:
+          summary: "AI provider P95 latency exceeds 5s"
+          description: "Current P95: {{ $value }}ms"
+
+  - name: biozephyra-infrastructure
+    interval: 30s
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: |
+          increase(circuit_breaker_state_change_count{state="OPEN"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: P1
+          slo: circuit-breaker
+        annotations:
+          summary: "Circuit breaker opened for {{ $labels.dependency }}"
+
+      - alert: JobQueueStale
+        expr: |
+          max(time() - orchestration_job_oldest_queued_timestamp) > 300
+        for: 5m
+        labels:
+          severity: P2
+          slo: job-queue-staleness
+        annotations:
+          summary: "Orchestration job queue has items older than 5 minutes"
+
+      - alert: OutboxDispatchDelayed
+        expr: |
+          histogram_quantile(0.95, rate(outbox_dispatch_latency_ms_bucket[15m])) > 60000
+        for: 15m
+        labels:
+          severity: P2
+          slo: outbox-dispatch
+        annotations:
+          summary: "Outbox dispatch P95 latency exceeds 60 seconds"
+
+      - alert: RateLimitAbuseDetected
+        expr: |
+          increase(rate_limit_abuse_count[5m]) > 0
+        for: 0m
+        labels:
+          severity: P3
+        annotations:
+          summary: "Rate limit abuse detected from {{ $labels.ip }}"
+
+      - alert: DbPoolHighUtilization
+        expr: |
+          prisma_pool_active_connections / prisma_pool_max_connections > 0.80
+        for: 2m
+        labels:
+          severity: P1
+          slo: db-pool
+        annotations:
+          summary: "Database connection pool utilization exceeds 80%"

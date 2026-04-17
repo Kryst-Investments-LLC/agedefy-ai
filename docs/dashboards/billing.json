@@ -1,0 +1,33 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Stripe Webhook Events",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(biozephyra_stripe_webhook_count[5m])) by (event_type)", "legendFormat": "{{ event_type }}" }
+      ]
+    },
+    {
+      "title": "Webhook Success vs Failure",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum(increase(biozephyra_stripe_webhook_count{status=\"success\"}[24h]))", "legendFormat": "Success" },
+        { "expr": "sum(increase(biozephyra_stripe_webhook_count{status=\"error\"}[24h]))", "legendFormat": "Error" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["biozephyra", "billing"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "biozephyra — Billing & Webhooks",
+  "uid": "biozephyra-billing"
+}

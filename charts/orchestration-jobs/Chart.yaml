@@ -1,0 +1,6 @@
+apiVersion: v2
+name: orchestration-jobs
+description: Continuous worker and retention scheduler for Biozephyra orchestration jobs
+type: application
+version: 0.1.0
+appVersion: "main"

@@ -1,0 +1,66 @@
+name: staging-platform-validation
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: staging-platform-validation
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: ${{ vars.STAGING_VALIDATION_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_ENV: staging
+      RUNTIME_REQUIREMENTS_ENFORCED: 'true'
+      PRISMA_RUNTIME: postgres
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      POSTGRES_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      NEXTAUTH_URL: ${{ secrets.STAGING_NEXTAUTH_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.STAGING_NEXTAUTH_SECRET }}
+      REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+      REDIS_TOKEN: ${{ secrets.STAGING_REDIS_TOKEN }}
+      OTEL_SERVICE_NAME: ${{ vars.STAGING_OTEL_SERVICE_NAME || 'biozephyra-ai-staging' }}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.STAGING_OTEL_EXPORTER_OTLP_ENDPOINT }}
+      SMOKE_BASE_URL: ${{ secrets.STAGING_SMOKE_BASE_URL }}
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate staging configuration
+        run: |
+          test -n "$DATABASE_URL" || { echo "STAGING_DATABASE_URL secret is required"; exit 1; }
+          test -n "$NEXTAUTH_URL" || { echo "STAGING_NEXTAUTH_URL secret is required"; exit 1; }
+          test -n "$NEXTAUTH_SECRET" || { echo "STAGING_NEXTAUTH_SECRET secret is required"; exit 1; }
+          test -n "$REDIS_URL" || { echo "STAGING_REDIS_URL secret is required"; exit 1; }
+          test -n "$REDIS_TOKEN" || { echo "STAGING_REDIS_TOKEN secret is required"; exit 1; }
+          test -n "$OTEL_EXPORTER_OTLP_ENDPOINT" || { echo "STAGING_OTEL_EXPORTER_OTLP_ENDPOINT secret is required"; exit 1; }
+          test -n "$SMOKE_BASE_URL" || { echo "STAGING_SMOKE_BASE_URL secret is required"; exit 1; }
+
+      - name: Generate Postgres Prisma runtime client
+        run: pnpm db:generate:postgres:runtime
+
+      - name: Validate runtime baseline
+        run: pnpm validate:runtime
+
+      - name: Run platform smoke
+        run: pnpm smoke:platform
