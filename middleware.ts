@@ -7,31 +7,50 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...array))
 }
 
-function buildCspHeader(nonce: string): string {
+function buildCspHeader(nonce: string, isDev: boolean): string {
+  const scriptSrc = isDev
+    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    `style-src 'self' 'nonce-${nonce}'`,
+    scriptSrc,
+    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https://api.stripe.com https://eutils.ncbi.nlm.nih.gov https://clinicaltrials.gov",
     "frame-src 'self' https://js.stripe.com",
-    "worker-src 'self'",
+    "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
   ].join("; ")
 }
 
 function applyCspHeaders(response: NextResponse, nonce: string): NextResponse {
-  response.headers.set("Content-Security-Policy", buildCspHeader(nonce))
+  const isDev = process.env.NODE_ENV !== "production"
+  response.headers.set("Content-Security-Policy", buildCspHeader(nonce, isDev))
+  response.headers.set("x-nonce", nonce)
   return response
 }
 
-const AUTH_PATHS = ["/dashboard", "/account", "/admin", "/mfa-verify"]
+const AUTH_PATHS = ["/dashboard", "/account", "/admin", "/mfa-verify", "/settings"]
 const SIGN_IN_PATH = "/sign-in"
 const MFA_VERIFY_PATH = "/mfa-verify"
-const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET ?? "development-secret-change-me-before-production"
+
+function getNextAuthSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret || secret.length < 32) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("NEXTAUTH_SECRET must be set (>=32 chars) in production")
+    }
+    return "development-secret-change-me-before-production-32c"
+  }
+  return secret
+}
 
 function buildPageResponse(request: NextRequest, nonce: string): NextResponse {
   const requestHeaders = new Headers(request.headers)
@@ -52,7 +71,7 @@ function buildRedirectResponse(request: NextRequest, pathname: string, nonce: st
   return applyCspHeaders(NextResponse.redirect(redirectUrl), nonce)
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const nonce = generateNonce()
   const { pathname } = request.nextUrl
   const needsAuth = AUTH_PATHS.some((p) => pathname.startsWith(p))
@@ -61,7 +80,7 @@ export async function proxy(request: NextRequest) {
     return buildPageResponse(request, nonce)
   }
 
-  const token = await getToken({ req: request, secret: NEXTAUTH_SECRET })
+  const token = await getToken({ req: request, secret: getNextAuthSecret() })
 
   if (!token) {
     return buildRedirectResponse(request, SIGN_IN_PATH, nonce)

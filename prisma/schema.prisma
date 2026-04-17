@@ -2271,3 +2271,16 @@ model ClinicalSignature {
   @@index([sessionId])
   @@index([clinicianId, signedAt])
 }
+
+model AdminImpersonationSession {
+  id            String   @id @default(cuid())
+  adminUserId   String   @unique
+  targetUserId  String
+  reason        String
+  startedAt     DateTime @default(now())
+  expiresAt     DateTime
+  stoppedAt     DateTime?
+
+  @@index([targetUserId])
+  @@index([expiresAt])
+}

@@ -36,7 +36,19 @@ interface CachedCBState {
 }
 
 const CB_CACHE_TTL_MS = 10_000 // refresh from DB at most every 10s
+// Source-of-truth is the DependencyCircuitBreaker table; this Map is a small
+// read-through cache keyed by the (finite) set of dependency names. The cap
+// is defense-in-depth in case a buggy caller starts generating dynamic names.
+const CB_CACHE_MAX_ENTRIES = 1_000
 const cbCache = new Map<string, CachedCBState>()
+
+function setCachedState(dependency: string, entry: CachedCBState) {
+  if (!cbCache.has(dependency) && cbCache.size >= CB_CACHE_MAX_ENTRIES) {
+    const firstKey = cbCache.keys().next().value
+    if (firstKey !== undefined) cbCache.delete(firstKey)
+  }
+  cbCache.set(dependency, entry)
+}
 
 async function getCachedState(dependency: string): Promise<CachedCBState | null> {
   const cached = cbCache.get(dependency)
@@ -53,12 +65,12 @@ async function getCachedState(dependency: string): Promise<CachedCBState | null>
     nextAttemptAt: row.nextAttemptAt,
     cachedAt: Date.now(),
   }
-  cbCache.set(dependency, entry)
+  setCachedState(dependency, entry)
   return entry
 }
 
 function updateCache(dependency: string, state: DependencyCircuitBreakerState, failureCount: number, nextAttemptAt: Date | null) {
-  cbCache.set(dependency, { state, failureCount, nextAttemptAt, cachedAt: Date.now() })
+  setCachedState(dependency, { state, failureCount, nextAttemptAt, cachedAt: Date.now() })
 }
 
 export async function executeWithCircuitBreaker<T>({

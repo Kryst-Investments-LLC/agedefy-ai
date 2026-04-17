@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { requireAuthWithRole } from '@/lib/rbac'
+import { safeJsonParse } from '@/lib/safe-json'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
 export async function POST(request: NextRequest) {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   // Check if ALL linked review items are now resolved
   const linkedIds = agentSession.reviewItemIds
-    ? (JSON.parse(agentSession.reviewItemIds) as string[])
+    ? safeJsonParse<string[]>(agentSession.reviewItemIds, [])
     : []
 
   const unresolvedCount = linkedIds.length > 0

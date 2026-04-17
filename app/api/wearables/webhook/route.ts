@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { detectDrift } from '@/lib/agents/drift-detector'
+import { claimWebhookDelivery } from '@/lib/webhook-idempotency'
 import { promoteWearableMetrics } from '@/lib/wearables/biomarker-bridge'
 import { verifyWebhookSignature } from '@/lib/wearables/terra-client'
 import { normalizeTerraPayload } from '@/lib/wearables/normalizer'
@@ -23,6 +25,19 @@ export async function POST(request: NextRequest) {
   if (!signature || !verifyWebhookSignature(rawBody, signature)) {
     logger.warn('Terra webhook signature verification failed', { hasSignature: !!signature })
     return NextResponse.json({ error: 'Invalid or missing signature' }, { status: 401 })
+  }
+
+  // Idempotency guard — Terra retries deliveries; reject duplicates.
+  // Terra does not send a stable event id, so we hash the signed body.
+  const deliveryId = createHash('sha256').update(rawBody).digest('hex')
+  const claim = await claimWebhookDelivery({
+    provider: 'terra',
+    route: '/api/wearables/webhook',
+    eventId: deliveryId,
+  })
+  if (!claim.claimed) {
+    logger.info('Terra webhook duplicate delivery ignored', { deliveryId })
+    return NextResponse.json({ ok: true, duplicate: true })
   }
 
   let payload: Record<string, unknown>

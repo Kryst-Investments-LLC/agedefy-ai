@@ -10,6 +10,7 @@ import { env } from "@/lib/env"
 import { stripeWebhookCounter } from "@/lib/observability/telemetry"
 import { isAICreditPackKey, isPricingRegionTierKey, normalizeStripeIntervalToBillingCycle, resolveDefaultMonthlyAICreditAllowance } from "@/lib/pricing"
 import { stripe } from "@/lib/stripe"
+import { claimWebhookDelivery } from "@/lib/webhook-idempotency"
 import { confirmMarketplaceStripeCheckoutSession } from "@/scientist-sponsor-marketplace/backend/services/paymentLifecycleService"
 
 export const runtime = "nodejs"
@@ -149,6 +150,21 @@ export async function POST(request: Request) {
   })
 
   stripeWebhookCounter.add(1, { event_type: event.type, livemode: String(event.livemode) })
+
+  // Idempotency guard: Stripe retries deliveries; refuse to re-execute side effects.
+  const claim = await claimWebhookDelivery({
+    provider: "stripe",
+    route: "/api/stripe/webhook",
+    eventId: event.id,
+  })
+  if (!claim.claimed) {
+    await logAudit({
+      action: "billing.webhook.duplicate",
+      entityType: event.type,
+      entityId: event.id,
+    })
+    return NextResponse.json({ received: true, duplicate: true })
+  }
 
   switch (event.type) {
     case "checkout.session.completed": {

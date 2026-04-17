@@ -11,6 +11,8 @@
  * - Read-only: no mutations allowed during impersonation
  * - Time-limited: sessions expire after 30 minutes
  * - Fully audited: start, stop, and every access logged
+ * - Persistent: backed by AdminImpersonationSession table so guarantees
+ *   hold across multiple app instances and restarts.
  *
  * @module lib/admin/impersonation
  */
@@ -28,9 +30,21 @@ export interface ImpersonationSession {
   reason: string
 }
 
-// In-memory store of active impersonation sessions.
-// In production with multiple instances, this would be backed by Redis.
-const activeSessions = new Map<string, ImpersonationSession>()
+function toSession(row: {
+  adminUserId: string
+  targetUserId: string
+  startedAt: Date
+  expiresAt: Date
+  reason: string
+}): ImpersonationSession {
+  return {
+    adminUserId: row.adminUserId,
+    targetUserId: row.targetUserId,
+    startedAt: row.startedAt,
+    expiresAt: row.expiresAt,
+    reason: row.reason,
+  }
+}
 
 /**
  * Start an impersonation session. Creates an immutable audit log entry.
@@ -41,7 +55,6 @@ export async function startImpersonation(input: {
   targetUserId: string
   reason: string
 }): Promise<{ success: true; session: ImpersonationSession } | { success: false; error: string }> {
-  // Verify admin exists
   const admin = await db.user.findUnique({
     where: { id: input.adminUserId },
     select: { id: true, role: true },
@@ -50,7 +63,6 @@ export async function startImpersonation(input: {
     return { success: false, error: 'Only admins can impersonate users' }
   }
 
-  // Verify target exists and is not an admin
   const target = await db.user.findUnique({
     where: { id: input.targetUserId },
     select: { id: true, role: true, email: true },
@@ -62,25 +74,38 @@ export async function startImpersonation(input: {
     return { success: false, error: 'Cannot impersonate admin users' }
   }
 
-  // Check for existing active session for this admin
-  const existingKey = `${input.adminUserId}`
-  const existing = activeSessions.get(existingKey)
-  if (existing && existing.expiresAt > new Date()) {
-    return { success: false, error: 'Admin already has an active impersonation session. Stop it first.' }
-  }
-
   const now = new Date()
-  const session: ImpersonationSession = {
-    adminUserId: input.adminUserId,
-    targetUserId: input.targetUserId,
-    startedAt: now,
-    expiresAt: new Date(now.getTime() + IMPERSONATION_TTL_MS),
-    reason: input.reason,
+  const expiresAt = new Date(now.getTime() + IMPERSONATION_TTL_MS)
+
+  const existing = await db.adminImpersonationSession.findUnique({
+    where: { adminUserId: input.adminUserId },
+  })
+  if (existing && existing.stoppedAt === null && existing.expiresAt > now) {
+    return {
+      success: false,
+      error: 'Admin already has an active impersonation session. Stop it first.',
+    }
   }
 
-  activeSessions.set(existingKey, session)
+  const row = await db.adminImpersonationSession.upsert({
+    where: { adminUserId: input.adminUserId },
+    create: {
+      adminUserId: input.adminUserId,
+      targetUserId: input.targetUserId,
+      reason: input.reason,
+      startedAt: now,
+      expiresAt,
+      stoppedAt: null,
+    },
+    update: {
+      targetUserId: input.targetUserId,
+      reason: input.reason,
+      startedAt: now,
+      expiresAt,
+      stoppedAt: null,
+    },
+  })
 
-  // Immutable audit log
   await logAudit({
     actorUserId: input.adminUserId,
     actorEmail: input.adminEmail,
@@ -90,22 +115,27 @@ export async function startImpersonation(input: {
     details: {
       targetEmail: target.email,
       reason: input.reason,
-      expiresAt: session.expiresAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
     },
   })
 
-  return { success: true, session }
+  return { success: true, session: toSession(row) }
 }
 
 /**
  * Stop an active impersonation session.
  */
 export async function stopImpersonation(adminUserId: string, adminEmail: string): Promise<boolean> {
-  const key = `${adminUserId}`
-  const session = activeSessions.get(key)
-  if (!session) return false
+  const session = await db.adminImpersonationSession.findUnique({
+    where: { adminUserId },
+  })
+  if (!session || session.stoppedAt !== null) return false
 
-  activeSessions.delete(key)
+  const stoppedAt = new Date()
+  await db.adminImpersonationSession.update({
+    where: { adminUserId },
+    data: { stoppedAt },
+  })
 
   await logAudit({
     actorUserId: adminUserId,
@@ -115,7 +145,7 @@ export async function stopImpersonation(adminUserId: string, adminEmail: string)
     entityId: session.targetUserId,
     details: {
       reason: session.reason,
-      duration: Date.now() - session.startedAt.getTime(),
+      duration: stoppedAt.getTime() - session.startedAt.getTime(),
     },
   })
 
@@ -124,24 +154,25 @@ export async function stopImpersonation(adminUserId: string, adminEmail: string)
 
 /**
  * Get the active impersonation session for an admin, if any.
- * Returns null if expired or none exists.
+ * Returns null if expired, stopped, or none exists.
  */
-export function getActiveImpersonation(adminUserId: string): ImpersonationSession | null {
-  const session = activeSessions.get(adminUserId)
-  if (!session) return null
-  if (session.expiresAt <= new Date()) {
-    activeSessions.delete(adminUserId)
-    return null
-  }
-  return session
+export async function getActiveImpersonation(
+  adminUserId: string,
+): Promise<ImpersonationSession | null> {
+  const row = await db.adminImpersonationSession.findUnique({
+    where: { adminUserId },
+  })
+  if (!row || row.stoppedAt !== null) return null
+  if (row.expiresAt <= new Date()) return null
+  return toSession(row)
 }
 
 /**
  * Check whether a request is in an impersonation context.
  * If so, mutations should be blocked (read-only mode).
  */
-export function isImpersonating(adminUserId: string): boolean {
-  return getActiveImpersonation(adminUserId) !== null
+export async function isImpersonating(adminUserId: string): Promise<boolean> {
+  return (await getActiveImpersonation(adminUserId)) !== null
 }
 
 /**
@@ -149,14 +180,17 @@ export function isImpersonating(adminUserId: string): boolean {
  * is in an active impersonation session, or null if writes are allowed.
  *
  * Usage in any mutation route handler:
- *   const blocked = blockWriteDuringImpersonation(session.user.id)
+ *   const blocked = await blockWriteDuringImpersonation(session.user.id)
  *   if (blocked) return blocked
  */
-export function blockWriteDuringImpersonation(userId: string): Response | null {
-  if (!isImpersonating(userId)) return null
+export async function blockWriteDuringImpersonation(userId: string): Promise<Response | null> {
+  if (!(await isImpersonating(userId))) return null
 
   return Response.json(
-    { error: 'Write operations are blocked during impersonation. Stop the impersonation session first.' },
+    {
+      error:
+        'Write operations are blocked during impersonation. Stop the impersonation session first.',
+    },
     { status: 403 },
   )
 }

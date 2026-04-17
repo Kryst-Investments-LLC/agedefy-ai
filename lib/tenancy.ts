@@ -36,14 +36,31 @@ function normalizeHeaderValue(value: string | null | undefined) {
 // Short-lived in-memory cache to avoid repeated DB lookups for the same
 // user+tenant pair on consecutive requests (e.g. rapid UI interactions).
 const MEMBERSHIP_CACHE_TTL_MS = 30_000
+const MEMBERSHIP_CACHE_MAX_ENTRIES = 5_000
 const membershipCache = new Map<string, { allowed: boolean; expiresAt: number }>()
+
+function setMembershipCache(key: string, allowed: boolean) {
+  if (membershipCache.size >= MEMBERSHIP_CACHE_MAX_ENTRIES) {
+    // Drop oldest 25% of entries (Map preserves insertion order).
+    const drop = Math.floor(MEMBERSHIP_CACHE_MAX_ENTRIES / 4)
+    let i = 0
+    for (const k of membershipCache.keys()) {
+      membershipCache.delete(k)
+      if (++i >= drop) break
+    }
+  }
+  membershipCache.set(key, { allowed, expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS })
+}
 
 async function validateTenantMembership(
   userId: string,
   requestedTenantId: string,
 ): Promise<boolean> {
   const fallback = getFallbackTenantId()
-  if (requestedTenantId === fallback) return true
+  // The default-tenant short-circuit is ONLY safe in single-tenant mode.
+  // In shared/isolated mode an attacker who guesses the default ID via
+  // the x-tenant-id header could otherwise bypass membership validation.
+  if (env.TENANCY_MODE === "single" && requestedTenantId === fallback) return true
 
   const cacheKey = `${userId}:${requestedTenantId}`
   const cached = membershipCache.get(cacheKey)
@@ -64,12 +81,12 @@ async function validateTenantMembership(
   })
 
   if (!user) {
-    membershipCache.set(cacheKey, { allowed: false, expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS })
+    setMembershipCache(cacheKey, false)
     return false
   }
 
   const allowed = user.defaultTenantId === requestedTenantId || user.organizationMemberships.length > 0
-  membershipCache.set(cacheKey, { allowed, expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS })
+  setMembershipCache(cacheKey, allowed)
   return allowed
 }
 

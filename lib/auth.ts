@@ -41,6 +41,7 @@ function buildOidcProvider(): Provider | null {
         name: (profile.name as string) ?? (profile.preferred_username as string) ?? null,
         email: (profile.email as string) ?? null,
         image: (profile.picture as string) ?? null,
+        emailVerified: profile.email_verified === true,
       }
     },
   }
@@ -116,15 +117,24 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       // Auto-create user record for SSO (OIDC) logins on first sign-in
       if (account?.provider === "oidc" && user.email) {
+        // Refuse SSO sign-in if the IdP did not assert a verified email.
+        // Without this an attacker controlling an unverified mailbox claim
+        // could impersonate (or auto-promote to admin via configured admin emails).
+        const emailVerified = (user as unknown as { emailVerified?: boolean }).emailVerified === true
+        if (!emailVerified) {
+          return false
+        }
         const existing = await db.user.findUnique({ where: { email: user.email.toLowerCase() } })
         if (!existing) {
-          const shouldBeAdmin = isConfiguredAdminEmail(user.email)
+          // Never auto-promote to ADMIN on first SSO sign-in. Admins must be
+          // bootstrapped through an explicit credentialed login or a manual
+          // role assignment. This closes the OIDC admin-by-email risk.
           await db.user.create({
             data: {
               email: user.email.toLowerCase(),
               name: user.name || undefined,
               passwordHash: getNonPasswordAuthHash("OIDC"),
-              role: shouldBeAdmin ? UserRole.ADMIN : UserRole.MEMBER,
+              role: UserRole.MEMBER,
               defaultTenantId: getFallbackTenantId(),
             },
           })
@@ -163,6 +173,27 @@ export const authOptions: NextAuthOptions = {
         const updatePayload = user as unknown as Record<string, unknown> | undefined
         if (updatePayload?.mfaPending === false) {
           token.mfaPending = false
+        }
+      }
+
+      // Re-evaluate role + mfaPending on every JWT refresh, not only at sign-in.
+      // Without this, a user promoted to ADMIN/CLINICIAN while holding a session
+      // would skip MFA gating until their next login.
+      if (token.sub && !user) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.sub as string },
+          select: { role: true, defaultTenantId: true },
+        })
+        if (dbUser) {
+          const previousRole = token.role
+          token.role = dbUser.role
+          if (!token.tenantId) {
+            token.tenantId = dbUser.defaultTenantId ?? getFallbackTenantId()
+          }
+          if (previousRole !== dbUser.role && isMfaRequired(dbUser.role)) {
+            const enrolled = await isMfaEnabled(token.sub as string)
+            token.mfaPending = enrolled || true
+          }
         }
       }
 

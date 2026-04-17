@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { computeAndPersistBioAge } from '@/lib/bio-age/compute-bio-age'
 import { db } from '@/lib/db'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { safeJsonParse } from '@/lib/safe-json'
 
 /**
  * POST /api/bio-age
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
     biologicalAge: s.biologicalAge,
     chronologicalAge: s.chronologicalAge,
     delta: Math.round((s.biologicalAge - s.chronologicalAge) * 10) / 10,
-    hallmarkScores: typeof s.hallmarkScores === 'string' ? JSON.parse(s.hallmarkScores) : s.hallmarkScores,
+    hallmarkScores: typeof s.hallmarkScores === 'string' ? safeJsonParse<unknown>(s.hallmarkScores, null) : s.hallmarkScores,
     confidence: s.confidence,
     createdAt: s.createdAt,
   }))

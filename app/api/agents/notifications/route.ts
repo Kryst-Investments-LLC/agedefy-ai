@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { safeJsonParse } from '@/lib/safe-json'
 
 /**
  * GET /api/agents/notifications
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       title: n.title,
       body: n.body,
       severity: n.severity,
-      biomarkerNames: JSON.parse(n.biomarkerNames) as string[],
+      biomarkerNames: safeJsonParse<string[]>(n.biomarkerNames, []),
       sessionId: n.sessionId,
       readAt: n.readAt,
       dismissedAt: n.dismissedAt,

@@ -3,14 +3,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getApiRequestUserId } from '@/lib/api-auth';
 import { db } from '@/lib/db';
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency';
+import { applyRateLimit } from '@/lib/rate-limit';
+
+const MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 25;
 
 // GET /api/mechanistic-models
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const blocked = await applyRateLimit(req);
+  if (blocked) return blocked;
+
+  const userId = await getApiRequestUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const take = Math.min(
+    Math.max(Number.parseInt(searchParams.get('limit') ?? '', 10) || DEFAULT_PAGE_SIZE, 1),
+    MAX_PAGE_SIZE,
+  );
+  const cursor = searchParams.get('cursor') ?? undefined;
+
   const models = await db.mechanisticModel.findMany({
-    include: { confidenceScores: true, createdBy: true },
+    take: take + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: {
+      confidenceScores: true,
+      // Do not include the full createdBy user record (PII).
+      // Expose only the id; clients can resolve display name via a scoped endpoint.
+    },
     orderBy: { createdAt: 'desc' },
   });
-  return NextResponse.json(models);
+
+  const hasMore = models.length > take;
+  const items = hasMore ? models.slice(0, take) : models;
+  const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null;
+
+  return NextResponse.json({ items, nextCursor });
 }
 
 // POST /api/mechanistic-models

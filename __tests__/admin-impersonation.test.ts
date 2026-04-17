@@ -1,17 +1,23 @@
-import { describe, expect, it, beforeEach } from 'vitest'
-import {
-  getActiveImpersonation,
-  isImpersonating,
-} from '@/lib/admin/impersonation'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    adminImpersonationSession: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+  },
+}))
+
+import { getActiveImpersonation, isImpersonating } from '@/lib/admin/impersonation'
 
 describe('admin impersonation utilities', () => {
-  it('getActiveImpersonation returns null when no session exists', () => {
-    const result = getActiveImpersonation('nonexistent-admin-id')
+  it('getActiveImpersonation returns null when no session exists', async () => {
+    const result = await getActiveImpersonation('nonexistent-admin-id')
     expect(result).toBeNull()
   })
 
-  it('isImpersonating returns false when no session exists', () => {
-    expect(isImpersonating('nonexistent-admin-id')).toBe(false)
+  it('isImpersonating returns false when no session exists', async () => {
+    expect(await isImpersonating('nonexistent-admin-id')).toBe(false)
   })
 
   it('exports expected function shapes', async () => {

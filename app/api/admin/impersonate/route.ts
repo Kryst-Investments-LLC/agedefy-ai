@@ -18,7 +18,7 @@ export async function GET() {
   const authResult = requireAuthWithRole(session, 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
 
-  const impersonation = getActiveImpersonation(authResult.user.id)
+  const impersonation = await getActiveImpersonation(authResult.user.id)
   if (!impersonation) {
     return NextResponse.json({ active: false })
   }

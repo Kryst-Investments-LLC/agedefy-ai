@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       where: { userId: session.user.id },
       orderBy: { measuredAt: "desc" },
       distinct: ["name"],
+      take: 500,
       select: { name: true, value: true, unit: true, target: true, trend: true },
     }),
     db.compoundPathway.findMany({

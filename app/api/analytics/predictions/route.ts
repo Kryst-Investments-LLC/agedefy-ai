@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const biomarkers = await db.biomarker.findMany({
     where: { userId: session.user.id },
     orderBy: { measuredAt: "asc" },
+    take: 2_000,
   })
 
   // Group biomarker entries by name

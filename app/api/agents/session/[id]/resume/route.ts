@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { safeJsonParse } from '@/lib/safe-json'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
 type RouteContext = {
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Verify all linked review items have been resolved
     if (agentSession.reviewItemIds) {
-      const reviewItemIds = JSON.parse(agentSession.reviewItemIds) as string[]
+      const reviewItemIds = safeJsonParse<string[]>(agentSession.reviewItemIds, [])
       const unresolvedItems = await db.reviewItem.findMany({
         where: { id: { in: reviewItemIds }, status: { notIn: ['RESOLVED', 'DISMISSED'] } },
         select: { id: true, status: true },

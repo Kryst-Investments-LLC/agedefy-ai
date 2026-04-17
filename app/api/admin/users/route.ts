@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult
   const user = authResult.user
 
-  const impersonationBlock = blockWriteDuringImpersonation(user.id)
+  const impersonationBlock = await blockWriteDuringImpersonation(user.id)
   if (impersonationBlock) return impersonationBlock
 
   const body = await request.json()

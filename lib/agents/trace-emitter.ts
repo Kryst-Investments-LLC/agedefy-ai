@@ -69,7 +69,7 @@ export function clearTraceHistory(sessionId: string): void {
 
 // Periodic cleanup of stale trace data
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const cutoff = Date.now() - TRACE_TTL_MS
     for (const [sessionId, events] of sessionTraces) {
       if (events.length === 0) {
@@ -83,4 +83,8 @@ if (typeof setInterval !== 'undefined') {
       }
     }
   }, 5 * 60 * 1000)
+  // Don't keep the event loop alive solely for cleanup (e.g. in tests/CLI).
+  if (cleanupTimer && typeof cleanupTimer === 'object' && 'unref' in cleanupTimer) {
+    ;(cleanupTimer as { unref: () => void }).unref()
+  }
 }

@@ -56,12 +56,47 @@ async function loadUserQuietPrefs(userId: string): Promise<UserQuietPrefs> {
     },
   })
 
+  return prefsFromProfile(profile)
+}
+
+function prefsFromProfile(
+  profile: {
+    timezone: string | null
+    quietHoursStart: number | null
+    quietHoursEnd: number | null
+    driftNotificationsOn: boolean | null
+  } | null,
+): UserQuietPrefs {
   return {
     timezone: profile?.timezone ?? null,
     quietHoursStart: profile?.quietHoursStart ?? DEFAULT_QUIET_START,
     quietHoursEnd: profile?.quietHoursEnd ?? DEFAULT_QUIET_END,
     driftNotificationsOn: profile?.driftNotificationsOn ?? true,
   }
+}
+
+/**
+ * Bulk-load notification preferences for many users in one round trip.
+ * Used by the batch sweep to avoid N+1 findUnique calls.
+ */
+async function loadUserQuietPrefsBatch(userIds: string[]): Promise<Map<string, UserQuietPrefs>> {
+  const out = new Map<string, UserQuietPrefs>()
+  if (userIds.length === 0) return out
+  const profiles = await db.userProfile.findMany({
+    where: { userId: { in: userIds } },
+    select: {
+      userId: true,
+      timezone: true,
+      quietHoursStart: true,
+      quietHoursEnd: true,
+      driftNotificationsOn: true,
+    },
+  })
+  const byUser = new Map(profiles.map((p) => [p.userId, p]))
+  for (const userId of userIds) {
+    out.set(userId, prefsFromProfile(byUser.get(userId) ?? null))
+  }
+  return out
 }
 
 /**
@@ -194,6 +229,7 @@ async function sweepUser(
   userId: string,
   tenantId: string,
   triggerType: 'scheduled' | 'manual',
+  preloadedPrefs?: UserQuietPrefs,
 ): Promise<{ driftsDetected: number; sessionTriggered: boolean }> {
   const result = await detectDrift(userId)
 
@@ -215,7 +251,7 @@ async function sweepUser(
   // ── Notification gating ────────────────────────────────
   // Always record the sweep data, but gate user-facing notifications
   // and proactive sessions to prevent alert fatigue.
-  const quietPrefs = await loadUserQuietPrefs(userId)
+  const quietPrefs = preloadedPrefs ?? (await loadUserQuietPrefs(userId))
   const gating = await checkNotificationGating(userId, result.findings, quietPrefs)
 
   // Persist sweep record regardless of gating
@@ -355,10 +391,16 @@ export async function runDriftSweepBatch(
   // Process in batches
   for (let i = 0; i < eligibleUsers.length; i += BATCH_SIZE) {
     const batch = eligibleUsers.slice(i, i + BATCH_SIZE)
+    const prefsByUser = await loadUserQuietPrefsBatch(batch.map((u) => u.userId))
 
     const batchResults = await Promise.allSettled(
       batch.map((u) =>
-        sweepUser(u.userId, u.user.defaultTenantId ?? 'default', triggerType),
+        sweepUser(
+          u.userId,
+          u.user.defaultTenantId ?? 'default',
+          triggerType,
+          prefsByUser.get(u.userId),
+        ),
       ),
     )
 

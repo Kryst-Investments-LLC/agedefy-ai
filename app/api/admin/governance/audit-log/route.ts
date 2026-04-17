@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { safeJsonParse } from '@/lib/safe-json'
 
 async function requireAdmin(userId: string) {
   const user = await db.user.findUnique({
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
       compoundName: e.compoundName,
       riskCategory: e.riskCategory,
       decision: e.decision,
-      policySnapshot: JSON.parse(e.policySnapshot),
+      policySnapshot: safeJsonParse<unknown>(e.policySnapshot, null),
       adherenceRate: e.adherenceRate,
       reason: e.reason,
       createdAt: e.createdAt,

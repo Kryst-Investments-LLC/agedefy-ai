@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       measuredAt: { gte: since },
     },
     orderBy: { measuredAt: "asc" },
+    take: 1_000,
     select: {
       id: true,
       value: true,
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
   const availableNames = await db.biomarker.findMany({
     where: { userId: session.user.id },
     distinct: ["name"],
+    take: 500,
     select: { name: true },
     orderBy: { name: "asc" },
   })

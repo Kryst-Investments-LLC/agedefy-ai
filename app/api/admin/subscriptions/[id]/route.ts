@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
 
-  const impersonationBlock = blockWriteDuringImpersonation(authResult.user.id)
+  const impersonationBlock = await blockWriteDuringImpersonation(authResult.user.id)
   if (impersonationBlock) return impersonationBlock
 
   const { id } = await context.params

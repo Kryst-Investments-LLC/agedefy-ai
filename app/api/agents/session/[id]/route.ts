@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { safeJsonParse } from '@/lib/safe-json'
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const result = agentSession.result ? JSON.parse(agentSession.result) : null
+  const result = agentSession.result ? safeJsonParse<unknown>(agentSession.result, null) : null
 
   return NextResponse.json({
     id: agentSession.id,

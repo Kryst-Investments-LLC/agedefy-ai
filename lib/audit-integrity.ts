@@ -26,9 +26,20 @@ export function computeEntryHash(entry: {
 /**
  * Get the hash of the most recent audit log entry for a tenant.
  * Used as `prevHash` when inserting the next entry.
+ *
+ * Optionally accepts a Prisma transaction client so the read+write of the
+ * hash chain can run inside a single serialized transaction.
  */
-export async function getLatestHash(tenantId?: string): Promise<string | null> {
-  const latest = await db.auditLog.findFirst({
+type PrismaLike = {
+  auditLog: {
+    findFirst: (typeof db.auditLog)["findFirst"]
+  }
+}
+export async function getLatestHash(
+  tenantId?: string,
+  client: PrismaLike = db,
+): Promise<string | null> {
+  const latest = await client.auditLog.findFirst({
     where: tenantId ? { tenantId } : {},
     orderBy: { createdAt: 'desc' },
     select: { entryHash: true },

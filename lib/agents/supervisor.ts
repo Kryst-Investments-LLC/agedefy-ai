@@ -336,10 +336,33 @@ export class SupervisorAgent {
       explainability: '💡',
     }
 
+    // Hard caps to prevent runaway sessions (cost / latency safety net).
+    // If the planner ever produces or revises into more than MAX_STEPS_EXECUTED
+    // executable steps, or the wall-clock exceeds MAX_WALLCLOCK_MS, the
+    // remaining steps are marked skipped and the session ends gracefully.
+    const MAX_STEPS_EXECUTED = 12
+    const MAX_WALLCLOCK_MS = 5 * 60_000 // 5 minutes
+
     let currentPlan = plan
+    let executedCount = 0
+    const deadline = Date.now() + MAX_WALLCLOCK_MS
 
     for (const step of currentPlan.steps) {
       if (step.status === 'skipped' || step.status === 'failed' || step.status === 'completed') continue
+
+      if (executedCount >= MAX_STEPS_EXECUTED || Date.now() > deadline) {
+        step.status = 'skipped'
+        step.error = executedCount >= MAX_STEPS_EXECUTED
+          ? `Skipped: exceeded MAX_STEPS_EXECUTED (${MAX_STEPS_EXECUTED})`
+          : `Skipped: exceeded MAX_WALLCLOCK_MS (${MAX_WALLCLOCK_MS}ms)`
+        context.emitTrace({
+          kind: 'step_failed',
+          agentClass: step.agentClass,
+          icon: '⏱️',
+          message: step.error,
+        })
+        continue
+      }
 
       const agent = this.agents.get(step.agentClass)
       if (!agent) {
@@ -365,6 +388,7 @@ export class SupervisorAgent {
         step.result = { outputKeys: result.outputKeys }
         allMessages.push(...result.messages)
         allSafetyFlags.push(...result.safetyFlags)
+        executedCount++
 
         context.emitTrace({
           kind: 'step_complete',

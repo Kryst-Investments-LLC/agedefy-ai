@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   const sessions = await db.activeSession.findMany({
     where: { userId, revokedAt: null },
     orderBy: { lastActiveAt: 'desc' },
+    take: 200,
     select: {
       id: true,
       userAgent: true,
@@ -47,7 +48,7 @@ export async function DELETE(request: NextRequest) {
   const authResult = requireAuthWithRole(session, 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
 
-  const impersonationBlock = blockWriteDuringImpersonation(authResult.user.id)
+  const impersonationBlock = await blockWriteDuringImpersonation(authResult.user.id)
   if (impersonationBlock) return impersonationBlock
 
   const { searchParams } = new URL(request.url)
