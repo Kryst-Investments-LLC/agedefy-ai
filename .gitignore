@@ -37,3 +37,4 @@ coverage/
 # Misc
 *.tgz
 .tmp-*
+typecheck-output.txt
