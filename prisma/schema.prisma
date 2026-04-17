@@ -1,0 +1,2273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  MEMBER
+  ADMIN
+  CLINICIAN
+  RESEARCHER
+}
+
+enum OrganizationMembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ReviewStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ReviewSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingRecordCategory {
+  AI_CREDIT_PACK
+  AI_CREDIT_USAGE
+  TELEMEDICINE_CONSULTATION
+  LAB_ORDER
+}
+
+enum BillingRecordStatus {
+  PENDING
+  PAID
+  FAILED
+  VOIDED
+}
+
+enum AICreditSource {
+  SUBSCRIPTION_ALLOWANCE
+  PURCHASED_TOP_UP
+  ENTERPRISE_POOL
+}
+
+enum BiomarkerTrend {
+  UP
+  DOWN
+  STABLE
+}
+
+enum IdempotencyExecutionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum DependencyCircuitBreakerState {
+  CLOSED
+  OPEN
+  HALF_OPEN
+}
+
+enum OrchestrationJobQueue {
+  AI
+  INGESTION
+  NOTIFICATION
+  GOVERNANCE
+}
+
+enum OrchestrationJobStatus {
+  QUEUED
+  LEASED
+  SUCCEEDED
+  FAILED
+  DEAD_LETTER
+  CANCELED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String?
+  email          String          @unique
+  emailVerified  DateTime?
+  passwordHash   String
+  stripeCustomerId String?       @unique
+  role           UserRole        @default(MEMBER)
+  discoveryTier  String?         @default("explorer") // explorer | pro | enterprise
+  defaultTenantId String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  accounts       Account[]
+  auditLogs      AuditLog[]
+  profile        UserProfile?
+  consentGrant   UserConsentGrant?
+  biomarkers     Biomarker[]
+  protocols      Protocol[]
+  reviewItems    ReviewItem[]    @relation("ReviewedByUser")
+  sessions       Session[]
+  subscriptions  Subscription[]
+  billingRecords BillingRecord[]
+  researchCollections ResearchCollection[]
+  clinicianTasks      ClinicianTask[]
+  partnerDataRecords  PartnerDataRecord[]
+  communityPosts      CommunityPost[]
+  learnArticles       LearnArticle[]
+  labOrders           LabOrder[]
+  consultations       ConsultationRequest[]
+  adverseEventReports AdverseEventReport[]
+  marketplaceOrders   MarketplaceOrder[]
+  evidenceRecords     EvidenceRecord[]       @relation("EvidenceCreatedBy")
+  reviewedEvidence    EvidenceRecord[]       @relation("EvidenceReviewedBy")
+  assignedEvidence    EvidenceRecord[]       @relation("EvidenceAssignedReviewer")
+  evidenceReviewEvents EvidenceReviewEvent[] @relation("EvidenceReviewActor")
+  ownedHypotheses     Hypothesis[]           @relation("HypothesisOwner")
+  ownedCohorts        PatientCohort[]        @relation("CohortOwner")
+  interventionOutcomes InterventionOutcome[]
+  trialMatches        TrialMatch[]           @relation("TrialMatchUser")
+  reviewedTrialMatches TrialMatch[]          @relation("TrialMatchReviewer")
+  trialMatchReviewEvents TrialMatchReviewEvent[] @relation("TrialMatchReviewActor")
+  aiResearchRuns      AIResearchRun[]
+  createdMechanisticModels MechanisticModel[] @relation("UserCreatedMechanisticModels")
+  aeonForgeCandidates AeonForgeCandidate[]
+  marketplaceScientistProfile MarketplaceScientist? @relation("MarketplaceScientistUser")
+  marketplaceSponsorProfile MarketplaceSponsor? @relation("MarketplaceSponsorUser")
+  marketplaceSentMessages MarketplaceMessageThread[] @relation("MarketplaceMessageSender")
+  marketplaceAuditEvents MarketplaceAuditLog[] @relation("MarketplaceAuditActor")
+  marketplaceNotifications MarketplaceNotification[] @relation("MarketplaceNotificationRecipient")
+  createdOrchestrationJobs OrchestrationJob[]    @relation("OrchestrationJobCreator")
+  defaultTenant   Tenant?        @relation("UserDefaultTenant", fields: [defaultTenantId], references: [id], onDelete: SetNull)
+  organizationMemberships OrganizationMembership[]
+  mfaSecret       UserMfaSecret?
+  activeSessions  ActiveSession[]
+  trustScores     TrustScore[]   @relation("TrustScoreUser")
+  timelineEntries TimelineEntry[] @relation("TimelineEntryUser")
+  feedbackLoopSnapshots FeedbackLoopSnapshot[] @relation("FeedbackLoopUser")
+  biologicalAgeSnapshots BiologicalAgeSnapshot[] @relation("BioAgeUser")
+  userXP              UserXP?            @relation("UserXPUser")
+  userStreaks          UserStreak[]       @relation("UserStreakUser")
+  userAchievements    UserAchievement[]  @relation("UserAchievementUser")
+  wearableConnections WearableConnection[] @relation("WearableConnectionUser")
+  graphContributions  PendingGraphContribution[] @relation("GraphContributionUser")
+  apiKeys             APIKey[]           @relation("APIKeyUser")
+  referralsSent       Referral[]         @relation("ReferralReferrer")
+  referralsReceived   Referral[]         @relation("ReferralReferee")
+  flParticipations    FLParticipation[]  @relation("FLParticipationUser")
+  medications         Medication[]       @relation("MedicationUser")
+  agentSessions       AgentSession[]     @relation("AgentSessionUser")
+  driftSweeps         DriftSweep[]       @relation("DriftSweepUser")
+  driftNotifications  DriftNotification[] @relation("DriftNotificationUser")
+}
+
+model UserMfaSecret {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  secret      String
+  verified    Boolean  @default(false)
+  backupCodes Json?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActiveSession {
+  id            String    @id @default(cuid())
+  userId        String
+  tokenHash     String    @unique
+  userAgent     String?
+  ipAddress     String?
+  createdAt     DateTime  @default(now())
+  lastActiveAt  DateTime  @default(now())
+  revokedAt     DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model Tenant {
+  id              String                   @id @default(cuid())
+  slug            String                   @unique
+  name            String
+  status          String                   @default("active")
+  isolationMode   String                   @default("shared")
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  organizations   Organization[]
+  memberships     OrganizationMembership[]
+  defaultUsers    User[]                   @relation("UserDefaultTenant")
+  agentSessions AgentSession[]             @relation("AgentSessionTenant")
+
+  @@index([status, isolationMode])
+}
+
+model Organization {
+  id              String                   @id @default(cuid())
+  tenantId        String
+  name            String
+  slug            String                   @unique
+  type            String                   @default("enterprise")
+  status          String                   @default("active")
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships     OrganizationMembership[]
+  sponsorProfiles MarketplaceSponsor[]
+
+  @@index([tenantId, status])
+}
+
+model OrganizationMembership {
+  id             String                     @id @default(cuid())
+  tenantId       String
+  organizationId String
+  userId         String
+  role           OrganizationMembershipRole @default(MEMBER)
+  status         String                     @default("active")
+  isDefault      Boolean                    @default(false)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  tenant         Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organization   Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([tenantId, userId, role])
+}
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  tenantId              String   @default("default")
+  userId                String   @unique
+  dateOfBirth           DateTime?
+  biologicalSex         String?
+  longevityGoal         String?
+  riskTolerance         String?
+  // Onboarding fields
+  dietaryPattern        String?  // omnivore, vegetarian, vegan, keto, mediterranean, paleo, other
+  activityLevel         String?  // sedentary, light, moderate, active, very_active
+  sleepQuality          Int?     // 1-5
+  stressLevel           Int?     // 1-5
+  healthConditions      String   @default("[]") // JSON array of condition strings
+  supplementStack       String   @default("[]") // JSON array of supplement strings
+  healthGoals           String   @default("[]") // JSON array: cognitive, cardiovascular, metabolic, athletic, aesthetic
+  primaryMotivation     String?
+  onboardingCompletedAt DateTime?
+  // Notification preferences
+  timezone              String?  // IANA timezone, e.g. "America/New_York"
+  quietHoursStart       Int?     // 0-23, local hour when quiet hours begin
+  quietHoursEnd         Int?     // 0-23, local hour when quiet hours end
+  driftNotificationsOn  Boolean  @default(true) // master toggle for drift alerts
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserConsentGrant {
+  id               String   @id @default(cuid())
+  tenantId         String   @default("default")
+  userId           String   @unique
+  status           String   @default("active")
+  legalBasis       String?
+  scopes           Json
+  gdprConsents     Json?    /// GDPR consent categories: data-processing, ai-health-info, research-usage
+  consentVersion   Int      @default(1)
+  effectiveAt      DateTime @default(now())
+  expiresAt        DateTime?
+  revokedAt        DateTime?
+  revocationReason String?
+  policyVersion    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  tenantId         String             @default("default")
+  userId           String
+  plan             String
+  status           SubscriptionStatus @default(INACTIVE)
+  provider         String             @default("manual")
+  priceCents       Int
+  currency         String             @default("USD")
+  billingCycle     String
+  regionTier       String?
+  seatQuantity     Int                @default(1)
+  monthlyAICreditAllowance Int?
+  stripeCheckoutSessionId String?     @unique
+  stripeSubscriptionId String?        @unique
+  currentPeriodEnd DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([regionTier, createdAt])
+}
+
+model BillingRecord {
+  id                   String                @id @default(cuid())
+  tenantId             String                @default("default")
+  userId               String
+  category             BillingRecordCategory
+  status               BillingRecordStatus   @default(PENDING)
+  description          String
+  amountCents          Int
+  currency             String                @default("USD")
+  quantity             Int                   @default(1)
+  regionTier           String?
+  pricingModel         String?
+  aiCreditPackKey      String?
+  aiCreditSource       AICreditSource?
+  aiCreditsDelta       Int                   @default(0)
+  stripeCheckoutSessionId String?            @unique
+  stripePaymentIntentId   String?            @unique
+  consultationRequestId   String?            @unique
+  labOrderId              String?            @unique
+  paidAt               DateTime?
+  metadata             Json?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consultationRequest  ConsultationRequest?  @relation(fields: [consultationRequestId], references: [id], onDelete: SetNull)
+  labOrder             LabOrder?             @relation(fields: [labOrderId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, category, status])
+  @@index([userId, createdAt])
+  @@index([userId, aiCreditSource, status, createdAt])
+  @@index([regionTier, createdAt])
+}
+
+model Biomarker {
+  id         String         @id @default(cuid())
+  tenantId   String         @default("default")
+  userId     String
+  name       String
+  value      Float
+  unit       String
+  target     Float?
+  trend      BiomarkerTrend @default(STABLE)
+  source     String?        // Origin: null=manual, "lab:provider", "wearable:oura", etc.
+  measuredAt DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  protocolId String?        // Link to protocol/intervention period
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  protocol   Protocol?      @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  @@index([userId, measuredAt])
+  @@index([tenantId, userId])
+}
+
+model Protocol {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("default")
+  userId      String
+  name        String
+  status      String   @default("draft")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outcomes    InterventionOutcome[]
+  contraindicationScore Float? // Aggregate safety/contraindication score
+  biomarkerMeasurements Biomarker[]
+  labResults LabResult[]
+  adverseEventReports AdverseEventReport[]
+  aggregateOutcomes AggregateOutcome[] @relation("AggregateOutcomeProtocol")
+
+  @@index([userId, updatedAt])
+  @@index([tenantId, userId])
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorEmail  String?
+  tenantId    String   @default("default")
+  action      String
+  entityType  String
+  entityId    String?
+  details     String?
+  prevHash    String?
+  entryHash   String?
+  createdAt   DateTime @default(now())
+  actorUser   User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model IdempotencyRecord {
+  id                 String                      @id @default(cuid())
+  tenantId           String
+  route              String
+  method             String
+  key                String
+  actorUserId        String?
+  requestFingerprint String
+  status             IdempotencyExecutionStatus @default(PENDING)
+  responseStatus     Int?
+  responseBody       Json?
+  errorMessage       String?
+  completedAt        DateTime?
+  expiresAt          DateTime?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  @@unique([tenantId, route, method, key])
+  @@index([tenantId, status, expiresAt])
+  @@index([actorUserId, createdAt])
+}
+
+model DependencyCircuitBreaker {
+  id            String                         @id @default(cuid())
+  dependency    String                         @unique
+  state         DependencyCircuitBreakerState  @default(CLOSED)
+  failureCount  Int                            @default(0)
+  successCount  Int                            @default(0)
+  lastFailureAt DateTime?
+  lastSuccessAt DateTime?
+  openedAt      DateTime?
+  nextAttemptAt DateTime?
+  lastError     String?
+  createdAt     DateTime                       @default(now())
+  updatedAt     DateTime                       @updatedAt
+
+  @@index([state, nextAttemptAt])
+}
+
+model ReviewItem {
+  id                String         @id @default(cuid())
+  tenantId          String         @default("default")
+  title             String
+  category          String
+  status            ReviewStatus   @default(OPEN)
+  severity          ReviewSeverity @default(MEDIUM)
+  details           String?
+  relatedEntityType String?
+  relatedEntityId   String?
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  reviewedByUser    User?          @relation("ReviewedByUser", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, severity])
+}
+
+// ─── Enterprise research & clinical data models ─────────────
+
+enum ResearchSource {
+  PUBMED
+  MANUAL
+  IMPORT
+}
+
+enum EvidenceStudyType {
+  IN_VITRO
+  ANIMAL
+  OBSERVATIONAL
+  CASE_SERIES
+  RCT
+  META_ANALYSIS
+  SYSTEMATIC_REVIEW
+  MECHANISTIC
+  EXPERT_OPINION
+}
+
+enum EvidenceDirection {
+  SUPPORTIVE
+  MIXED
+  NEUTRAL
+  CONTRADICTORY
+}
+
+enum EvidenceReviewStatus {
+  AUTO_QUEUED
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+  ESCALATED
+}
+
+enum EvidenceProvenanceType {
+  MANUAL
+  PUBMED_IMPORT
+  CLINICAL_TRIAL_IMPORT
+  USER_CURATED
+  AI_EXTRACTED
+}
+
+enum EvidenceReviewEventType {
+  ASSIGNED
+  STATUS_UPDATED
+  NOTES_UPDATED
+}
+
+enum HypothesisStatus {
+  DRAFT
+  PRIORITIZED
+  IN_REVIEW
+  VALIDATED
+  REJECTED
+}
+
+enum TrialMatchStatus {
+  CANDIDATE
+  REVIEWED
+  CONTACTED
+  ENROLLED
+  ARCHIVED
+}
+
+enum AIWorkflowType {
+  LITERATURE_REVIEW
+  HYPOTHESIS_GENERATION
+  SAFETY_REVIEW
+  COHORT_ANALYSIS
+  TRIAL_MATCHING
+}
+
+enum ClinicianTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum PartnerDataSource {
+  LAB
+  WEARABLE
+  GENOMICS
+  CUSTOM
+}
+
+enum CohortRiskBand {
+  LOW
+  MODERATE
+  HIGH
+  COMPLEX
+}
+
+model ResearchCollection {
+  id          String            @id @default(cuid())
+  tenantId    String            @default("default")
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  entries     ResearchEntry[]
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ResearchEntry {
+  id           String           @id @default(cuid())
+  collectionId String
+  source       ResearchSource   @default(MANUAL)
+  externalId   String?
+  title        String
+  authors      String?
+  abstract     String?
+  url          String?
+  publishedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  collection   ResearchCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  evidenceRecords EvidenceRecord[]
+
+  @@index([collectionId])
+  @@index([source, externalId])
+}
+
+model EvidenceRecord {
+  id                  String            @id @default(cuid())
+  createdByUserId     String?
+  reviewedByUserId    String?
+  assignedReviewerId  String?
+  researchEntryId     String?
+  title               String
+  diseaseArea         String?
+  sourceLabel         String
+  externalId          String?
+  sourceUrl           String?
+  abstract            String?
+  populationSummary   String?
+  interventionSummary String?
+  outcomeSummary      String?
+  biomarkerTargets    String?
+  contraindications   String?
+  studyType           EvidenceStudyType
+  evidenceDirection   EvidenceDirection @default(SUPPORTIVE)
+  reviewStatus        EvidenceReviewStatus @default(AUTO_QUEUED)
+  provenanceType      EvidenceProvenanceType @default(MANUAL)
+  provenanceDetail    String?
+  automationSource    String?
+  evidenceScore       Float             @default(0)
+  uncertaintyScore    Float             @default(0.5)
+  reviewConfidence    Float             @default(0.5)
+  sourceCapturedAt    DateTime?
+  reviewed            Boolean           @default(false)
+  verificationNotes   String?
+  reviewedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  createdByUser       User?             @relation("EvidenceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser      User?             @relation("EvidenceReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  assignedReviewer    User?             @relation("EvidenceAssignedReviewer", fields: [assignedReviewerId], references: [id], onDelete: SetNull)
+  researchEntry       ResearchEntry?    @relation(fields: [researchEntryId], references: [id], onDelete: SetNull)
+  hypotheses          HypothesisEvidence[]
+  reviewEvents        EvidenceReviewEvent[]
+  priorityChanges     HypothesisPriorityChange[]
+
+  @@index([diseaseArea, studyType])
+  @@index([reviewed, evidenceScore])
+  @@index([reviewStatus, provenanceType])
+  @@index([assignedReviewerId, reviewStatus])
+}
+
+model Hypothesis {
+  id                     String            @id @default(cuid())
+  ownerUserId            String
+  title                  String
+  question               String
+  targetCondition        String?
+  rationale              String
+  proposedMechanism      String?
+  suggestedTests         String?
+  suggestedInterventions String?
+  cohortDefinition       String?
+  priorityScore          Float             @default(0.25)
+  averageEvidenceScore   Float             @default(0.25)
+  evidenceCoverageScore  Float             @default(0)
+  contraindicationScore  Float             @default(0.25)
+  confidenceScore        Float             @default(0.5)
+  uncertaintyScore       Float             @default(0.5)
+  status                 HypothesisStatus  @default(DRAFT)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  ownerUser              User              @relation("HypothesisOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  evidenceLinks          HypothesisEvidence[]
+  priorityChanges        HypothesisPriorityChange[]
+
+  @@index([ownerUserId, status])
+}
+
+model EvidenceReviewEvent {
+  id                         String                  @id @default(cuid())
+  evidenceRecordId           String
+  actorUserId                String
+  eventType                  EvidenceReviewEventType
+  previousStatus             EvidenceReviewStatus?
+  nextStatus                 EvidenceReviewStatus?
+  previousAssignedReviewerId String?
+  nextAssignedReviewerId     String?
+  notes                      String?
+  createdAt                  DateTime                @default(now())
+
+  evidenceRecord             EvidenceRecord          @relation(fields: [evidenceRecordId], references: [id], onDelete: Cascade)
+  actorUser                  User                    @relation("EvidenceReviewActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  hypothesisChanges          HypothesisPriorityChange[]
+
+  @@index([evidenceRecordId, createdAt])
+  @@index([actorUserId, eventType])
+}
+
+model HypothesisPriorityChange {
+  id                       String              @id @default(cuid())
+  hypothesisId             String
+  evidenceReviewEventId    String
+  evidenceRecordId         String
+  previousPriorityScore    Float
+  newPriorityScore         Float
+  previousConfidenceScore  Float
+  newConfidenceScore       Float
+  previousStatus           HypothesisStatus
+  newStatus                HypothesisStatus
+  delta                    Float
+  rationale                String?
+  createdAt                DateTime            @default(now())
+
+  hypothesis               Hypothesis          @relation(fields: [hypothesisId], references: [id], onDelete: Cascade)
+  evidenceReviewEvent      EvidenceReviewEvent @relation(fields: [evidenceReviewEventId], references: [id], onDelete: Cascade)
+  evidenceRecord           EvidenceRecord      @relation(fields: [evidenceRecordId], references: [id], onDelete: Cascade)
+
+  @@index([hypothesisId, createdAt])
+  @@index([evidenceRecordId, createdAt])
+}
+
+model HypothesisEvidence {
+  id               String         @id @default(cuid())
+  hypothesisId     String
+  evidenceRecordId String
+  weight           Float          @default(1)
+  rationale        String?
+  createdAt        DateTime       @default(now())
+
+  hypothesis       Hypothesis     @relation(fields: [hypothesisId], references: [id], onDelete: Cascade)
+  evidenceRecord   EvidenceRecord @relation(fields: [evidenceRecordId], references: [id], onDelete: Cascade)
+
+  @@unique([hypothesisId, evidenceRecordId])
+}
+
+model PatientCohort {
+  id                String       @id @default(cuid())
+  tenantId          String       @default("default")
+  ownerUserId       String
+  name              String
+  focusArea         String
+  inclusionCriteria String
+  exclusionCriteria String?
+  biomarkerFocus    String?
+  cohortSize        Int          @default(0)
+  stratificationAxes String?
+  stratificationSummary String?
+  estimatedEligibleShare Float   @default(0)
+  confidenceScore   Float        @default(0.5)
+  readinessScore    Float        @default(0)
+  riskBand          CohortRiskBand @default(MODERATE)
+  outcomeSummary    String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  ownerUser         User         @relation("CohortOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  trialMatches      TrialMatch[]
+
+  @@index([ownerUserId, focusArea])
+}
+
+model AIResearchRun {
+  id               String         @id @default(cuid())
+  tenantId         String         @default("default")
+  userId           String
+  workflowType     AIWorkflowType
+  inputSummary     String
+  outputSummary    String
+  citations        String?
+  uncertaintyScore Float          @default(0.5)
+  createdAt        DateTime       @default(now())
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, workflowType])
+}
+
+model ClinicianTask {
+  id          String              @id @default(cuid())
+  tenantId    String              @default("default")
+  userId      String
+  title       String
+  description String?
+  status      ClinicianTaskStatus @default(PENDING)
+  priority    Int                 @default(0)
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model Medication {
+  id             String   @id @default(cuid())
+  tenantId       String   @default("default")
+  userId         String
+  name           String
+  dosage         String?
+  frequency      String?  // e.g. "once daily", "twice daily"
+  prescribedFor  String?  // condition or reason
+  category       String   @default("supplement") // supplement, prescription, otc
+  active         Boolean  @default(true)
+  startedAt      DateTime @default(now())
+  discontinuedAt DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation("MedicationUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@index([tenantId, userId])
+}
+
+model PartnerDataRecord {
+  id         String            @id @default(cuid())
+  tenantId   String            @default("default")
+  userId     String
+  source     PartnerDataSource
+  partnerId  String?
+  label      String
+  payload    String
+  receivedAt DateTime          @default(now())
+  createdAt  DateTime          @default(now())
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, source])
+}
+
+// ─── Knowledge Graph: Longevity Science Ontology ─────────────
+
+model Compound {
+  id            String       @id @default(cuid())
+  name          String       @unique
+  aliases       String?      // JSON array of alternative names
+  category      String       // e.g. "peptide", "small-molecule", "supplement", "drug"
+  riskCategory  RiskCategory @default(GREEN)
+  description   String?
+  casNumber     String?      @unique
+  pubChemCid    String?
+  mechanism     String?      // brief mechanism of action
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  pathways          CompoundPathway[]
+  interactions      CompoundInteraction[] @relation("CompoundA")
+  interactedWith    CompoundInteraction[] @relation("CompoundB")
+  biomarkerEffects  CompoundBiomarkerEffect[]
+  studyLinks        CompoundStudyLink[]
+  aggregateOutcomes AggregateOutcome[] @relation("AggregateOutcomeCompound")
+}
+
+model Pathway {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String   // e.g. "aging", "metabolic", "epigenetic", "inflammatory"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  compounds   CompoundPathway[]
+}
+
+model CompoundPathway {
+  id          String   @id @default(cuid())
+  compoundId  String
+  pathwayId   String
+  effect      String   // "activator", "inhibitor", "modulator"
+  strength    String?  // "strong", "moderate", "weak", "theoretical"
+  evidence    String?  // free-text evidence summary
+  createdAt   DateTime @default(now())
+
+  compound    Compound @relation(fields: [compoundId], references: [id], onDelete: Cascade)
+  pathway     Pathway  @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+
+  @@unique([compoundId, pathwayId])
+}
+
+enum InteractionSeverity {
+  BENEFICIAL
+  NEUTRAL
+  CAUTION
+  DANGEROUS
+  UNKNOWN
+}
+
+model CompoundInteraction {
+  id             String              @id @default(cuid())
+  compoundAId    String
+  compoundBId    String
+  severity       InteractionSeverity @default(UNKNOWN)
+  description    String?
+  source         String?             // citation or source URL
+  createdAt      DateTime            @default(now())
+
+  compoundA      Compound @relation("CompoundA", fields: [compoundAId], references: [id], onDelete: Cascade)
+  compoundB      Compound @relation("CompoundB", fields: [compoundBId], references: [id], onDelete: Cascade)
+
+  @@unique([compoundAId, compoundBId])
+}
+
+model CompoundBiomarkerEffect {
+  id            String   @id @default(cuid())
+  compoundId    String
+  biomarkerName String   // e.g. "HbA1c", "CRP", "telomere length"
+  direction     String   // "increase", "decrease", "stabilize"
+  magnitude     String?  // "significant", "moderate", "mild"
+  evidence      String?  // summary
+  source        String?  // citation
+  createdAt     DateTime @default(now())
+
+  compound      Compound @relation(fields: [compoundId], references: [id], onDelete: Cascade)
+
+  @@index([compoundId])
+  @@index([biomarkerName])
+}
+
+model CompoundStudyLink {
+  id            String   @id @default(cuid())
+  compoundId    String
+  externalId    String   // PubMed ID, NCT ID, DOI, etc.
+  source        String   // "pubmed", "clinicaltrials", "doi"
+  title         String?
+  url           String?
+  createdAt     DateTime @default(now())
+
+  compound      Compound @relation(fields: [compoundId], references: [id], onDelete: Cascade)
+
+  @@unique([compoundId, source, externalId])
+}
+
+
+// ─── Mechanistic Model Registry ────────────────────────────
+
+model MechanisticModel {
+  id            String   @id @default(cuid())
+  tenantId      String   @default("default")
+  name          String
+  description   String?
+  version       String   // e.g. "v1.0.0"
+  source        String?  // e.g. "manual", "imported", "AI-generated"
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy     User?    @relation("UserCreatedMechanisticModels", fields: [createdById], references: [id], onDelete: SetNull)
+  confidenceScores ModelConfidenceScore[]
+
+  @@unique([name, version])
+}
+
+model ModelConfidenceScore {
+  id                  String   @id @default(cuid())
+  mechanisticModelId  String
+  entityType          String   // e.g. "Hypothesis", "Protocol", "Cohort", etc.
+  entityId            String   // ID of the entity the score applies to
+  score               Float    // Confidence score (0-1)
+  rationale           String?
+  version             String   // Model version used for this score
+  createdAt           DateTime @default(now())
+
+  mechanisticModel    MechanisticModel @relation(fields: [mechanisticModelId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([mechanisticModelId, version])
+}
+
+// ─── Community ─────────────────────────────────────────────
+
+enum PostCategory {
+  COMPOUNDS
+  BIOMARKERS
+  PROTOCOLS
+  RESEARCH
+  GENERAL
+}
+
+model CommunityPost {
+  id          String       @id @default(cuid())
+  tenantId    String       @default("default")
+  authorId    String
+  category    PostCategory @default(GENERAL)
+  title       String
+  body        String
+  published   Boolean      @default(true)
+  flagged     Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([category, createdAt])
+  @@index([authorId])
+}
+
+enum ArticleTopic {
+  PATHWAYS
+  COMPOUNDS
+  BIOMARKERS
+  PROTOCOLS
+  NUTRITION
+  EXERCISE
+  SLEEP
+  OVERVIEW
+}
+
+model LearnArticle {
+  id           String       @id @default(cuid())
+  tenantId     String       @default("default")
+  authorId     String
+  topic        ArticleTopic @default(OVERVIEW)
+  title        String
+  slug         String       @unique
+  summary      String
+  body         String
+  published    Boolean      @default(false)
+  reviewed     Boolean      @default(false)
+  reviewedBy   String?
+  publishedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([topic, publishedAt])
+  @@index([slug])
+}
+
+// ─── Lab Testing ────────────────────────────────────────────
+
+enum LabTestStatus {
+  AVAILABLE
+  DISCONTINUED
+}
+
+enum LabOrderStatus {
+  PENDING
+  CONFIRMED
+  COLLECTED
+  PROCESSING
+  COMPLETED
+  CANCELED
+}
+
+model LabTestPanel {
+  id            String        @id @default(cuid())
+  name          String        @unique
+  category      String
+  description   String?
+  biomarkers    String
+  priceCents    Int
+  turnaroundDays Int          @default(5)
+  status        LabTestStatus @default(AVAILABLE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  orders        LabOrder[]
+}
+
+model LabOrder {
+  id            String         @id @default(cuid())
+  tenantId      String         @default("default")
+  userId        String
+  panelId       String
+  status        LabOrderStatus @default(PENDING)
+  notes         String?
+  orderedAt     DateTime       @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  panel         LabTestPanel   @relation(fields: [panelId], references: [id])
+  results       LabResult[]
+  billingRecord BillingRecord?
+
+  @@index([userId, status])
+}
+
+model LabResult {
+  id            String   @id @default(cuid())
+  orderId       String
+  biomarkerName String
+  value         Float
+  unit          String
+  refLow        Float?
+  refHigh       Float?
+  flag          String?
+  protocolId    String?   // Link to protocol/intervention period
+  createdAt     DateTime @default(now())
+
+  order         LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  protocol      Protocol? @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([protocolId])
+}
+
+// ─── Telemedicine ───────────────────────────────────────────
+
+enum ConsultationStatus {
+  REQUESTED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ConsultationType {
+  INITIAL
+  FOLLOW_UP
+  LAB_REVIEW
+  PROTOCOL_REVIEW
+}
+
+model TelehealthProvider {
+  id              String   @id @default(cuid())
+  name            String
+  credentials     String   // e.g. "MD, Board Certified Internal Medicine"
+  specialty       String   // e.g. "longevity medicine", "endocrinology"
+  bio             String?
+  licenseStates   String?  // JSON array of states/regions
+  acceptingNew    Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  consultations   ConsultationRequest[]
+}
+
+model ConsultationRequest {
+  id              String             @id @default(cuid())
+  tenantId        String             @default("default")
+  userId          String
+  providerId      String?
+  type            ConsultationType   @default(INITIAL)
+  status          ConsultationStatus @default(REQUESTED)
+  reason          String
+  notes           String?
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  summary         String?            // clinician summary after completion
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        TelehealthProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  billingRecord   BillingRecord?
+
+  @@index([userId, status])
+  @@index([providerId])
+}
+
+model AdverseEventReport {
+  id                  String   @id @default(cuid())
+  tenantId            String   @default("default")
+  userId              String
+  protocolId          String?
+  severity            String
+  seriousness         String
+  category            String
+  suspectedCause      String?
+  symptoms            Json
+  detectedBy          String
+  onsetAt             DateTime?
+  resolvedAt          DateTime?
+  outcome             String?
+  escalationRequired  Boolean  @default(false)
+  regulatorReportable Boolean  @default(false)
+  note                String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  protocol            Protocol? @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([protocolId, createdAt])
+}
+
+// ÆonForge: Pharmaceutical Superintelligence Models
+model AeonForgeCandidate {
+  id                String              @id @default(cuid())
+  tenantId          String              @default("default")
+  userId            String
+  prompt            String              // User's discovery prompt
+  rawResponse       Json                // Full response from ÆonForge API
+  candidates        Json                // Array of discovered molecules / antigens / stacks
+  simulationScore   Float?              // Overall simulation confidence [0, 1]
+  healthspanDelta   Int?                // Predicted days/months/years improvement
+  safetyScore       Float?              // Safety assessment [0, 1]
+  status            String              @default("pending") // pending | approved | rejected
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulationResults SimulationResult[]
+  virtualTwinRuns   VirtualTwinRun[]
+
+  @@index([userId, status])
+  @@index([createdAt])
+}
+
+model SimulationResult {
+  id                    String              @id @default(cuid())
+  aeonForgeCandidateId  String
+  type                  String              // virtual_cell | organ | whole_body | immunogenicity | senolytic_prediction
+  result                Json                // Structured simulation outcome
+  confidence            Float               // Confidence in simulation [0, 1]
+  createdAt             DateTime            @default(now())
+
+  candidate             AeonForgeCandidate  @relation(fields: [aeonForgeCandidateId], references: [id], onDelete: Cascade)
+
+  @@index([aeonForgeCandidateId, type])
+}
+
+model VirtualTwinRun {
+  id                    String              @id @default(cuid())
+  aeonForgeCandidateId  String
+  twinProfile           Json                // age, biomarkers snapshot, genetics summary, health history
+  predictedOutcomes     Json                // Multi-hallmark response predictions
+  createdAt             DateTime            @default(now())
+
+  candidate             AeonForgeCandidate  @relation(fields: [aeonForgeCandidateId], references: [id], onDelete: Cascade)
+
+  @@index([aeonForgeCandidateId])
+}
+
+model CanonicalHealthEventRecord {
+  id            String   @id @default(cuid())
+  eventId       String
+  tenantId      String
+  subjectId     String
+  type          String
+  topic         String
+  aggregateId   String
+  aggregateType String
+  occurredAt    DateTime
+  recordedAt    DateTime
+  emittedAt     DateTime
+  storedAt      DateTime @default(now())
+  partitionKey  String
+  sequence      Int?
+  idempotencyKey String?
+  envelope      Json
+  event         Json
+
+  @@unique([tenantId, eventId])
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, subjectId, occurredAt])
+  @@index([tenantId, aggregateId, occurredAt])
+  @@index([tenantId, type, occurredAt])
+  @@index([tenantId, topic, occurredAt])
+}
+
+model CanonicalHealthEventOutboxRecord {
+  id             String   @id @default(cuid())
+  eventRecordId  String   @unique
+  tenantId       String
+  topic          String
+  partitionKey   String
+  message        Json
+  headers        Json?
+  status         String   @default("pending")
+  attemptCount   Int      @default(0)
+  availableAt    DateTime @default(now())
+  publishedAt    DateTime?
+  lastError      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, status, availableAt])
+  @@index([topic, status, availableAt])
+}
+
+model OrchestrationJob {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  organizationId  String?
+  queue           OrchestrationJobQueue
+  jobType         String
+  dedupeKey       String?
+  status          OrchestrationJobStatus @default(QUEUED)
+  priority        Int                    @default(100)
+  payload         Json
+  result          Json?
+  lastError       String?
+  attempts        Int                    @default(0)
+  maxAttempts     Int                    @default(5)
+  availableAt     DateTime               @default(now())
+  leasedAt        DateTime?
+  leaseExpiresAt  DateTime?
+  completedAt     DateTime?
+  canceledAt      DateTime?
+  retainedUntil   DateTime?
+  createdByUserId String?
+  parentJobId     String?
+  correlationId   String?
+  requestId       String?
+  traceContext    Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  createdBy       User?                  @relation("OrchestrationJobCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  parent          OrchestrationJob?      @relation("OrchestrationJobParent", fields: [parentJobId], references: [id], onDelete: SetNull)
+  children        OrchestrationJob[]     @relation("OrchestrationJobParent")
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, queue, status, availableAt, priority])
+  @@index([tenantId, jobType, status, availableAt])
+  @@index([tenantId, retainedUntil])
+  @@index([parentJobId])
+}
+
+// ─── Marketplace ────────────────────────────────────────────
+
+enum ProductCategory {
+  SUPPLEMENT
+  PEPTIDE
+  TEST_KIT
+  DEVICE
+  BUNDLE
+}
+
+enum MarketplaceOrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELED
+  REFUNDED
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  tenantId        String          @default("default")
+  name            String          @unique
+  slug            String          @unique
+  category        ProductCategory @default(SUPPLEMENT)
+  description     String?
+  ingredients     String?         // JSON array
+  priceCents      Int
+  currency        String          @default("USD")
+  imageUrl        String?
+  inStock         Boolean         @default(true)
+  thirdPartyTested Boolean        @default(false)
+  coaUrl          String?         // certificate of analysis URL
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  orderItems      MarketplaceOrderItem[]
+}
+
+model MarketplaceOrder {
+  id              String                  @id @default(cuid())
+  tenantId        String                  @default("default")
+  userId          String
+  status          MarketplaceOrderStatus  @default(PENDING)
+  totalCents      Int
+  currency        String                  @default("USD")
+  shippingAddress String?
+  trackingNumber  String?
+  orderedAt       DateTime                @default(now())
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           MarketplaceOrderItem[]
+
+  @@index([userId, status])
+}
+
+model MarketplaceOrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  priceCents  Int
+  createdAt   DateTime @default(now())
+
+  order       MarketplaceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product          @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model InterventionOutcome {
+  id              String    @id @default(cuid())
+  tenantId        String    @default("default")
+  userId          String
+  protocolId      String?
+  biomarkerName   String
+  baselineValue   Float
+  latestValue     Float
+  delta           Float
+  confidenceScore Float     @default(0.5)
+  observedAt      DateTime  @default(now())
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  protocol        Protocol? @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  @@index([userId, biomarkerName])
+  @@index([protocolId])
+}
+
+model TrialMatch {
+  id              String           @id @default(cuid())
+  tenantId        String           @default("default")
+  userId          String
+  cohortId        String?
+  trialExternalId String
+  title           String
+  condition       String?
+  matchScore      Float
+  rationale       String
+  status          TrialMatchStatus @default(CANDIDATE)
+  reviewerId      String?
+  reviewNotes     String?
+  reviewEvents    TrialMatchReviewEvent[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation("TrialMatchUser", fields: [userId], references: [id], onDelete: Cascade)
+  cohort          PatientCohort?   @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  reviewer        User?            @relation("TrialMatchReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([trialExternalId])
+  @@index([reviewerId, status])
+}
+
+model TrialMatchReviewEvent {
+  id             String           @id @default(cuid())
+  trialMatchId   String
+  actorUserId    String
+  eventType      String
+  previousStatus TrialMatchStatus?
+  nextStatus     TrialMatchStatus?
+  notes          String?
+  createdAt      DateTime         @default(now())
+
+  trialMatch     TrialMatch       @relation(fields: [trialMatchId], references: [id], onDelete: Cascade)
+  actorUser      User             @relation("TrialMatchReviewActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([trialMatchId, createdAt])
+  @@index([actorUserId, eventType])
+}
+
+// ─── Scientist Sponsor Marketplace ─────────────────────────
+
+enum MarketplaceDiscoveryStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  PRIVATE
+  ARCHIVED
+}
+
+enum MarketplaceFundingRequestStatus {
+  DRAFT
+  OPEN
+  DUE_DILIGENCE
+  COMMITTED
+  CLOSED
+}
+
+enum MarketplaceDealRoomStatus {
+  OPEN
+  NEGOTIATING
+  AGREEMENT_PENDING
+  FUNDED
+  CLOSED
+}
+
+enum MarketplaceAgreementStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  SIGNED
+}
+
+enum MarketplaceMessageType {
+  MESSAGE
+  DOCUMENT
+  AGREEMENT
+  PAYMENT
+  SYSTEM
+}
+
+enum MarketplaceTransactionStatus {
+  PENDING
+  AUTHORIZED
+  SETTLED
+  RELEASED
+  FAILED
+  REFUNDED
+}
+
+enum MarketplaceNotificationStatus {
+  QUEUED
+  DELIVERED
+  READ
+  DISMISSED
+}
+
+model MarketplaceScientist {
+  id                      String   @id @default(cuid())
+  tenantId                String   @default("default")
+  userId                  String   @unique
+  displayName             String
+  institution             String?
+  specialty               String?
+  biography               String?
+  categories              Json
+  fundingStage            String   @default("pre-seed")
+  reputationScore         Float    @default(0.45)
+  evidenceCount           Int      @default(0)
+  publishedDiscoveryCount Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user                    User                     @relation("MarketplaceScientistUser", fields: [userId], references: [id], onDelete: Cascade)
+  discoveries             MarketplaceDiscovery[]
+  fundingRequests         MarketplaceFundingRequest[]
+  matchScores             MarketplaceMatchScore[]
+  dealRooms               MarketplaceDealRoom[]
+
+  @@index([fundingStage, reputationScore])
+}
+
+model MarketplaceSponsor {
+  id                   String   @id @default(cuid())
+  tenantId             String   @default("default")
+  userId               String   @unique
+  organizationId       String?
+  organizationName     String
+  organizationType     String   @default("venture")
+  thesis               String
+  preferredCategories  Json
+  preferredStages      Json
+  maxBudgetCents       Int      @default(250000)
+  minImpactScore       Float    @default(0.5)
+  capitalAvailableCents Int     @default(1000000)
+  dueDiligenceLevel    String   @default("standard")
+  geographyFocus       Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user                 User                     @relation("MarketplaceSponsorUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization         Organization?            @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  matchScores          MarketplaceMatchScore[]
+  dealRooms            MarketplaceDealRoom[]
+  transactions         MarketplaceTransaction[]
+
+  @@index([organizationId])
+  @@index([maxBudgetCents, minImpactScore])
+}
+
+model MarketplaceDiscovery {
+  id                   String                     @id @default(cuid())
+  tenantId             String                     @default("default")
+  scientistId          String
+  title                String
+  slug                 String                     @unique
+  category             String
+  summary              String
+  developmentStage     String
+  status               MarketplaceDiscoveryStatus @default(DRAFT)
+  scientificImpactScore Float                     @default(0.5)
+  commercialReadiness  Float                      @default(0.4)
+  fundingGoalCents     Int                        @default(50000)
+  currency             String                     @default("USD")
+  evidenceSummary      String?
+  evidenceLinks        Json
+  metadata             Json
+  publishedAt          DateTime?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+
+  scientist            MarketplaceScientist       @relation(fields: [scientistId], references: [id], onDelete: Cascade)
+  fundingRequest       MarketplaceFundingRequest?
+  matchScores          MarketplaceMatchScore[]
+  dealRooms            MarketplaceDealRoom[]
+  transactions         MarketplaceTransaction[]
+  notifications        MarketplaceNotification[]
+
+  @@index([category, status])
+  @@index([scientistId, createdAt])
+}
+
+model MarketplaceFundingRequest {
+  id                   String                          @id @default(cuid())
+  tenantId             String                          @default("default")
+  discoveryId          String                          @unique
+  scientistId          String
+  requestedAmountCents Int
+  currency             String                          @default("USD")
+  useOfFunds           String
+  timelineMonths       Int                             @default(12)
+  status               MarketplaceFundingRequestStatus @default(DRAFT)
+  milestonePlan        Json
+  evidenceUploads      Json
+  publishedAt          DateTime?
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
+
+  discovery            MarketplaceDiscovery            @relation(fields: [discoveryId], references: [id], onDelete: Cascade)
+  scientist            MarketplaceScientist            @relation(fields: [scientistId], references: [id], onDelete: Cascade)
+
+  @@index([scientistId, status])
+}
+
+model MarketplaceMatchScore {
+  id                   String   @id @default(cuid())
+  tenantId             String   @default("default")
+  discoveryId          String
+  scientistId          String
+  sponsorId            String
+  overallScore         Float
+  ruleBasedScore       Float
+  aiAugmentedScore     Float?
+  weightedBreakdown    Json
+  sponsorPreferenceFit Float    @default(0)
+  metadataFit          Float    @default(0)
+  rationale            String
+  rank                 Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  discovery            MarketplaceDiscovery @relation(fields: [discoveryId], references: [id], onDelete: Cascade)
+  scientist            MarketplaceScientist @relation(fields: [scientistId], references: [id], onDelete: Cascade)
+  sponsor              MarketplaceSponsor   @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@unique([discoveryId, sponsorId])
+  @@index([sponsorId, overallScore])
+  @@index([scientistId, overallScore])
+}
+
+model MarketplaceDealRoom {
+  id                   String                     @id @default(cuid())
+  tenantId             String                     @default("default")
+  discoveryId          String
+  scientistId          String
+  sponsorId            String
+  status               MarketplaceDealRoomStatus  @default(OPEN)
+  ndaRequired          Boolean                    @default(true)
+  ndaAcceptedAt        DateTime?
+  agreementStatus      MarketplaceAgreementStatus @default(DRAFT)
+  agreementTerms       Json
+  documentVault        Json
+  lastActivityAt       DateTime                   @default(now())
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+
+  discovery            MarketplaceDiscovery       @relation(fields: [discoveryId], references: [id], onDelete: Cascade)
+  scientist            MarketplaceScientist       @relation(fields: [scientistId], references: [id], onDelete: Cascade)
+  sponsor              MarketplaceSponsor         @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  messages             MarketplaceMessageThread[]
+  transactions         MarketplaceTransaction[]
+  auditLogs            MarketplaceAuditLog[]
+  notifications        MarketplaceNotification[]
+
+  @@unique([discoveryId, sponsorId])
+  @@index([scientistId, status])
+  @@index([sponsorId, status])
+}
+
+model MarketplaceMessageThread {
+  id                   String                 @id @default(cuid())
+  tenantId             String                 @default("default")
+  dealRoomId           String
+  senderUserId         String?
+  senderRole           String
+  messageType          MarketplaceMessageType @default(MESSAGE)
+  body                 String
+  attachments          Json
+  readAt               DateTime?
+  createdAt            DateTime               @default(now())
+
+  dealRoom             MarketplaceDealRoom    @relation(fields: [dealRoomId], references: [id], onDelete: Cascade)
+  senderUser           User?                  @relation("MarketplaceMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@index([dealRoomId, createdAt])
+}
+
+model MarketplaceTransaction {
+  id                   String                       @id @default(cuid())
+  tenantId             String                       @default("default")
+  dealRoomId           String
+  discoveryId          String
+  sponsorId            String
+  amountCents          Int
+  currency             String                       @default("USD")
+  platformFeeCents     Int                          @default(0)
+  transactionFeeCents  Int                          @default(0)
+  payoutCents          Int                          @default(0)
+  status               MarketplaceTransactionStatus @default(PENDING)
+  providerReference    String?
+  metadata             Json
+  paidAt               DateTime?
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+
+  dealRoom             MarketplaceDealRoom          @relation(fields: [dealRoomId], references: [id], onDelete: Cascade)
+  discovery            MarketplaceDiscovery         @relation(fields: [discoveryId], references: [id], onDelete: Cascade)
+  sponsor              MarketplaceSponsor           @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@index([dealRoomId, status])
+  @@index([sponsorId, createdAt])
+}
+
+model MarketplaceAuditLog {
+  id                   String   @id @default(cuid())
+  tenantId             String   @default("default")
+  dealRoomId           String?
+  actorUserId          String?
+  actorRole            String
+  action               String
+  entityType           String
+  entityId             String?
+  ipAddress            String?
+  details              Json
+  createdAt            DateTime @default(now())
+
+  dealRoom             MarketplaceDealRoom? @relation(fields: [dealRoomId], references: [id], onDelete: SetNull)
+  actorUser            User?                @relation("MarketplaceAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([dealRoomId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model MarketplaceNotification {
+  id                   String                        @id @default(cuid())
+  tenantId             String                        @default("default")
+  recipientUserId      String
+  recipientRole        String
+  discoveryId          String?
+  dealRoomId           String?
+  type                 String
+  title                String
+  body                 String
+  actionUrl            String?
+  channels             Json
+  status               MarketplaceNotificationStatus @default(QUEUED)
+  createdAt            DateTime                      @default(now())
+  readAt               DateTime?
+
+  recipientUser        User                          @relation("MarketplaceNotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  discovery            MarketplaceDiscovery?         @relation(fields: [discoveryId], references: [id], onDelete: SetNull)
+  dealRoom             MarketplaceDealRoom?          @relation(fields: [dealRoomId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId, status])
+  @@index([dealRoomId, createdAt])
+}
+
+// ─── Trust & Reputation Persistence ────────────────────────
+
+enum TrustRole {
+  SCIENTIST
+  SPONSOR
+  REVIEWER
+  CLINICIAN
+}
+
+model TrustScore {
+  id                    String    @id @default(cuid())
+  tenantId              String    @default("default")
+  userId                String
+  role                  TrustRole
+  overallScore          Float     @default(0.5)
+  evidenceScore         Float     @default(0.5)
+  reviewScore           Float     @default(0.5)
+  consistencyScore      Float     @default(0.5)
+  reputationScore       Float     @default(0.5)
+  engagementScore       Float     @default(0.5)
+  computedAt            DateTime  @default(now())
+  createdAt             DateTime  @default(now())
+
+  user                  User      @relation("TrustScoreUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, role])
+  @@index([tenantId, role, overallScore])
+}
+
+// ─── Unified Timeline Persistence ──────────────────────────
+
+model TimelineEntry {
+  id                String   @id @default(cuid())
+  tenantId          String   @default("default")
+  userId            String
+  domain            String   // biomarker, protocol, lab, consultation, intervention, evidence, marketplace, research, trial, adverse-event
+  entityType        String
+  entityId          String
+  title             String
+  summary           String?
+  occurredAt        DateTime
+  provenanceType    String?  // manual, automated, imported, ai-generated
+  provenanceDetail  String?
+  reviewStatus      String?  // unreviewed, reviewed, disputed
+  createdAt         DateTime @default(now())
+
+  user              User     @relation("TimelineEntryUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, domain, occurredAt])
+  @@index([tenantId, userId, occurredAt])
+  @@index([entityType, entityId])
+}
+
+// ─── Feedback Loop & Mission Control Persistence ────────────
+
+model FeedbackLoopSnapshot {
+  id                  String   @id @default(cuid())
+  tenantId            String   @default("default")
+  userId              String
+  loopStrength        Float    @default(0)
+  discoveryScore      Float    @default(0)
+  evaluationScore     Float    @default(0)
+  procurementScore    Float    @default(0)
+  clinicalReviewScore Float    @default(0)
+  interventionScore   Float    @default(0)
+  outcomeScore        Float    @default(0)
+  fundingScore        Float    @default(0)
+  snapshotAt          DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  user                User     @relation("FeedbackLoopUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, snapshotAt])
+  @@index([tenantId, snapshotAt])
+}
+
+// ─── Biological Age Snapshots ──────────────────────────────
+
+model BiologicalAgeSnapshot {
+  id                  String   @id @default(cuid())
+  tenantId            String   @default("default")
+  userId              String
+  chronologicalAge    Float
+  biologicalAge       Float
+  hallmarkScores      String   @default("{}") // JSON: per-hallmark 0-1 scores
+  inputSummary        String?  // JSON: biomarkers used for computation
+  confidence          Float    @default(0.5)
+  createdAt           DateTime @default(now())
+
+  user                User     @relation("BioAgeUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([tenantId, userId, createdAt])
+}
+
+// ─── Gamification ──────────────────────────────────────────
+
+model UserXP {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("default")
+  userId      String   @unique
+  totalXP     Int      @default(0)
+  level       Int      @default(1)
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation("UserXPUser", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserStreak {
+  id            String   @id @default(cuid())
+  tenantId      String   @default("default")
+  userId        String
+  type          String   // daily_login, biomarker_log, protocol_adherence, community
+  currentCount  Int      @default(0)
+  longestCount  Int      @default(0)
+  lastActionAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user          User     @relation("UserStreakUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId, type])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  title       String
+  description String
+  icon        String   @default("trophy") // lucide icon name
+  category    String   // consistency, knowledge, community, science, health
+  threshold   Int      @default(1) // numeric threshold to unlock
+  xpReward    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  tenantId      String      @default("default")
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+
+  user          User        @relation("UserAchievementUser", fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+}
+
+// ─── Wearable Connections ──────────────────────────────────
+
+model WearableConnection {
+  id            String    @id @default(cuid())
+  tenantId      String    @default("default")
+  userId        String
+  provider      String    // terra, apple_health, garmin, oura, whoop, fitbit
+  externalUserId String?  // provider-specific user ID
+  scopes        String    @default("[]") // JSON array of granted scopes
+  status        String    @default("active") // active, disconnected, error
+  connectedAt   DateTime  @default(now())
+  lastSyncAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation("WearableConnectionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId, status])
+}
+
+// ─── Knowledge Graph Community Contributions ───────────────
+
+model PendingGraphContribution {
+  id              String    @id @default(cuid())
+  tenantId        String    @default("default")
+  contributorId   String
+  entityType      String    // pathway-link, interaction, biomarker-effect, study-link
+  payload         String    // JSON of the proposed entity data
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewerId      String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  createdAt       DateTime  @default(now())
+
+  contributor     User      @relation("GraphContributionUser", fields: [contributorId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([contributorId, status])
+}
+
+// ─── AeonForge API-as-a-Service ─────────────────────────────
+
+model APIKey {
+  id              String    @id @default(cuid())
+  tenantId        String    @default("default")
+  userId          String
+  name            String    // human label e.g. "Production key"
+  prefix          String    // first 8 chars of the raw key (ak_xxxxxxxx) for identification
+  keyHash         String    @unique // SHA-256 hash of the full key
+  scopes          String    @default("discover,simulate,virtual-twin") // comma-separated
+  rateLimitPerMin Int       @default(60)
+  sandbox         Boolean   @default(false)
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  lastUsedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation("APIKeyUser", fields: [userId], references: [id], onDelete: Cascade)
+  usageRecords    APIUsageRecord[] @relation("APIUsageKey")
+
+  @@index([prefix])
+  @@index([userId, revokedAt])
+}
+
+model APIUsageRecord {
+  id          String   @id @default(cuid())
+  keyId       String
+  endpoint    String   // e.g. "/v1/aeonforge/discover"
+  method      String   @default("POST")
+  statusCode  Int
+  tokens      Int      @default(0) // AI tokens consumed
+  computeMs   Int      @default(0) // execution time in ms
+  createdAt   DateTime @default(now())
+
+  apiKey      APIKey   @relation("APIUsageKey", fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@index([keyId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Social Sharing & Referrals ─────────────────────────────
+
+model Referral {
+  id              String    @id @default(cuid())
+  tenantId        String    @default("default")
+  referrerId      String
+  refereeId       String?   // null until referee signs up
+  code            String    @unique // human-readable referral code
+  status          String    @default("PENDING") // PENDING, COMPLETED, EXPIRED
+  rewardGranted   Boolean   @default(false)
+  completedAt     DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  referrer        User      @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee         User?     @relation("ReferralReferee", fields: [refereeId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, status])
+  @@index([code])
+}
+
+// ─── Anonymised Outcome Data Flywheel ───────────────────────
+
+model AggregateOutcome {
+  id               String   @id @default(cuid())
+  tenantId         String   @default("default")
+  protocolId       String?
+  compoundId       String?
+  cohortBucket     String   // e.g. "age:40-49", "all"
+  sampleSize       Int
+  meanOutcomeScore Float
+  stdDev           Float    @default(0)
+  pValue           Float?
+  confidence       Float    @default(0.5)
+  period           String   // e.g. "2025-Q1", "2025-06"
+  computedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  protocol         Protocol? @relation("AggregateOutcomeProtocol", fields: [protocolId], references: [id], onDelete: SetNull)
+  compound         Compound? @relation("AggregateOutcomeCompound", fields: [compoundId], references: [id], onDelete: SetNull)
+
+  @@index([protocolId, period])
+  @@index([compoundId, period])
+  @@index([cohortBucket, computedAt])
+}
+
+// ─── Federated Learning ─────────────────────────────────────
+
+model FederatedModel {
+  id                String   @id @default(cuid())
+  tenantId          String   @default("default")
+  version           Int      // monotonically increasing model version
+  architecture      String   // e.g. "mlp-3-64", "gbt-100"
+  taskType          String   @default("bio-age-delta") // prediction task
+  aggregatedFromN   Int      @default(0) // number of clients that contributed
+  roundsCompleted   Int      @default(0)
+  epsilon           Float?   // total differential privacy budget consumed
+  accuracy          Float?   // model accuracy on validation set
+  loss              Float?   // model loss on validation set
+  metricsJson       String   @default("{}") // JSON: additional eval metrics
+  weightsUrl        String?  // URL/path to serialised model weights
+  status            String   @default("training") // training, published, deprecated
+  publishedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  participations    FLParticipation[]
+
+  @@unique([version, taskType])
+  @@index([status, taskType])
+  @@index([taskType, version])
+}
+
+model FLParticipation {
+  id              String   @id @default(cuid())
+  tenantId        String   @default("default")
+  userId          String
+  modelId         String
+  round           Int
+  localSampleSize Int      @default(0)
+  localLoss       Float?
+  epsilonSpent    Float?   // per-round DP budget for this client
+  status          String   @default("completed") // completed, failed, timeout
+  createdAt       DateTime @default(now())
+
+  user            User     @relation("FLParticipationUser", fields: [userId], references: [id], onDelete: Cascade)
+  model           FederatedModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, modelId, round])
+  @@index([modelId, round])
+  @@index([userId, createdAt])
+}
+
+enum AgentSessionStatusEnum {
+  PLANNING
+  RUNNING
+  PAUSED
+  AWAITING_REVIEW
+  COMPLETED
+  FAILED
+}
+
+enum AgentClassEnum {
+  PERCEPTION
+  DISCOVERY
+  PROTOCOL
+  SAFETY
+  EXPLAINABILITY
+}
+
+model AgentSession {
+  id              String                 @id @default(cuid())
+  userId          String
+  tenantId        String
+  goal            String
+  status          AgentSessionStatusEnum @default(PLANNING)
+  plan            String?
+  scratchpad      String?
+  result          String?
+  reviewItemIds   String?
+  resumedAt       DateTime?
+  reviewedBy      String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  completedAt     DateTime?
+
+  user        User                   @relation("AgentSessionUser", fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant                 @relation("AgentSessionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  steps       AgentStepLog[]
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model AgentStepLog {
+  id          String         @id @default(cuid())
+  sessionId   String
+  stepIndex   Int
+  agentClass  AgentClassEnum
+  input       String?
+  output      String?
+  status      String         @default("pending")
+  durationMs  Int?
+  error       String?
+  createdAt   DateTime       @default(now())
+
+  session     AgentSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+// ─── Biological Drift Monitor ──────────────────────────────
+
+enum DriftSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model DriftSweep {
+  id              String          @id @default(cuid())
+  userId          String
+  tenantId        String          @default("default")
+  ranAt           DateTime        @default(now())
+  biomarkersScanned Int           @default(0)
+  driftsDetected  Int             @default(0)
+  findings        String          @default("[]") // JSON array of DriftFinding
+  triggerType     String          @default("scheduled") // scheduled | manual
+  proactiveSessionId String?      // AgentSession spawned, if any
+  createdAt       DateTime        @default(now())
+
+  user            User            @relation("DriftSweepUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, ranAt])
+  @@index([tenantId, ranAt])
+}
+
+model DriftNotification {
+  id              String          @id @default(cuid())
+  userId          String
+  tenantId        String          @default("default")
+  sweepId         String
+  title           String
+  body            String
+  severity        DriftSeverity   @default(MEDIUM)
+  biomarkerNames  String          @default("[]") // JSON array of names
+  sessionId       String?         // linked proactive session
+  readAt          DateTime?
+  dismissedAt     DateTime?
+  createdAt       DateTime        @default(now())
+
+  user            User            @relation("DriftNotificationUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// ─── Clinical Safety & Governance ──────────────────────────
+
+enum RiskCategory {
+  GREEN
+  YELLOW
+  RED
+}
+
+model GovernancePolicy {
+  id               String        @id @default(cuid())
+  category         RiskCategory  @unique
+  autoApprove      Boolean       @default(false)
+  minAdherenceRate Float         @default(0.8)
+  requireLabReview Boolean       @default(false)
+  maxAutoApprovePerSession Int   @default(3)
+  description      String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model GovernanceAuditLog {
+  id              String        @id @default(cuid())
+  sessionId       String
+  userId          String
+  tenantId        String        @default("default")
+  compoundName    String
+  riskCategory    RiskCategory
+  decision        String        // AUTO_APPROVED, AWAITING_REVIEW, ESCALATED
+  policySnapshot  String        // JSON snapshot of the policy at decision time
+  adherenceRate   Float?
+  reason          String
+  createdAt       DateTime      @default(now())
+
+  @@index([sessionId])
+  @@index([userId, createdAt])
+  @@index([decision, createdAt])
+}
+
+// ─── Clinical Signatures ───────────────────────────────────
+
+model ClinicalSignature {
+  id              String   @id @default(cuid())
+  reviewItemId    String
+  sessionId       String?
+  clinicianId     String
+  tenantId        String   @default("default")
+  rationale       String
+  compoundName    String?
+  riskCategory    String?  // GREEN, YELLOW, RED at time of signing
+  signatureHash   String   // SHA-256 of (clinicianId + reviewItemId + rationale + timestamp)
+  signedAt        DateTime @default(now())
+  clinicianName   String   // denormalized for PDF rendering
+  clinicianEmail  String   // denormalized for PDF rendering
+  createdAt       DateTime @default(now())
+
+  @@unique([reviewItemId, clinicianId])
+  @@index([sessionId])
+  @@index([clinicianId, signedAt])
+}
