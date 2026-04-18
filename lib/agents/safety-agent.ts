@@ -1,4 +1,6 @@
 import { checkUserInteractions } from '@/lib/safety/interaction-checker'
+import { checkDrugInteractions, hasContraindication } from '@/lib/safety/ddi'
+import { getPgxRecommendationsForUser } from '@/lib/safety/pgx'
 import { createReviewItem } from '@/lib/audit'
 import { logAudit } from '@/lib/audit'
 
@@ -87,8 +89,47 @@ export class SafetyAgent implements BioAgentInterface {
       safetyFlags.push(sf)
     }
 
-    const recommendedCompounds = extractCompoundNames(allEntries)
     const userMedications = context.clinicalContext.medications.map((m) => m.name.toLowerCase())
+
+    // ── Pharmacogenomics + structured DDI cross-check ROI ──────────────
+    // For each recommended compound:
+    //   1. Look up CPIC PGx guidance for the patient's stored variants.
+    //   2. Cross-check against the structured DrugDrugInteraction table.
+    // Both produce SafetyFlags so HITL gating treats them identically.
+    for (const compound of recommendedCompounds) {
+      const pgxRecs = await getPgxRecommendationsForUser(context.userId, compound).catch(() => [])
+      for (const rec of pgxRecs) {
+        const isAvoidOrAlt = rec.level === 'AVOID' || rec.level === 'ALTERNATIVE_PREFERRED'
+        safetyFlags.push({
+          id: crypto.randomUUID(),
+          severity: isAvoidOrAlt ? 'high' : 'medium',
+          description: `PGx (${rec.gene} ${rec.phenotype}) for ${compound}: ${rec.level} — ${rec.rationale}`,
+          source: 'safety',
+          requiresClinicianReview: isAvoidOrAlt,
+          createdAt: new Date().toISOString(),
+        })
+      }
+
+      const ddiHits = await checkDrugInteractions(compound, userMedications).catch(() => [])
+      for (const hit of ddiHits) {
+        const sev =
+          hit.severity === 'contraindicated'
+            ? 'critical'
+            : hit.severity === 'major'
+              ? 'high'
+              : hit.severity === 'moderate'
+                ? 'medium'
+                : 'low'
+        safetyFlags.push({
+          id: crypto.randomUUID(),
+          severity: sev,
+          description: `DDI ${hit.drugA} × ${hit.drugB}: ${hit.mechanism} (${hit.severity}, evidence ${hit.evidenceGrade}, ${hit.source})`,
+          source: 'safety',
+          requiresClinicianReview: hasContraindication([hit]) || hit.severity === 'major',
+          createdAt: new Date().toISOString(),
+        })
+      }
+    }
 
     for (const compound of recommendedCompounds) {
       for (const med of userMedications) {
