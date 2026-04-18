@@ -47,6 +47,10 @@ const envSchema = z.object({
   JOB_RETENTION_HOURS: z.string().optional(),
   JOB_TENANT_ID: z.string().optional(),
   CPIC_GUIDELINES_JSON_PATH: z.string().optional(),
+  KG_BACKEND: z.enum(["relational", "neo4j"]).optional(),
+  KG_NEO4J_URL: z.string().optional(),
+  KG_NEO4J_USER: z.string().optional(),
+  KG_NEO4J_PASSWORD: z.string().optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>
