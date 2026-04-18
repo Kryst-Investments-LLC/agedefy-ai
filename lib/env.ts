@@ -51,6 +51,7 @@ const envSchema = z.object({
   KG_NEO4J_URL: z.string().optional(),
   KG_NEO4J_USER: z.string().optional(),
   KG_NEO4J_PASSWORD: z.string().optional(),
+  BIO_AGE_USE_OMICS: z.enum(["true", "false"]).optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>

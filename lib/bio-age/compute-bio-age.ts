@@ -10,6 +10,13 @@ import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 
+import {
+  isOmicsBioAgeEnabled,
+  omicsSummaryToInputRecord,
+  omicsSummaryToPromptLines,
+  summarizeOmicsForBioAge,
+} from './omics-input'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -236,13 +243,31 @@ export async function computeBiologicalAge(
     ([name, d]) => `  ${name}: ${d.value} ${d.unit}`
   )
 
-  const prompt = [
+  // Optional omics augmentation. We never silently fail to a clock
+  // result here — if the flag is on but the user has no omics, we just
+  // run the biomarker-only path.
+  const omicsSummary = isOmicsBioAgeEnabled()
+    ? await summarizeOmicsForBioAge(userId, tenantId).catch((err) => {
+        logger.warn('omics summary failed for bio-age', {
+          userId,
+          error: err instanceof Error ? err.message : String(err),
+        })
+        return null
+      })
+    : null
+
+  const promptParts: string[] = [
     `Chronological age: ${chronologicalAge}`,
     `Biomarkers (${latestByName.size} total):`,
     ...biomarkerLines,
-    '',
-    'Compute the biological age and hallmark aging scores for this individual.',
-  ].join('\n')
+  ]
+  if (omicsSummary) {
+    promptParts.push('', ...omicsSummaryToPromptLines(omicsSummary))
+    Object.assign(inputSummary, omicsSummaryToInputRecord(omicsSummary))
+  }
+  promptParts.push('', 'Compute the biological age and hallmark aging scores for this individual.')
+
+  const prompt = promptParts.join('\n')
 
   const rawResult = await callBioAgeAI(prompt)
   const result = parseResult(rawResult, chronologicalAge)
@@ -254,6 +279,7 @@ export async function computeBiologicalAge(
     delta: result.delta,
     confidence: result.confidence,
     biomarkerCount: latestByName.size,
+    omicsAugmented: Boolean(omicsSummary),
   })
 
   return result
