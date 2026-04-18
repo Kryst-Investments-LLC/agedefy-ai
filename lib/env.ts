@@ -46,6 +46,7 @@ const envSchema = z.object({
   JOB_WORKER_LEASE_MS: z.string().optional(),
   JOB_RETENTION_HOURS: z.string().optional(),
   JOB_TENANT_ID: z.string().optional(),
+  CPIC_GUIDELINES_JSON_PATH: z.string().optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>

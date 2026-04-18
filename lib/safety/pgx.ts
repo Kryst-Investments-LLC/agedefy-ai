@@ -14,6 +14,8 @@ import type { PgxMetabolizerPhenotype } from "@prisma/client"
 import { db } from "@/lib/db"
 import { safeJsonParse } from "@/lib/safe-json"
 
+import { loadCpicTable } from "./pgx-loader"
+
 export interface PgxVariant {
   gene: string
   diplotype: string
@@ -57,8 +59,26 @@ export function lookupCpicGuidance(
   variants: PgxVariant[],
 ): PgxRecommendation[] {
   const drugKey = drug.toLowerCase()
+  const loaded = loadCpicTable()
+  // External CPIC release rows shadow in-tree rows on (drug, gene, phenotype).
+  // Source label reflects which table actually produced the hit so the UI
+  // can show the operator whether they are running on the maintained CPIC
+  // release or the dev fallback.
   const out: PgxRecommendation[] = []
   for (const v of variants) {
+    const loadedHit = loaded?.rows.find(
+      (row) => row.drug === drugKey && row.gene === v.gene && row.phenotype === v.phenotype,
+    )
+    if (loadedHit) {
+      out.push({
+        gene: v.gene,
+        phenotype: v.phenotype,
+        level: loadedHit.level,
+        rationale: loadedHit.rationale,
+        source: `${loaded!.source} ${loaded!.version}`,
+      })
+      continue
+    }
     const hit = CPIC_TABLE.find(
       (row) => row.drug === drugKey && row.gene === v.gene && row.phenotype === v.phenotype,
     )
