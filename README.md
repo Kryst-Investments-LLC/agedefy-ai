@@ -1,4 +1,4 @@
-# AgeDefy AI
+# Biozephyra AI
 
 **Enterprise longevity-medicine platform** — track biomarkers, optimize protocols, access telemedicine, shop curated supplements, and explore anti-aging research in one place.
 
@@ -81,7 +81,7 @@ Built with **Next.js 15** (App Router), **React 19**, **Prisma 6**, **Stripe**, 
 
 ```bash
 # Clone
-git clone <repo-url> && cd agedefy-ai
+git clone <repo-url> && cd biozephyra-ai
 
 # Install dependencies
 pnpm install
@@ -125,7 +125,7 @@ Copy `.env.example` and fill in:
 | `SMTP_PORT` | No | SMTP port (default `587`) |
 | `SMTP_USER` | No | SMTP username |
 | `SMTP_PASS` | No | SMTP password |
-| `EMAIL_FROM` | No | Sender address (default `noreply@agedefy.ai`) |
+| `EMAIL_FROM` | No | Sender address (default `noreply@biozephyra.com`) |
 
 ---
 

@@ -532,11 +532,11 @@ function runPackageScript(scriptName: string): CheckResult {
 
 function generateMarkdownReport(sections: SectionResult[], profile: AIEnvProfile) {
   const packageManager = detectPackageManager()
-  const reportPath = toAbsolute("age-defy-ai-level4-report.md")
+  const reportPath = toAbsolute("biozephyra-level4-report.md")
   const lines: string[] = []
   const failedChecks: Array<{ section: string; check: CheckResult }> = []
 
-  lines.push("# AgeDefy AI - Level 4 Readiness Report")
+  lines.push("# Biozephyra AI - Level 4 Readiness Report")
   lines.push("")
   lines.push(`Generated at: ${new Date().toISOString()}`)
   lines.push(`Package manager detected: ${packageManager}`)

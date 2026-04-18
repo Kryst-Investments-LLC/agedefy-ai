@@ -1,4 +1,4 @@
-﻿# agedefy AI Platform Architecture
+﻿# Biozephyra AI Platform Architecture
 
 ```text
 +-----------------------------+
@@ -9,7 +9,7 @@
                v
 +-----------------------------+
 |  AI Platform Layer          |
-|  Repo: agedefy-AI            |
+|  Repo: biozephyra-AI         |
 |  - agents/                  |
 |  - tools/                   |
 |  - platform-dev.ps1         |

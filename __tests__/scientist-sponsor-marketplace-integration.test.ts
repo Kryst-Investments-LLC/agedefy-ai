@@ -118,14 +118,14 @@ beforeAll(async () => {
       where: { userId: ownerUserId },
       update: {
         displayName: ownerUser.name,
-        institution: "AgeDefy Lab",
+        institution: "Biozephyra Lab",
         specialty: "Longevity Biology",
         categories: ["Longevity", "Diagnostics"],
       },
       create: {
         userId: ownerUserId,
         displayName: ownerUser.name,
-        institution: "AgeDefy Lab",
+        institution: "Biozephyra Lab",
         specialty: "Longevity Biology",
         categories: ["Longevity", "Diagnostics"],
       },

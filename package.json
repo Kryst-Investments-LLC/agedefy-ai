@@ -27,7 +27,7 @@
     "jobs:worker": "tsx scripts/orchestration-worker.ts",
     "jobs:retention": "tsx scripts/orchestration-retention.ts",
     "jobs:worker:once": "tsx scripts/orchestration-dispatch.ts",
-    "audit:ai": "tsx scripts/audit-age-defy-ai.ts",
+    "audit:ai": "tsx scripts/audit-biozephyra.ts",
     "bench": "tsx scripts/run-bench.ts",
     "build": "next build",
     "dev": "next dev",

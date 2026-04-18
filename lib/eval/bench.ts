@@ -7,7 +7,7 @@
  * migration.
  *
  * The intent is to publish the benches and the dataset hashes so external
- * researchers can reproduce numbers and so AgeDefy can claim a measurable
+ * researchers can reproduce numbers and so Biozephyra can claim a measurable
  * advantage rather than a marketing one.
  */
 

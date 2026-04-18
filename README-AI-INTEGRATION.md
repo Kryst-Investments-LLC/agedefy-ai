@@ -1,4 +1,4 @@
-# AI Integration Guide for AgeDefy AI
+# AI Integration Guide for Biozephyra AI
 
 This guide documents the real provider-backed AI layer implemented in this repository. It covers the live provider routes, the required production/staging environment shape, and the audit command used to validate production-readiness expectations for the AI surface.
 
@@ -176,7 +176,7 @@ The audit only treats a provider-backed profile as readiness-capable:
 The command writes a markdown report to:
 
 ```text
-age-defy-ai-level4-report.md
+biozephyra-level4-report.md
 ```
 
 ## Local Verification Commands
