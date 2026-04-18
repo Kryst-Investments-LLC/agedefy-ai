@@ -29,8 +29,6 @@ import { existsSync, readFileSync, statSync } from "node:fs"
 
 import type { PgxMetabolizerPhenotype } from "@prisma/client"
 
-import { env } from "@/lib/env"
-
 import type { PgxRecommendationLevel } from "./pgx"
 
 export interface CpicRow {
@@ -119,7 +117,11 @@ function parseCpicTable(raw: string): CpicTable {
  * release file is parsed once per process per release.
  */
 export function loadCpicTable(): CpicTable | null {
-  const path = env.CPIC_GUIDELINES_JSON_PATH
+  // Read process.env directly rather than going through the validated env
+  // wrapper: this loader is also exercised from offline tools (eval bench)
+  // that have no business triggering MFA_ENCRYPTION_KEY validation just to
+  // resolve an optional file path.
+  const path = process.env.CPIC_GUIDELINES_JSON_PATH
   if (!path) return null
   if (!existsSync(path)) {
     console.warn(`[pgx] CPIC_GUIDELINES_JSON_PATH=${path} not found; using in-tree table.`)

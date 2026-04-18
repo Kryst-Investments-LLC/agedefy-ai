@@ -61,17 +61,26 @@ function parseParameters(twinParametersJson: string): PbpkParameters {
   } catch {
     // fall through to defaults
   }
-  const numOr = (key: keyof PbpkParameters): number => {
+  // Strict-positive fields (Vd, CL, F, ka): zero is not physiologically
+  // meaningful so we fall back to the population default.
+  const positiveOr = (key: keyof PbpkParameters): number => {
     const v = parsed[key]
     return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : DEFAULTS[key]
   }
+  // Non-negative fields (CV_CL, CV_Vd): zero is meaningful — it disables
+  // the Monte Carlo spread for that parameter, which is exactly what the
+  // mechanistic-calibration bench needs.
+  const nonNegativeOr = (key: keyof PbpkParameters): number => {
+    const v = parsed[key]
+    return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : DEFAULTS[key]
+  }
   return {
-    Vd_L: numOr("Vd_L"),
-    CL_L_per_h: numOr("CL_L_per_h"),
-    F: numOr("F"),
-    ka_per_h: numOr("ka_per_h"),
-    CV_CL: numOr("CV_CL"),
-    CV_Vd: numOr("CV_Vd"),
+    Vd_L: positiveOr("Vd_L"),
+    CL_L_per_h: positiveOr("CL_L_per_h"),
+    F: positiveOr("F"),
+    ka_per_h: positiveOr("ka_per_h"),
+    CV_CL: nonNegativeOr("CV_CL"),
+    CV_Vd: nonNegativeOr("CV_Vd"),
   }
 }
 

@@ -28,6 +28,7 @@
     "jobs:retention": "tsx scripts/orchestration-retention.ts",
     "jobs:worker:once": "tsx scripts/orchestration-dispatch.ts",
     "audit:ai": "tsx scripts/audit-age-defy-ai.ts",
+    "bench": "tsx scripts/run-bench.ts",
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
