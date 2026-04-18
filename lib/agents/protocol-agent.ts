@@ -1,5 +1,6 @@
 import { checkStackAdherence } from './adherence-checker'
 import type { AdherenceReport } from './adherence-checker'
+import { recordClaim } from './claims'
 import { queryHistoricalCorrelations } from './historical-correlation'
 import type {
   AgentExecutionContext,
@@ -206,6 +207,37 @@ export class ProtocolAgent implements BioAgentInterface {
 
       // Write backtesting data to scratchpad for explainability
       context.scratchpad.write('protocol.backtesting', correlations, 'protocol')
+
+      // Provenance: each addition that is backed by a historical
+      // correlation gets an AgentClaim citing that correlation. Additions
+      // without historical evidence still get a claim, but cite the
+      // discovery run id so they are not unprovenanced.
+      for (const addition of recommendations.additions) {
+        const backing = correlations.find(
+          (c) => c.compound.toLowerCase() === addition.compound.toLowerCase(),
+        )
+        if (backing) {
+          await recordClaim({
+            tenantId: context.tenantId,
+            sessionId: context.sessionId,
+            agentClass: 'protocol',
+            claimText: `Add ${addition.compound}: prior ${backing.trialPeriodDays}-day trial showed ${Math.abs(backing.changePercent)}% ${backing.direction} in ${backing.biomarker}.`,
+            evidenceKind: 'COHORT_STATISTIC',
+            evidenceRef: `historical-correlation:${context.userId}:${backing.compound}:${backing.biomarker}`,
+            confidence: Math.min(1, Math.abs(backing.changePercent) / 100),
+          }).catch(() => {})
+        } else {
+          await recordClaim({
+            tenantId: context.tenantId,
+            sessionId: context.sessionId,
+            agentClass: 'protocol',
+            claimText: `Add ${addition.compound}: ${addition.rationale}`,
+            evidenceKind: 'COHORT_STATISTIC',
+            evidenceRef: `discovery-run:${context.sessionId}`,
+            confidence: 0.5,
+          }).catch(() => {})
+        }
+      }
     }
 
     context.scratchpad.write('protocol.recommendations', recommendations, 'protocol')

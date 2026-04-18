@@ -1,6 +1,7 @@
 import { aeonforgeService } from '@/lib/services/aeonforge'
 import type { AeonForgePromptRequest } from '@/lib/services/aeonforge'
 
+import { recordClaim } from './claims'
 import type {
   AgentExecutionContext,
   AgentMessage,
@@ -79,6 +80,33 @@ export class DiscoveryAgent implements BioAgentInterface {
     }
 
     context.scratchpad.write('discovery.results', discoveryResults, 'discovery')
+
+    // Provenance: every candidate the discovery agent surfaces is logged
+    // as an AgentClaim citing the AeonForge run that produced it. Without
+    // this row the explainability agent has nothing to cite downstream.
+    for (const candidate of response.candidates) {
+      const name = candidate.commonName ?? candidate.iupacName
+      if (!name) continue
+      const evidenceRef =
+        (candidate as { id?: string; aeonForgeRunId?: string }).aeonForgeRunId ??
+        (candidate as { id?: string }).id ??
+        `aeonforge:${context.sessionId}`
+      await recordClaim({
+        tenantId: context.tenantId,
+        sessionId: context.sessionId,
+        agentClass: 'discovery',
+        claimText: `Candidate compound "${name}" suggested for the user's biomarker profile.`,
+        evidenceKind: 'COHORT_STATISTIC',
+        evidenceRef,
+        confidence: response.confidence,
+      }).catch((err) => {
+        context.logger.warn('discovery.recordClaim_failed', {
+          sessionId: context.sessionId,
+          name,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      })
+    }
 
     context.emitTrace({
       kind: 'step_progress',

@@ -1,3 +1,6 @@
+import { db } from '@/lib/db'
+
+import { recordClaim } from './claims'
 import type {
   AgentExecutionContext,
   AgentMessage,
@@ -201,6 +204,38 @@ export class ExplainabilityAgent implements BioAgentInterface {
     const summary = sections.filter(Boolean).join('\n\n')
 
     context.scratchpad.write('explainability.summary', summary, 'explainability')
+
+    // Citation enforcement: this is the agent that turns scratch state
+    // into a clinician-facing message. Before we let the summary leave
+    // the boundary, confirm that the upstream agents recorded at least
+    // one AgentClaim for this session. If they didn't, mark a critical
+    // safety flag rather than silently shipping uncited recommendations.
+    const claimCount = await db.agentClaim
+      .count({ where: { sessionId: context.sessionId } })
+      .catch(() => 0)
+
+    if (claimCount === 0 && sections.length > 1) {
+      safetyFlags.push({
+        id: crypto.randomUUID(),
+        severity: 'critical',
+        description:
+          'Explainability summary was produced without any upstream AgentClaim citations. Recommendations cannot be defended to a clinician and must be reviewed.',
+        source: 'explainability',
+        requiresClinicianReview: true,
+        createdAt: new Date().toISOString(),
+      })
+    } else {
+      // Record one explainability-level claim that bundles the upstream ones.
+      await recordClaim({
+        tenantId: context.tenantId,
+        sessionId: context.sessionId,
+        agentClass: 'explainability',
+        claimText: `Summary of session ${context.sessionId} synthesizes ${claimCount} upstream agent claims.`,
+        evidenceKind: 'COHORT_STATISTIC',
+        evidenceRef: `agent-session:${context.sessionId}`,
+        confidence: 1.0,
+      }).catch(() => {})
+    }
 
     messages.push({
       from: 'explainability',
