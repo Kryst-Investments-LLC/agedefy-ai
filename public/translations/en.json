@@ -63,6 +63,21 @@
     "aiPersonalization": "AI Personalization",
     "getStarted": "Get Started"
   },
+  "landing": {
+    "eyebrow": "The longevity intelligence platform",
+    "headline": "Track biomarkers. Optimize protocols. Access longevity medicine — all in one platform.",
+    "description": "Biozephyra combines biomarker tracking, a curated compound knowledge graph, AI-assisted informational coaching, physician consultation workflows, lab testing, and a marketplace with tracked inventory and audit trails.",
+    "ctaPrimary": "Get started free",
+    "ctaSecondary": "View plans",
+    "ctaTertiary": "Open dashboard",
+    "statsUsers": "registered users",
+    "statsBiomarkers": "biomarker readings",
+    "statsCompounds": "compounds in graph",
+    "trustSoc2": "SOC 2 Aware",
+    "trustHipaa": "HIPAA-Aware Architecture",
+    "trustClinician": "Clinician-Reviewed Protocols",
+    "trustRealData": "Real Biomarker Data — No Simulations"
+  },
   "hero": {
     "title": "Revolutionary Longevity Platform",
     "subtitle": "Advanced AI-powered health optimization for extended lifespan and enhanced vitality",

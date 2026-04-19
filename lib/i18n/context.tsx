@@ -32,13 +32,16 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     async function loadTranslations() {
       setIsLoading(true);
       try {
-        const response = await fetch(`/translations/${locale}.json`);
+        // `cache: 'no-store'` ensures newly added translation keys appear
+        // immediately when switching locales in development; browsers were
+        // otherwise serving stale public/translations/*.json from disk cache.
+        const response = await fetch(`/translations/${locale}.json`, { cache: 'no-store' });
         if (response.ok) {
           const data = (await response.json()) as TranslationDictionary;
           setTranslations(data);
         } else {
           console.warn(`Failed to load translations for ${locale}, falling back to English`);
-          const fallbackResponse = await fetch('/translations/en.json');
+          const fallbackResponse = await fetch('/translations/en.json', { cache: 'no-store' });
           if (fallbackResponse.ok) {
             const fallbackData = (await fallbackResponse.json()) as TranslationDictionary;
             setTranslations(fallbackData);

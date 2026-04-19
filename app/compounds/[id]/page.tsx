@@ -47,9 +47,9 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
   ]
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <main className="mx-auto max-w-4xl px-4 py-10 text-white">
+      <main className="mx-auto max-w-4xl px-4 py-10">
         <Link href="/mixer">
           <Button variant="ghost" className="text-gray-400 hover:text-white mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Mixer

@@ -63,6 +63,21 @@
     "aiPersonalization": "Personalización con IA",
     "getStarted": "Comenzar"
   },
+  "landing": {
+    "eyebrow": "La plataforma de inteligencia para longevidad",
+    "headline": "Sigue biomarcadores. Optimiza protocolos. Accede a medicina de longevidad — todo en una plataforma.",
+    "description": "Biozephyra combina seguimiento de biomarcadores, un grafo de conocimiento curado de compuestos, asistencia informativa con IA, flujos de consulta médica, pruebas de laboratorio y un marketplace con inventario rastreado y trazabilidad de auditoría.",
+    "ctaPrimary": "Comenzar gratis",
+    "ctaSecondary": "Ver planes",
+    "ctaTertiary": "Abrir panel",
+    "statsUsers": "usuarios registrados",
+    "statsBiomarkers": "lecturas de biomarcadores",
+    "statsCompounds": "compuestos en el grafo",
+    "trustSoc2": "Consciente de SOC 2",
+    "trustHipaa": "Arquitectura compatible con HIPAA",
+    "trustClinician": "Protocolos revisados por clínicos",
+    "trustRealData": "Datos reales de biomarcadores — Sin simulaciones"
+  },
   "hero": {
     "title": "Plataforma Revolucionaria de Longevidad",
     "subtitle": "Optimización de salud impulsada por IA avanzada para una vida más larga y vitalidad mejorada",

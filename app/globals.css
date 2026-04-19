@@ -90,6 +90,40 @@
       padding-left: 16rem;
     }
   }
+
+  /* Light-mode override for legacy hardcoded dark grays.
+     Most pages were authored with hardcoded `bg-gray-900`, `bg-gray-800`,
+     `text-white`, etc. Rather than refactor every page to use semantic
+     tokens, we remap those utilities to light equivalents when the user
+     selects the light theme via next-themes (which sets `html.light`).
+     Dark mode (`html.dark`) is unaffected and keeps the original look. */
+  html.light .bg-gray-900,
+  html.light .bg-gray-900\/95,
+  html.light aside.bg-gray-900\/95 {
+    background-color: hsl(0 0% 100%) !important;
+  }
+  html.light .bg-gray-800,
+  html.light .bg-gray-800\/95,
+  html.light .bg-gray-800\/50 {
+    background-color: hsl(210 40% 98%) !important;
+  }
+  html.light .bg-gray-700 {
+    background-color: hsl(210 40% 94%) !important;
+  }
+  html.light .border-gray-700,
+  html.light .border-gray-800 {
+    border-color: hsl(214.3 31.8% 91.4%) !important;
+  }
+  html.light .text-white {
+    color: hsl(222.2 84% 4.9%) !important;
+  }
+  html.light .text-gray-300,
+  html.light .text-gray-400 {
+    color: hsl(215.4 16.3% 36.9%) !important;
+  }
+  html.light .text-gray-500 {
+    color: hsl(215.4 16.3% 46.9%) !important;
+  }
 }
 
 /* Custom animations */
