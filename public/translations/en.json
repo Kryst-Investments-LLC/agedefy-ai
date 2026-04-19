@@ -56,7 +56,12 @@
     "telemedicine": "Telemedicine",
     "marketplace": "Marketplace",
     "pricing": "Pricing",
-    "account": "Account"
+    "account": "Account",
+    "pathways": "Pathways",
+    "learn": "Learn",
+    "scientistSponsor": "Scientist-Sponsor",
+    "aiPersonalization": "AI Personalization",
+    "getStarted": "Get Started"
   },
   "hero": {
     "title": "Revolutionary Longevity Platform",

@@ -56,7 +56,12 @@
     "telemedicine": "Telemedicina",
     "marketplace": "Tienda",
     "pricing": "Precios",
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "pathways": "Rutas",
+    "learn": "Aprender",
+    "scientistSponsor": "Científico-Patrocinador",
+    "aiPersonalization": "Personalización con IA",
+    "getStarted": "Comenzar"
   },
   "hero": {
     "title": "Plataforma Revolucionaria de Longevidad",

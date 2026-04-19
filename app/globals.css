@@ -82,6 +82,14 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Offset page content to the right of the fixed lateral sidebar on lg+ screens.
+     The sidebar (components/navigation.tsx) is `fixed` and 16rem (w-64) wide. */
+  @media (min-width: 1024px) {
+    body {
+      padding-left: 16rem;
+    }
+  }
 }
 
 /* Custom animations */
