@@ -19,6 +19,7 @@ Built with **Next.js 15** (App Router), **React 19**, **Prisma 6**, **Stripe**, 
 - [Testing](#testing)
 - [Linting & Type-checking](#linting--type-checking)
 - [Deployment](#deployment)
+- [Scientific Data Integrations & Roadmap](#scientific-data-integrations--roadmap)
 - [Security](#security)
 - [License](#license)
 
@@ -379,6 +380,44 @@ CI runs both on every push (`.github/workflows/ci.yml`).
 3. Ensure `DATABASE_URL` points to a PostgreSQL instance
 4. Keep `ENABLE_TEST_AUTH_ENDPOINT` unset unless the deployment is an isolated, temporary test environment.
 5. Run `pnpm db:push` and `pnpm db:seed` once
+
+---
+
+## Scientific Data Integrations & Roadmap
+
+Biozephyra is built around an **adapter-based architecture** for external biomedical data. Every scientific data source the platform consumes (literature, trials, compounds, pathways, pharmacogenomics, knowledge graph) sits behind a strategy interface so that integrations can be added incrementally without rewriting the application.
+
+**Today's default configuration runs end-to-end on local Prisma seed data and bundled rules packs.** No live biomedical database is required for the platform to boot, render every screen, and pass the full test suite. This is intentional: it lets the product be demonstrated, reviewed, and tested before committing to specific vendors or paid licenses.
+
+### Status of each integration
+
+| Source | Status | Adapter location | Notes |
+|---|---|---|---|
+| Local Knowledge Graph (Prisma) | ✅ Live (default) | `lib/knowledge-graph/` | Seed data covers pathways, compounds, interactions, effects |
+| CPIC pharmacogenomics | ✅ Bundled rules pack | `lib/cpic/` | Live polling adapter is a small follow-on |
+| Mechanistic models (PBPK strategy) | ✅ Local strategy implementations | `lib/mechanistic-models/` | Pluggable per model |
+| Bio-age omics hook | ✅ Feature-flagged | `lib/bio-age/` | Transparent estimate + confidence interval |
+| PubMed / NCBI E-utilities | 🟡 Adapter ready, not wired | Citation source interface | Free API key, planned phase 1 |
+| ClinicalTrials.gov v2 API | 🟡 Adapter ready, not wired | `app/api/clinical-trials/` | No key required, planned phase 1 |
+| PubChem | 🟡 Adapter ready, not wired | Compound source interface | Free PUG-REST, planned phase 1 |
+| UniProt | 🟡 Adapter ready, not wired | Target source interface | Free REST, planned phase 1 |
+| Reactome | 🟡 Adapter ready, not wired | Pathway source interface | Free REST, planned phase 1 |
+| ChEMBL | 🟡 Planned ingest | KG enrichment job | Free public REST + downloadable SQLite, planned phase 2 |
+| Neo4j / Neptune KG backend | 🟡 Adapter ready, not wired | KG backend interface | For scaling beyond local store, planned phase 2 |
+| DrugBank | 🔴 License-gated | DDI source interface | Commercial license required, post-funding |
+| KEGG | 🔴 License-gated | Pathway source interface | Academic/commercial license required, post-funding |
+
+### Phased roll-out
+
+1. **Phase 1 — free, low-friction sources.** PubMed, ClinicalTrials.gov, PubChem, UniProt, Reactome, live CPIC. Moves the platform from demonstration shell to real scientific tool. Each adapter slots into the existing strategy interfaces.
+2. **Phase 2 — ingest and scale.** ChEMBL ingest for richer compound and mechanism-of-action data; Neo4j or Neptune backend swap for the Knowledge Graph to support graph queries (Cypher) at scale.
+3. **Phase 3 — license-gated, post-funding.** DrugBank for real drug–drug interactions; KEGG for additional pathway coverage. Both require commercial licenses and are intentionally deferred.
+
+### Implications for current claims
+
+- All scientific outputs shown in the current build (citations, trial matches, interaction warnings, pathway enrichment, bio-age estimates) reflect **local seed data and bundled rules packs**, not live external sources.
+- Any clinical or research claim made on top of Biozephyra requires the corresponding live integration to be enabled and validated before production use.
+- The adapter pattern means each integration carries its own legal, licensing, and validation risk, which can be approved and rolled out independently.
 
 ---
 
