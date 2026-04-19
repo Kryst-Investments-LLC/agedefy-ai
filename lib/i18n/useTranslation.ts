@@ -10,7 +10,7 @@ interface TranslationNodeMap {
 type TranslationNode = string | TranslationNodeMap;
 
 export function useTranslation() {
-  const { locale, translations } = useLocale();
+  const { locale, translations, isLoading } = useLocale();
 
   const t = useCallback((key: string, params?: Record<string, string | number>) => {
     const keys = key.split('.');
@@ -20,13 +20,19 @@ export function useTranslation() {
       if (value && typeof value === 'object' && k in value) {
         value = value[k as keyof typeof value];
       } else {
-        console.warn(`Translation key not found: ${key}`);
+        // Suppress warnings while translations are still loading to avoid
+        // flooding the console on every initial render (translations start as {}).
+        if (!isLoading) {
+          console.warn(`Translation key not found: ${key}`);
+        }
         return key;
       }
     }
 
     if (typeof value !== 'string') {
-      console.warn(`Translation value is not a string: ${key}`);
+      if (!isLoading) {
+        console.warn(`Translation value is not a string: ${key}`);
+      }
       return key;
     }
 
@@ -38,7 +44,7 @@ export function useTranslation() {
     }
 
     return value;
-  }, [translations]);
+  }, [translations, isLoading]);
 
   return { t, locale };
 } 
