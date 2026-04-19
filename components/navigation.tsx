@@ -31,9 +31,9 @@ import {
   Handshake,
 } from "lucide-react"
 
+const BADGE_CLS = "ml-auto bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-600/20 dark:text-teal-300 dark:border-teal-500/20 text-xs"
+
 type NavItem = {
-  /** Translation key under `navigation.*` in public/translations/*.json */
-  i18nKey: string
   /** Fallback label when the translation key is missing */
   fallback: string
   href: string
@@ -143,7 +143,7 @@ export function Navigation() {
             <Shield className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold text-white">Biozephyra</span>
-          <Badge className="ml-auto bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs">BETA</Badge>
+          <Badge className={BADGE_CLS}>BETA</Badge>
         </Link>
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           <ul className="space-y-1">
@@ -156,15 +156,15 @@ export function Navigation() {
                       variant="ghost"
                       className={`w-full justify-start gap-2 ${
                         active
-                          ? "bg-gray-700 text-white"
-                          : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                       aria-current={active ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" />
                       <span className="truncate">{label(item)}</span>
                       {item.badge && (
-                        <Badge className="ml-auto bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs">
+                        <Badge className={BADGE_CLS}>
                           {item.badge}
                         </Badge>
                       )}
@@ -175,7 +175,7 @@ export function Navigation() {
             })}
           </ul>
         </nav>
-        <div className="border-t border-gray-700 p-3">
+        <div className="border-t border-border p-3">
           <Button className="w-full bg-teal-600 text-white hover:bg-teal-700">
             {label({ i18nKey: "getStarted", fallback: "Get Started", href: "#", icon: User })}
           </Button>
@@ -224,15 +224,15 @@ export function Navigation() {
                       variant="ghost"
                       className={`w-full justify-start gap-2 ${
                         active
-                          ? "bg-gray-700 text-white"
-                          : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                       aria-current={active ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" />
                       <span className="truncate">{label(item)}</span>
                       {item.badge && (
-                        <Badge className="ml-auto bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs">
+                        <Badge className={BADGE_CLS}>
                           {item.badge}
                         </Badge>
                       )}
@@ -243,7 +243,7 @@ export function Navigation() {
             })}
             <li>
               <Link href="/pricing" onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2 text-gray-300 hover:bg-gray-700 hover:text-white">
+                <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
                   <DollarSign className="h-4 w-4" />
                   {label({ i18nKey: "pricing", fallback: "Pricing", href: "/pricing", icon: DollarSign })}
                 </Button>
@@ -251,7 +251,7 @@ export function Navigation() {
             </li>
             <li>
               <Link href="/account" onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2 text-gray-300 hover:bg-gray-700 hover:text-white">
+                <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
                   <User className="h-4 w-4" />
                   {label({ i18nKey: "account", fallback: "Account", href: "/account", icon: User })}
                 </Button>

@@ -39,7 +39,7 @@ export function ThemeToggle() {
       onClick={cycle}
       aria-label={label}
       title={label}
-      className="text-gray-300 hover:text-white hover:bg-gray-700"
+      className="text-muted-foreground hover:text-foreground hover:bg-accent"
     >
       {current === "light" && <Sun className="h-4 w-4" />}
       {current === "dark" && <Moon className="h-4 w-4" />}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { InteractionGraph } from "@/components/interaction-graph"
+import { useTranslation } from "@/lib/i18n/useTranslation"
 import { AlertTriangle, CheckCircle, Info, Search, Plus, X } from "lucide-react"
 
 interface Compound {
@@ -40,6 +41,12 @@ export function CompoundMixer() {
   const [selected, setSelected] = useState<Compound[]>([])
   const [interactions, setInteractions] = useState<Interaction[]>([])
   const [loading, setLoading] = useState(false)
+  const { t } = useTranslation()
+
+  function tr(key: string, fallback: string) {
+    const v = t(key)
+    return v === key ? fallback : v
+  }
 
   const search = useCallback(async (q: string) => {
     if (q.length < 2) { setCompounds([]); return }
@@ -111,14 +118,14 @@ export function CompoundMixer() {
       {/* Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Build Your Stack</CardTitle>
-          <CardDescription>Search and add compounds to check interactions and pathway coverage.</CardDescription>
+          <CardTitle>{tr("mixer.buildStack", "Build Your Stack")}</CardTitle>
+          <CardDescription>{tr("mixer.buildStackDesc", "Search and add compounds to check interactions and pathway coverage.")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search compounds (e.g. Rapamycin, NMN, Fisetin)…"
+              placeholder={tr("mixer.searchPlaceholder", "Search compounds (e.g. Rapamycin, NMN, Fisetin)\u2026")}
               className="pl-9"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -144,7 +151,7 @@ export function CompoundMixer() {
       {selected.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Your Stack ({selected.length})</CardTitle>
+            <CardTitle>{tr("mixer.yourStack", "Your Stack")} ({selected.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {selected.map((c) => (
@@ -199,16 +206,16 @@ export function CompoundMixer() {
       {selected.length >= 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Interaction Check</CardTitle>
+            <CardTitle>{tr("mixer.interactions", "Detected Interactions")}</CardTitle>
             <CardDescription>
-              {loading ? "Checking…" : `${interactions.length} known interaction(s) between selected compounds.`}
+              {loading ? "Checking\u2026" : `${interactions.length} known interaction(s) between selected compounds.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {interactions.length === 0 && !loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Info className="h-4 w-4" />
-                No recorded interactions between these compounds. This does not guarantee safety — consult a clinician.
+                {tr("mixer.noInteractions", "No recorded interactions between these compounds. This does not guarantee safety — consult a clinician.")}
               </div>
             )}
             <div className="space-y-3">

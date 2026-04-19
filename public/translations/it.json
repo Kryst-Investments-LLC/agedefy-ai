@@ -56,7 +56,27 @@
     "telemedicine": "Telemedicina",
     "marketplace": "Negozio",
     "pricing": "Prezzi",
-    "account": "Il mio account"
+    "account": "Il mio account",
+    "pathways": "Percorsi",
+    "learn": "Impara",
+    "scientistSponsor": "Scienziato-Sponsor",
+    "aiPersonalization": "Personalizzazione IA",
+    "getStarted": "Inizia"
+  },
+  "landing": {
+    "eyebrow": "La piattaforma di intelligenza per la longevità",
+    "headline": "Traccia i biomarcatori. Ottimizza i protocolli. Accedi alla medicina della longevità — tutto in un'unica piattaforma.",
+    "description": "Biozephyra combina il monitoraggio dei biomarcatori, un grafo della conoscenza sui composti, coaching informazionale con IA, flussi di consulto medico, esami di laboratorio e un marketplace con inventario tracciabile.",
+    "ctaPrimary": "Inizia gratuitamente",
+    "ctaSecondary": "Vedi i piani",
+    "ctaTertiary": "Apri il pannello",
+    "statsUsers": "utenti registrati",
+    "statsBiomarkers": "letture di biomarcatori",
+    "statsCompounds": "composti nel grafo",
+    "trustSoc2": "Conformità SOC 2",
+    "trustHipaa": "Architettura conforme HIPAA",
+    "trustClinician": "Protocolli verificati da clinici",
+    "trustRealData": "Dati reali di biomarcatori — Nessuna simulazione"
   },
   "hero": {
     "title": "Piattaforma Rivoluzionaria per la Longevità",

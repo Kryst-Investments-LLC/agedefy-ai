@@ -101,7 +101,40 @@
     "recommendations": "Recomendaciones",
     "progress": "Progreso",
     "goals": "Objetivos",
-    "achievements": "Logros"
+    "achievements": "Logros",
+    "stats": {
+      "biomarkersTracked": "Biomarcadores registrados",
+      "biomarkersDetail": "Lecturas reales almacenadas en la base de datos.",
+      "protocolsCreated": "Protocolos creados",
+      "protocolsDetail": "Sin pilas simuladas ni resultados inferidos.",
+      "labOrders": "Pedidos de laboratorio",
+      "labOrdersLink": "Ver pruebas de laboratorio",
+      "pathwaysInGraph": "Rutas en el grafo",
+      "pathwaysLink": "Explorar rutas",
+      "subscriptionStatus": "Estado de suscripción",
+      "subscriptionInactive": "inactivo",
+      "subscriptionNone": "Aún no hay ningún plan activo en esta cuenta.",
+      "realWorkspace": "Espacio de trabajo real",
+      "accountCreated": "Cuenta creada el",
+      "role": "Rol",
+      "aiCoach": "Coach de Salud IA",
+      "aiCoachDesc": "Solicita resúmenes informativos asistidos por IA basados en tus biomarcadores y protocolos.",
+      "openAiCoach": "Abrir Coach IA",
+      "quickLinks": "Accesos rápidos"
+    }
+  },
+  "mixer": {
+    "buildStack": "Construye tu pila",
+    "buildStackDesc": "Busca y añade compuestos para verificar interacciones y cobertura de rutas.",
+    "searchPlaceholder": "Buscar compuestos (ej. Rapamicina, NMN, Fisetina)\u2026",
+    "yourStack": "Tu Pila",
+    "interactions": "Interacciones detectadas",
+    "interactionBetween": "entre",
+    "interactionAnd": "y",
+    "noInteractions": "No se detectaron interacciones entre los compuestos seleccionados.",
+    "goodToGo": "Estás listo.",
+    "pathways": "Cobertura de rutas",
+    "pathwaysNone": "Aún no hay compuestos seleccionados."
   },
   "aiHealthCoach": {
     "title": "Coach de Salud IA",

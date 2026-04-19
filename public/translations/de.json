@@ -56,7 +56,27 @@
     "telemedicine": "Telemedizin",
     "marketplace": "Marktplatz",
     "pricing": "Preise",
-    "account": "Konto"
+    "account": "Konto",
+    "pathways": "Stoffwechselwege",
+    "learn": "Lernen",
+    "scientistSponsor": "Wissenschaftler-Sponsor",
+    "aiPersonalization": "KI-Personalisierung",
+    "getStarted": "Loslegen"
+  },
+  "landing": {
+    "eyebrow": "Die Langlebigkeits-Intelligenzplattform",
+    "headline": "Biomarker verfolgen. Protokolle optimieren. Langlebigkeitsmedizin nutzen — alles auf einer Plattform.",
+    "description": "Biozephyra kombiniert Biomarker-Tracking, einen kuratierten Verbindungs-Wissensgraphen, KI-gestützte Informationsberatung, Arzt-Konsultations-Workflows, Labortests und einen Marktplatz mit nachverfolgbarem Inventar.",
+    "ctaPrimary": "Kostenlos starten",
+    "ctaSecondary": "Pläne ansehen",
+    "ctaTertiary": "Dashboard öffnen",
+    "statsUsers": "registrierte Nutzer",
+    "statsBiomarkers": "Biomarker-Messwerte",
+    "statsCompounds": "Verbindungen im Graphen",
+    "trustSoc2": "SOC 2 konform",
+    "trustHipaa": "HIPAA-konforme Architektur",
+    "trustClinician": "Klinisch geprüfte Protokolle",
+    "trustRealData": "Echte Biomarker-Daten — Keine Simulationen"
   },
   "hero": {
     "title": "Revolutionäre Langlebigkeitsplattform",
@@ -81,9 +101,41 @@
     "recommendations": "Empfehlungen",
     "progress": "Fortschritt",
     "goals": "Ziele",
-    "achievements": "Erfolge"
+    "achievements": "Erfolge",
+    "stats": {
+      "biomarkersTracked": "Verfolgte Biomarker",
+      "biomarkersDetail": "Echte Messwerte in der Datenbank.",
+      "protocolsCreated": "Erstellte Protokolle",
+      "protocolsDetail": "Keine simulierten Stacks oder abgeleiteten Ergebnisse.",
+      "labOrders": "Laboraufträge",
+      "labOrdersLink": "Labortests anzeigen",
+      "pathwaysInGraph": "Stoffwechselwege im Graphen",
+      "pathwaysLink": "Wege erkunden",
+      "subscriptionStatus": "Abonnementstatus",
+      "subscriptionInactive": "inaktiv",
+      "subscriptionNone": "Kein aktiver Plan mit diesem Konto verknüpft.",
+      "realWorkspace": "Echter Arbeitsbereich",
+      "accountCreated": "Konto erstellt am",
+      "role": "Rolle",
+      "aiCoach": "KI-Gesundheitscoach",
+      "aiCoachDesc": "Fragen Sie nach KI-gestützten Zusammenfassungen basierend auf Ihren Biomarkern.",
+      "openAiCoach": "KI-Coach öffnen",
+      "quickLinks": "Schnelllinks"
+    }
   },
-  "aiHealthCoach": {
+  "mixer": {
+    "buildStack": "Ihren Stack erstellen",
+    "buildStackDesc": "Verbindungen suchen und hinzufügen, um Interaktionen und Wegeabdeckung zu prüfen.",
+    "searchPlaceholder": "Verbindungen suchen (z.B. Rapamycin, NMN, Fisetin)\u2026",
+    "yourStack": "Ihr Stack",
+    "interactions": "Erkannte Interaktionen",
+    "interactionBetween": "zwischen",
+    "interactionAnd": "und",
+    "noInteractions": "Keine bekannten Interaktionen zwischen Ihren gewählten Verbindungen erkannt.",
+    "goodToGo": "Sie können loslegen.",
+    "pathways": "Wegeabdeckung",
+    "pathwaysNone": "Noch keine Verbindungen ausgewählt."
+  },
     "title": "KI-Gesundheitscoach",
     "subtitle": "Personalisierte Gesundheitsempfehlungen durch fortschrittliche KI",
     "askQuestion": "Stellen Sie Ihrem Gesundheitscoach eine Frage...",

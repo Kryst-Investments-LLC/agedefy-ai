@@ -56,7 +56,27 @@
     "telemedicine": "원격 의료",
     "marketplace": "마켓플레이스",
     "pricing": "요금제",
-    "account": "계정"
+    "account": "계정",
+    "pathways": "경로",
+    "learn": "배우기",
+    "scientistSponsor": "과학자-후원",
+    "aiPersonalization": "AI 맞춤화",
+    "getStarted": "시작하기"
+  },
+  "landing": {
+    "eyebrow": "장수 지능 플랫폼",
+    "headline": "바이오마커 추적. 프로토콜 최적화. 장수 의학 이용 — 하나의 플랫폼에서 모두.",
+    "description": "Biozephyra는 바이오마커 추적, 큐레이션된 화합물 지식 그래프, AI 정보 코칭, 의사 상담 워크플로우, 검사실 테스트, 추적 재고가 있는 마켓플레이스를 결합합니다.",
+    "ctaPrimary": "무료로 시작하기",
+    "ctaSecondary": "요금제 보기",
+    "ctaTertiary": "대시보드 열기",
+    "statsUsers": "등록 사용자",
+    "statsBiomarkers": "바이오마커 측정",
+    "statsCompounds": "그래프의 화합물",
+    "trustSoc2": "SOC 2 준수",
+    "trustHipaa": "HIPAA 준수 아키텍처",
+    "trustClinician": "임상의 검토 프로토콜",
+    "trustRealData": "실제 바이오마커 데이터 — 시뮬레이션 없음"
   },
   "hero": {
     "title": "혁신적인 장수 플랫폼",

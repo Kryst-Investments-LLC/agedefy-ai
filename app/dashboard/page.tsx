@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth"
-import Link from "next/link"
 import { unstable_cache } from "next/cache"
 import { BiomarkerTrends } from "@/components/biomarker-trends"
 import { DashboardDailyBrief } from "@/components/dashboard-daily-brief"
 import { DashboardWorkspace } from "@/components/dashboard-workspace"
+import { DashboardStatCards } from "@/components/dashboard-stat-cards"
 import { EnterpriseOperationsPanel } from "@/components/enterprise-operations-panel"
 import { AppShell } from "@/components/app-shell"
 import { ProtocolTemplates } from "@/components/protocol-templates"
@@ -93,53 +93,27 @@ export default async function DashboardPage() {
   return (
     <AppShell pageTitle="Dashboard">
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-primary">Real workspace</p>
-            <h1 className="text-4xl font-bold">{user?.name ?? user?.email}</h1>
-            <p className="mt-2 text-muted-foreground">
-              Persistent account created on {formatDate(user?.createdAt)}. Role: {session.user.role.toLowerCase()}.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <section className="rounded-2xl border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Biomarkers tracked</p>
-            <p className="mt-3 text-3xl font-semibold">{biomarkerCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground/70">Real readings stored in the database.</p>
-          </section>
-          <section className="rounded-2xl border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Protocols created</p>
-            <p className="mt-3 text-3xl font-semibold">{protocolCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground/70">No simulated stacks or inferred outcomes.</p>
-          </section>
-          <section className="rounded-2xl border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Lab orders</p>
-            <p className="mt-3 text-3xl font-semibold">{labOrderCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground/70">
-              <Link href="/lab-testing" className="text-primary hover:underline">View lab testing →</Link>
-            </p>
-          </section>
-          <section className="rounded-2xl border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Pathways in graph</p>
-            <p className="mt-3 text-3xl font-semibold">{pathwayCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground/70">
-              <Link href="/pathways" className="text-primary hover:underline">Explore pathways →</Link>
-            </p>
-          </section>
-          <section className="rounded-2xl border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Subscription status</p>
-            <p className="mt-3 text-3xl font-semibold">
-              {activeSubscription ? activeSubscription.status.toLowerCase() : "inactive"}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground/70">
-              {activeSubscription
-                ? `${activeSubscription.plan} plan, renewal ${formatDate(activeSubscription.currentPeriodEnd)}`
-                : "No live plan is attached to this account yet."}
-            </p>
-          </section>
-        </div>
+        <DashboardStatCards
+          biomarkerCount={biomarkerCount}
+          protocolCount={protocolCount}
+          labOrderCount={labOrderCount}
+          pathwayCount={pathwayCount}
+          activeSubscription={
+            activeSubscription
+              ? {
+                  status: activeSubscription.status,
+                  plan: activeSubscription.plan,
+                  renewalDate: activeSubscription.currentPeriodEnd
+                    ? formatDate(activeSubscription.currentPeriodEnd)
+                    : null,
+                }
+              : null
+          }
+          userName={user?.name ?? null}
+          userEmail={user?.email ?? null}
+          accountCreatedAt={formatDate(user?.createdAt)}
+          role={session.user.role}
+        />
 
         {/* Daily Brief */}
         <DashboardDailyBrief
@@ -168,32 +142,6 @@ export default async function DashboardPage() {
           }
           className="mt-6"
         />
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <section className="rounded-2xl border bg-card p-6">
-            <h2 className="text-xl font-semibold">AI Health Coach</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ask for AI-assisted informational summaries grounded in your tracked biomarkers, protocols, and the knowledge graph.
-            </p>
-            <Link
-              href="/personalization"
-              className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Open AI Coach →
-            </Link>
-          </section>
-          <section className="rounded-2xl border bg-card p-6">
-            <h2 className="text-xl font-semibold">Quick links</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-              <Link href="/mixer" className="rounded-lg border p-3 hover:bg-accent transition-colors">Compound Mixer</Link>
-              <Link href="/community" className="rounded-lg border p-3 hover:bg-accent transition-colors">Community</Link>
-              <Link href="/learn" className="rounded-lg border p-3 hover:bg-accent transition-colors">Learning Center</Link>
-              <Link href="/clinical-trials" className="rounded-lg border p-3 hover:bg-accent transition-colors">Clinical Trials</Link>
-              <Link href="/research" className="rounded-lg border p-3 hover:bg-accent transition-colors">Research Hub</Link>
-              <Link href="/account" className="rounded-lg border p-3 hover:bg-accent transition-colors">Account Settings</Link>
-            </div>
-          </section>
-        </div>
 
         <DashboardWorkspace
           biomarkers={biomarkers.map((biomarker) => ({

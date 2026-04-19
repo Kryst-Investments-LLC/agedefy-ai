@@ -56,7 +56,27 @@
     "telemedicine": "Telemedicina",
     "marketplace": "Loja",
     "pricing": "Preços",
-    "account": "Conta"
+    "account": "Conta",
+    "pathways": "Caminhos",
+    "learn": "Aprender",
+    "scientistSponsor": "Cientista-Patrocinador",
+    "aiPersonalization": "Personalização com IA",
+    "getStarted": "Começar"
+  },
+  "landing": {
+    "eyebrow": "A plataforma de inteligência para longevidade",
+    "headline": "Rastreie biomarcadores. Otimize protocolos. Acesse medicina de longevidade — tudo em uma plataforma.",
+    "description": "Biozephyra combina rastreamento de biomarcadores, um grafo de conhecimento de compostos curado, coaching informacional com IA, fluxos de consulta médica, exames laboratoriais e um marketplace com inventário rastreável.",
+    "ctaPrimary": "Começar gratuitamente",
+    "ctaSecondary": "Ver planos",
+    "ctaTertiary": "Abrir painel",
+    "statsUsers": "usuários registrados",
+    "statsBiomarkers": "leituras de biomarcadores",
+    "statsCompounds": "compostos no grafo",
+    "trustSoc2": "Conformidade SOC 2",
+    "trustHipaa": "Arquitetura compatível com HIPAA",
+    "trustClinician": "Protocolos revisados por clínicos",
+    "trustRealData": "Dados reais de biomarcadores — Sem simulações"
   },
   "hero": {
     "title": "Plataforma Revolucionária de Longevidade",
@@ -81,7 +101,40 @@
     "recommendations": "Recomendações",
     "progress": "Progresso",
     "goals": "Objetivos",
-    "achievements": "Conquistas"
+    "achievements": "Conquistas",
+    "stats": {
+      "biomarkersTracked": "Biomarcadores rastreados",
+      "biomarkersDetail": "Leituras reais armazenadas no banco de dados.",
+      "protocolsCreated": "Protocolos criados",
+      "protocolsDetail": "Sem stacks simulados ou resultados inferidos.",
+      "labOrders": "Pedidos de exame",
+      "labOrdersLink": "Ver exames de laboratório",
+      "pathwaysInGraph": "Caminhos no grafo",
+      "pathwaysLink": "Explorar caminhos",
+      "subscriptionStatus": "Status da assinatura",
+      "subscriptionInactive": "inativo",
+      "subscriptionNone": "Nenhum plano ativo vinculado a esta conta ainda.",
+      "realWorkspace": "Espaço de trabalho real",
+      "accountCreated": "Conta criada em",
+      "role": "Função",
+      "aiCoach": "Coach de Saúde IA",
+      "aiCoachDesc": "Solicite resumos informativos baseados em seus biomarcadores e protocolos.",
+      "openAiCoach": "Abrir Coach IA",
+      "quickLinks": "Acesso rápido"
+    }
+  },
+  "mixer": {
+    "buildStack": "Monte sua pilha",
+    "buildStackDesc": "Pesquise e adicione compostos para verificar interações e cobertura de caminhos.",
+    "searchPlaceholder": "Pesquisar compostos (ex. Rapamicina, NMN, Fisetina)\u2026",
+    "yourStack": "Sua Pilha",
+    "interactions": "Interações detectadas",
+    "interactionBetween": "entre",
+    "interactionAnd": "e",
+    "noInteractions": "Nenhuma interação conhecida detectada entre os compostos selecionados.",
+    "goodToGo": "Você está pronto.",
+    "pathways": "Cobertura de caminhos",
+    "pathwaysNone": "Nenhum composto selecionado ainda."
   },
   "aiHealthCoach": {
     "title": "Coach de Saúde IA",

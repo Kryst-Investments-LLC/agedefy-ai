@@ -56,7 +56,27 @@
     "telemedicine": "遠隔医療",
     "marketplace": "マーケットプレイス",
     "pricing": "料金",
-    "account": "アカウント"
+    "account": "アカウント",
+    "pathways": "パスウェイ",
+    "learn": "学習",
+    "scientistSponsor": "研究者スポンサー",
+    "aiPersonalization": "AIパーソナライゼーション",
+    "getStarted": "始める"
+  },
+  "landing": {
+    "eyebrow": "長寿知能プラットフォーム",
+    "headline": "バイオマーカーを追跡。プロトコルを最適化。長寿医療にアクセス — すべて1つのプラットフォームで。",
+    "description": "Biozephyraはバイオマーカー追跡、厳選された化合物ナレッジグラフ、AI情報コーチング、医師相談ワークフロー、検査、在庫追跡付きマーケットプレイスを統合します。",
+    "ctaPrimary": "無料で始める",
+    "ctaSecondary": "プランを見る",
+    "ctaTertiary": "ダッシュボードを開く",
+    "statsUsers": "登録ユーザー",
+    "statsBiomarkers": "バイオマーカー測定値",
+    "statsCompounds": "グラフ内の化合物",
+    "trustSoc2": "SOC 2 準拠",
+    "trustHipaa": "HIPAA準拠アーキテクチャ",
+    "trustClinician": "臨床家が検証したプロトコル",
+    "trustRealData": "実際のバイオマーカーデータ — シミュレーションなし"
   },
   "hero": {
     "title": "革新的な長寿プラットフォーム",

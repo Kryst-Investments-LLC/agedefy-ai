@@ -56,7 +56,27 @@
     "telemedicine": "远程医疗",
     "marketplace": "市场",
     "pricing": "定价",
-    "account": "账户"
+    "account": "账户",
+    "pathways": "通路",
+    "learn": "学习",
+    "scientistSponsor": "科学家-赞助商",
+    "aiPersonalization": "AI个性化",
+    "getStarted": "开始"
+  },
+  "landing": {
+    "eyebrow": "长寿智能平台",
+    "headline": "跟踪生物标志物。优化方案。获取长寿医疗 — 一站式平台。",
+    "description": "Biozephyra整合了生物标志物跟踪、精选化合物知识图谱、AI信息教练、医师咨询工作流程、实验室检测和具有可追溯库存的市场。",
+    "ctaPrimary": "免费开始",
+    "ctaSecondary": "查看计划",
+    "ctaTertiary": "打开控制台",
+    "statsUsers": "注册用户",
+    "statsBiomarkers": "生物标志物读数",
+    "statsCompounds": "图谱中的化合物",
+    "trustSoc2": "SOC 2 合规",
+    "trustHipaa": "HIPAA合规架构",
+    "trustClinician": "经临床医生审核的方案",
+    "trustRealData": "真实生物标志物数据 — 无模拟"
   },
   "hero": {
     "title": "革命性长寿平台",
