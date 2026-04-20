@@ -35,7 +35,7 @@ interface GraphResult {
   interactedWith: Interaction[]
 }
 
-export function CompoundMixer() {
+export function CompoundMixer({ initialCompounds = [] }: { initialCompounds?: string[] }) {
   const [query, setQuery] = useState("")
   const [compounds, setCompounds] = useState<Compound[]>([])
   const [selected, setSelected] = useState<Compound[]>([])
@@ -52,6 +52,24 @@ export function CompoundMixer() {
     if (q.length < 2) { setCompounds([]); return }
     const res = await fetch(`/api/compounds?q=${encodeURIComponent(q)}&limit=10`)
     if (res.ok) setCompounds(await res.json())
+  }, [])
+
+  // Auto-select compounds passed via initialCompounds prop (e.g. from ?compounds= URL param)
+  useEffect(() => {
+    if (initialCompounds.length === 0) return
+    async function loadInitial() {
+      const fetched: Compound[] = []
+      for (const name of initialCompounds) {
+        const res = await fetch(`/api/compounds?q=${encodeURIComponent(name)}&limit=1`)
+        if (res.ok) {
+          const results: Compound[] = await res.json()
+          if (results.length > 0) fetched.push(results[0])
+        }
+      }
+      setSelected(fetched)
+    }
+    loadInitial()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

@@ -1,7 +1,16 @@
 import { Navigation } from "@/components/navigation"
 import { CompoundMixer } from "@/components/compound-mixer"
 
-export default function MixerPage() {
+export default async function MixerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ compounds?: string }>
+}) {
+  const params = await searchParams
+  const initialCompounds = params.compounds
+    ? params.compounds.split(",").map((s) => s.trim()).filter(Boolean)
+    : []
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
@@ -11,7 +20,7 @@ export default function MixerPage() {
           Explore longevity compounds, check interactions, and understand pathway coverage.
           Data sourced from published research.
         </p>
-        <CompoundMixer />
+        <CompoundMixer initialCompounds={initialCompounds} />
       </main>
     </div>
   )
