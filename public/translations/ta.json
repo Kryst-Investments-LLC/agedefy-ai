@@ -78,7 +78,42 @@
     "trustClinician": "மருத்துவர் மதிப்பாய்வு செய்த நெறிமுறைகள்",
     "trustRealData": "உண்மையான உயிர்க்குறி தரவு — சிமுலேஷன்கள் இல்லை"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "Live Platform Metrics",
+    "sectionDesc": "Real counts queried from the database — no hardcoded marketing numbers.",
+    "registeredUsers": "Registered Users",
+    "registeredUsersDesc": "Authenticated accounts in the database",
+    "researchEntries": "Research Entries",
+    "researchEntriesDesc": "Articles ingested from PubMed",
+    "biomarkerReadings": "Biomarker Readings",
+    "biomarkerReadingsDesc": "Real measurements stored by users",
+    "auditEvents": "Audit Events",
+    "auditEventsDesc": "Governance events logged to date"
+  },
+  "features": {
+    "sectionTitle": "What Is Actually Built",
+    "sectionDesc": "Every feature listed here is wired to real code, real APIs, and a real database.",
+    "ctaTitle": "Start Building Your Longevity Workspace",
+    "ctaDesc": "Create a real account, track real biomarkers, and manage billing.",
+    "ctaPrimary": "Create Account",
+    "ctaSecondary": "Open Dashboard"
+  },
+  "footer": {
+    "tagline": "Making anti-aging research accessible to everyone through AI.",
+    "featuresTitle": "Features",
+    "supportTitle": "Support",
+    "legalTitle": "Legal",
+    "compoundMixer": "Compound Mixer",
+    "researchSearch": "Research Search",
+    "helpCenter": "Help Center",
+    "safetyGuidelines": "Safety Guidelines",
+    "contactUs": "Contact Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "copyright": "© 2026 Biozephyra. All rights reserved. Educational purposes only."
+  },
+    "hero": {
     "title": "புரட்சிகர நீண்ட ஆயுள் தளம்",
     "subtitle": "நீட்டிக்கப்பட்ட ஆயுட்காலம் மற்றும் மேம்படுத்தப்பட்ட உயிர்ச்சக்திக்கான மேம்பட்ட AI-இயக்கப்பட்ட ஆரோக்கிய மேம்படுத்தல்",
     "description": "அதிநவீன AI, நிகழ்நேர பயோமார்க்கர் பகுப்பாய்வு மற்றும் அறிவியல் ரீதியாக நிரூபிக்கப்பட்ட நீண்ட ஆயுள் தலையீடுகளுடன் தனிப்பயனாக்கப்பட்ட ஆரோக்கியத்தின் எதிர்காலத்தை அனுபவியுங்கள்.",

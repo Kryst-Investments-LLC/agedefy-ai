@@ -78,7 +78,42 @@
     "trustClinician": "चिकित्सक-समीक्षित प्रोटोकॉल",
     "trustRealData": "वास्तविक बायोमार्कर डेटा — कोई सिमुलेशन नहीं"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "Live Platform Metrics",
+    "sectionDesc": "Real counts queried from the database — no hardcoded marketing numbers.",
+    "registeredUsers": "Registered Users",
+    "registeredUsersDesc": "Authenticated accounts in the database",
+    "researchEntries": "Research Entries",
+    "researchEntriesDesc": "Articles ingested from PubMed",
+    "biomarkerReadings": "Biomarker Readings",
+    "biomarkerReadingsDesc": "Real measurements stored by users",
+    "auditEvents": "Audit Events",
+    "auditEventsDesc": "Governance events logged to date"
+  },
+  "features": {
+    "sectionTitle": "What Is Actually Built",
+    "sectionDesc": "Every feature listed here is wired to real code, real APIs, and a real database.",
+    "ctaTitle": "Start Building Your Longevity Workspace",
+    "ctaDesc": "Create a real account, track real biomarkers, and manage billing.",
+    "ctaPrimary": "Create Account",
+    "ctaSecondary": "Open Dashboard"
+  },
+  "footer": {
+    "tagline": "Making anti-aging research accessible to everyone through AI.",
+    "featuresTitle": "Features",
+    "supportTitle": "Support",
+    "legalTitle": "Legal",
+    "compoundMixer": "Compound Mixer",
+    "researchSearch": "Research Search",
+    "helpCenter": "Help Center",
+    "safetyGuidelines": "Safety Guidelines",
+    "contactUs": "Contact Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "copyright": "© 2026 Biozephyra. All rights reserved. Educational purposes only."
+  },
+    "hero": {
     "title": "क्रांतिकारी दीर्घायु मंच",
     "subtitle": "बढ़ी हुई आयु और उन्नत जीवनशक्ति के लिए उन्नत AI-संचालित स्वास्थ्य अनुकूलन",
     "description": "अत्याधुनिक AI, रीयल-टाइम बायोमार्कर विश्लेषण, और वैज्ञानिक रूप से सिद्ध दीर्घायु हस्तक्षेपों के साथ व्यक्तिगत स्वास्थ्य के भविष्य का अनुभव करें।",

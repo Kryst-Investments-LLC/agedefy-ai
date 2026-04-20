@@ -77,8 +77,26 @@
     "trustHipaa": "HIPAA-Aware Architecture",
     "trustClinician": "Clinician-Reviewed Protocols",
     "trustRealData": "Real Biomarker Data — No Simulations"
+  },  "stats": {
+    "sectionTitle": "Live platform metrics",
+    "sectionDesc": "Real counts queried from the database \u2014 no hardcoded marketing numbers.",
+    "registeredUsers": "Registered users",
+    "registeredUsersDesc": "Authenticated accounts in the database",
+    "researchEntries": "Research entries",
+    "researchEntriesDesc": "Articles ingested from PubMed",
+    "biomarkerReadings": "Biomarker readings",
+    "biomarkerReadingsDesc": "Real measurements stored by users",
+    "auditEvents": "Audit events",
+    "auditEventsDesc": "Governance events logged to date"
   },
-  "hero": {
+  "features": {
+    "sectionTitle": "What is actually built",
+    "sectionDesc": "Every feature listed here is wired to real code, real APIs, and a real database. Nothing is simulated.",
+    "ctaTitle": "Start building your longevity workspace",
+    "ctaDesc": "Create a real account, track real biomarkers, ingest real research, and manage billing \u2014 all backed by persistent storage and enterprise controls.",
+    "ctaPrimary": "Create account",
+    "ctaSecondary": "Open dashboard"
+  },  "hero": {
     "title": "Revolutionary Longevity Platform",
     "subtitle": "Advanced AI-powered health optimization for extended lifespan and enhanced vitality",
     "description": "Experience the future of personalized health with cutting-edge AI, real-time biomarker analysis, and scientifically-proven longevity interventions.",
@@ -132,6 +150,7 @@
     "pathways": "Pathway Coverage",
     "pathwaysNone": "No compounds selected yet."
   },
+  "dashboard": {
     "recommendations": "Recommendations",
     "progress": "Progress",
     "goals": "Goals",
@@ -338,17 +357,5 @@
     "privacy": "Privacy",
     "security": "Security",
     "data": "Data"
-  },
-  "footer": {
-    "company": "Company",
-    "product": "Product",
-    "resources": "Resources",
-    "support": "Support",
-    "legal": "Legal",
-    "social": "Social",
-    "newsletter": "Newsletter",
-    "subscribe": "Subscribe",
-    "email": "Email address",
-    "copyright": "© 2024 Biozephyra AI. All rights reserved."
   }
 } 

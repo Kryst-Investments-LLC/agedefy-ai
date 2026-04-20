@@ -78,6 +78,41 @@
     "trustClinician": "Protocolli verificati da clinici",
     "trustRealData": "Dati reali di biomarcatori — Nessuna simulazione"
   },
+    "stats": {
+    "sectionTitle": "Metriche live della piattaforma",
+    "sectionDesc": "Conteggi reali dalla banca dati — nessun numero di marketing codificato.",
+    "registeredUsers": "Utenti registrati",
+    "registeredUsersDesc": "Account autenticati nel database",
+    "researchEntries": "Voci di ricerca",
+    "researchEntriesDesc": "Articoli importati da PubMed",
+    "biomarkerReadings": "Letture di biomarcatori",
+    "biomarkerReadingsDesc": "Misurazioni reali memorizzate dagli utenti",
+    "auditEvents": "Eventi di audit",
+    "auditEventsDesc": "Eventi di governance registrati fino ad oggi"
+  },
+  "features": {
+    "sectionTitle": "Cosa è effettivamente costruito",
+    "sectionDesc": "Ogni funzionalità elencata qui è collegata a codice reale, API reali e un database reale.",
+    "ctaTitle": "Inizia a costruire il tuo spazio di lavoro per la longevità",
+    "ctaDesc": "Crea un account reale, monitora biomarcatori reali e gestisci la fatturazione.",
+    "ctaPrimary": "Crea account",
+    "ctaSecondary": "Apri il pannello"
+  },
+  "footer": {
+    "tagline": "Rendere la ricerca anti-invecchiamento accessibile a tutti tramite IA.",
+    "featuresTitle": "Funzionalità",
+    "supportTitle": "Supporto",
+    "legalTitle": "Legale",
+    "compoundMixer": "Miscelatore di composti",
+    "researchSearch": "Ricerca scientifica",
+    "helpCenter": "Centro assistenza",
+    "safetyGuidelines": "Linee guida sulla sicurezza",
+    "contactUs": "Contattaci",
+    "privacyPolicy": "Informativa sulla privacy",
+    "termsOfService": "Termini di servizio",
+    "medicalDisclaimer": "Avviso medico",
+    "copyright": "© 2026 Biozephyra. Tutti i diritti riservati. Questa app è solo a scopo educativo."
+  },
   "hero": {
     "title": "Piattaforma Rivoluzionaria per la Longevità",
     "subtitle": "Ottimizzazione della salute con IA avanzata per una vita più lunga e una vitalità migliorata",

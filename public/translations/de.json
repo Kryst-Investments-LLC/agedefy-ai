@@ -77,8 +77,26 @@
     "trustHipaa": "HIPAA-konforme Architektur",
     "trustClinician": "Klinisch geprüfte Protokolle",
     "trustRealData": "Echte Biomarker-Daten — Keine Simulationen"
+  },  "stats": {
+    "sectionTitle": "Live-Plattformmetriken",
+    "sectionDesc": "Echte Z\u00e4hlungen aus der Datenbank \u2014 keine fest kodierten Marketingzahlen.",
+    "registeredUsers": "Registrierte Nutzer",
+    "registeredUsersDesc": "Authentifizierte Konten in der Datenbank",
+    "researchEntries": "Forschungseintr\u00e4ge",
+    "researchEntriesDesc": "Von PubMed importierte Artikel",
+    "biomarkerReadings": "Biomarker-Messwerte",
+    "biomarkerReadingsDesc": "Echte von Nutzern gespeicherte Messungen",
+    "auditEvents": "Audit-Ereignisse",
+    "auditEventsDesc": "Bisher protokollierte Governance-Ereignisse"
   },
-  "hero": {
+  "features": {
+    "sectionTitle": "Was tats\u00e4chlich gebaut wurde",
+    "sectionDesc": "Jede hier aufgef\u00fchrte Funktion ist mit echtem Code, echten APIs und einer echten Datenbank verbunden.",
+    "ctaTitle": "Starten Sie Ihren Langlebigkeits-Arbeitsbereich",
+    "ctaDesc": "Erstellen Sie ein echtes Konto, verfolgen Sie echte Biomarker und verwalten Sie die Abrechnung.",
+    "ctaPrimary": "Konto erstellen",
+    "ctaSecondary": "Dashboard \u00f6ffnen"
+  },  "hero": {
     "title": "Revolutionäre Langlebigkeitsplattform",
     "subtitle": "Fortschrittliche KI-gestützte Gesundheitsoptimierung für verlängerte Lebensdauer und verbesserte Vitalität",
     "description": "Erleben Sie die Zukunft der personalisierten Gesundheit mit modernster KI, Echtzeit-Biomarker-Analyse und wissenschaftlich erprobten Langlebigkeitsinterventionen.",
@@ -136,6 +154,7 @@
     "pathways": "Wegeabdeckung",
     "pathwaysNone": "Noch keine Verbindungen ausgewählt."
   },
+  "aiHealthCoach": {
     "title": "KI-Gesundheitscoach",
     "subtitle": "Personalisierte Gesundheitsempfehlungen durch fortschrittliche KI",
     "askQuestion": "Stellen Sie Ihrem Gesundheitscoach eine Frage...",
@@ -336,17 +355,5 @@
     "privacy": "Datenschutz",
     "security": "Sicherheit",
     "data": "Daten"
-  },
-  "footer": {
-    "company": "Unternehmen",
-    "product": "Produkt",
-    "resources": "Ressourcen",
-    "support": "Unterstützung",
-    "legal": "Rechtliches",
-    "social": "Soziale Medien",
-    "newsletter": "Rundbrief",
-    "subscribe": "Abonnieren",
-    "email": "E-Mail-Adresse",
-    "copyright": "© 2024 Biozephyra AI. Alle Rechte vorbehalten."
   }
 }

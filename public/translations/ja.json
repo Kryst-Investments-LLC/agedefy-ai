@@ -78,7 +78,42 @@
     "trustClinician": "臨床家が検証したプロトコル",
     "trustRealData": "実際のバイオマーカーデータ — シミュレーションなし"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "ライブプラットフォーム指標",
+    "sectionDesc": "データベースから照会された実際のカウント — ハードコードされたマーケティング数値なし。",
+    "registeredUsers": "登録ユーザー",
+    "registeredUsersDesc": "データベース内の認証済みアカウント",
+    "researchEntries": "研究エントリ",
+    "researchEntriesDesc": "PubMedから取り込まれた記事",
+    "biomarkerReadings": "バイオマーカー測定値",
+    "biomarkerReadingsDesc": "ユーザーが保存した実際の測定値",
+    "auditEvents": "監査イベント",
+    "auditEventsDesc": "これまでに記録されたガバナンスイベント"
+  },
+  "features": {
+    "sectionTitle": "実際に構築されているもの",
+    "sectionDesc": "ここに記載されているすべての機能は、実際のコード、実際のAPI、実際のデータベースに接続されています。",
+    "ctaTitle": "長寿ワークスペースの構築を開始する",
+    "ctaDesc": "実際のアカウントを作成し、実際のバイオマーカーを追跡し、請求を管理してください。",
+    "ctaPrimary": "アカウントを作成",
+    "ctaSecondary": "ダッシュボードを開く"
+  },
+  "footer": {
+    "tagline": "AIを活用して、アンチエイジング研究をすべての人に。",
+    "featuresTitle": "機能",
+    "supportTitle": "サポート",
+    "legalTitle": "法的情報",
+    "compoundMixer": "化合物ミキサー",
+    "researchSearch": "研究検索",
+    "helpCenter": "ヘルプセンター",
+    "safetyGuidelines": "安全ガイドライン",
+    "contactUs": "お問い合わせ",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "medicalDisclaimer": "医療免責事項",
+    "copyright": "© 2026 Biozephyra. 全著作権所有。このアプリは教育目的のみです。"
+  },
+    "hero": {
     "title": "革新的な長寿プラットフォーム",
     "subtitle": "高度なAIによる健康最適化で寿命延長と活力向上を実現",
     "description": "最先端AI、リアルタイムバイオマーカー分析、科学的に証明された長寿介入で、パーソナライズされた健康の未来を体験してください。",

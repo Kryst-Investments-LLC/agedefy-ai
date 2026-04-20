@@ -78,7 +78,42 @@
     "trustClinician": "వైద్యులు సమీక్షించిన ప్రోటోకాల్‌లు",
     "trustRealData": "నిజమైన బయోమార్కర్ డేటా — సిమ్యులేషన్లు లేవు"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "Live Platform Metrics",
+    "sectionDesc": "Real counts queried from the database — no hardcoded marketing numbers.",
+    "registeredUsers": "Registered Users",
+    "registeredUsersDesc": "Authenticated accounts in the database",
+    "researchEntries": "Research Entries",
+    "researchEntriesDesc": "Articles ingested from PubMed",
+    "biomarkerReadings": "Biomarker Readings",
+    "biomarkerReadingsDesc": "Real measurements stored by users",
+    "auditEvents": "Audit Events",
+    "auditEventsDesc": "Governance events logged to date"
+  },
+  "features": {
+    "sectionTitle": "What Is Actually Built",
+    "sectionDesc": "Every feature listed here is wired to real code, real APIs, and a real database.",
+    "ctaTitle": "Start Building Your Longevity Workspace",
+    "ctaDesc": "Create a real account, track real biomarkers, and manage billing.",
+    "ctaPrimary": "Create Account",
+    "ctaSecondary": "Open Dashboard"
+  },
+  "footer": {
+    "tagline": "Making anti-aging research accessible to everyone through AI.",
+    "featuresTitle": "Features",
+    "supportTitle": "Support",
+    "legalTitle": "Legal",
+    "compoundMixer": "Compound Mixer",
+    "researchSearch": "Research Search",
+    "helpCenter": "Help Center",
+    "safetyGuidelines": "Safety Guidelines",
+    "contactUs": "Contact Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "copyright": "© 2026 Biozephyra. All rights reserved. Educational purposes only."
+  },
+    "hero": {
     "title": "విప్లవాత్మక దీర్ఘాయువు వేదిక",
     "subtitle": "పొడిగించిన ఆయుర్దాయం మరియు మెరుగైన జీవశక్తి కోసం అధునాతన AI-ఆధారిత ఆరోగ్య ఆప్టిమైజేషన్",
     "description": "అత్యాధునిక AI, నిజ-సమయ బయోమార్కర్ విశ్లేషణ మరియు శాస్త్రీయంగా నిరూపించబడిన దీర్ఘాయువు జోక్యాలతో వ్యక్తిగతీకరించిన ఆరోగ్యం యొక్క భవిష్యత్తును అనుభవించండి.",

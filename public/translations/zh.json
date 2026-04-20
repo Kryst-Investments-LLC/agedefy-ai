@@ -78,7 +78,42 @@
     "trustClinician": "经临床医生审核的方案",
     "trustRealData": "真实生物标志物数据 — 无模拟"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "实时平台指标",
+    "sectionDesc": "从数据库查询的真实计数 — 没有硬编码的营销数字。",
+    "registeredUsers": "注册用户",
+    "registeredUsersDesc": "数据库中的认证账户",
+    "researchEntries": "研究条目",
+    "researchEntriesDesc": "从PubMed导入的文章",
+    "biomarkerReadings": "生物标志物读数",
+    "biomarkerReadingsDesc": "用户存储的真实测量值",
+    "auditEvents": "审计事件",
+    "auditEventsDesc": "迄今记录的治理事件"
+  },
+  "features": {
+    "sectionTitle": "实际构建的内容",
+    "sectionDesc": "此处列出的每项功能都连接到真实代码、真实API和真实数据库。",
+    "ctaTitle": "开始构建您的长寿工作区",
+    "ctaDesc": "创建真实账户、跟踪真实生物标志物并管理计费。",
+    "ctaPrimary": "创建账户",
+    "ctaSecondary": "打开仪表盘"
+  },
+  "footer": {
+    "tagline": "通过AI洞察和教育，让每个人都能获得抗衰老研究。",
+    "featuresTitle": "功能",
+    "supportTitle": "支持",
+    "legalTitle": "法律",
+    "compoundMixer": "化合物混合器",
+    "researchSearch": "研究搜索",
+    "helpCenter": "帮助中心",
+    "safetyGuidelines": "安全准则",
+    "contactUs": "联系我们",
+    "privacyPolicy": "隐私政策",
+    "termsOfService": "服务条款",
+    "medicalDisclaimer": "医疗免责声明",
+    "copyright": "© 2026 Biozephyra. 版权所有。本应用仅供教育目的。"
+  },
+    "hero": {
     "title": "革命性长寿平台",
     "subtitle": "先进的AI驱动健康优化，延长寿命，增强活力",
     "description": "体验个性化健康的未来——尖端AI、实时生物标志物分析和经科学验证的长寿干预措施。",

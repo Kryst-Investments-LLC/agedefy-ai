@@ -78,7 +78,42 @@
     "trustClinician": "임상의 검토 프로토콜",
     "trustRealData": "실제 바이오마커 데이터 — 시뮬레이션 없음"
   },
-  "hero": {
+  "stats": {
+    "sectionTitle": "실시간 플랫폼 지표",
+    "sectionDesc": "데이터베이스에서 조회된 실제 수치 — 하드코딩된 마케팅 숫자 없음.",
+    "registeredUsers": "등록 사용자",
+    "registeredUsersDesc": "데이터베이스의 인증된 계정",
+    "researchEntries": "연구 항목",
+    "researchEntriesDesc": "PubMed에서 가져온 기사",
+    "biomarkerReadings": "바이오마커 측정값",
+    "biomarkerReadingsDesc": "사용자가 저장한 실제 측정값",
+    "auditEvents": "감사 이벤트",
+    "auditEventsDesc": "지금까지 기록된 거버넌스 이벤트"
+  },
+  "features": {
+    "sectionTitle": "실제로 구축된 것",
+    "sectionDesc": "여기에 나열된 모든 기능은 실제 코드, 실제 API 및 실제 데이터베이스에 연결되어 있습니다.",
+    "ctaTitle": "장수 워크스페이스 구축 시작",
+    "ctaDesc": "실제 계정을 만들고, 실제 바이오마커를 추적하고, 청구를 관리하세요.",
+    "ctaPrimary": "계정 만들기",
+    "ctaSecondary": "대시보드 열기"
+  },
+  "footer": {
+    "tagline": "AI를 통해 노화 방지 연구를 모든 사람에게.",
+    "featuresTitle": "기능",
+    "supportTitle": "지원",
+    "legalTitle": "법적 정보",
+    "compoundMixer": "화합물 믹서",
+    "researchSearch": "연구 검색",
+    "helpCenter": "도움말 센터",
+    "safetyGuidelines": "안전 지침",
+    "contactUs": "문의하기",
+    "privacyPolicy": "개인정보 처리방침",
+    "termsOfService": "서비스 약관",
+    "medicalDisclaimer": "의료 면책 조항",
+    "copyright": "© 2026 Biozephyra. 모든 권리 보유. 이 앱은 교육 목적으로만 사용됩니다."
+  },
+    "hero": {
     "title": "혁신적인 장수 플랫폼",
     "subtitle": "첨단 AI 기반 건강 최적화로 수명 연장과 활력 향상",
     "description": "최첨단 AI, 실시간 바이오마커 분석, 과학적으로 검증된 장수 중재로 개인화된 건강의 미래를 경험하세요.",

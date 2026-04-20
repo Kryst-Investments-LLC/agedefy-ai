@@ -78,6 +78,41 @@
     "trustClinician": "Protocoles validés par des cliniciens",
     "trustRealData": "Données réelles — Aucune simulation"
   },
+  "stats": {
+    "sectionTitle": "Métriques en direct de la plateforme",
+    "sectionDesc": "Comptages réels issus de la base de données — aucun chiffre marketing codé en dur.",
+    "registeredUsers": "Utilisateurs inscrits",
+    "registeredUsersDesc": "Comptes authentifiés dans la base de données",
+    "researchEntries": "Entrées de recherche",
+    "researchEntriesDesc": "Articles importés depuis PubMed",
+    "biomarkerReadings": "Lectures de biomarqueurs",
+    "biomarkerReadingsDesc": "Mesures réelles stockées par les utilisateurs",
+    "auditEvents": "Événements d'audit",
+    "auditEventsDesc": "Événements de gouvernance enregistrés"
+  },
+  "features": {
+    "sectionTitle": "Ce qui est réellement construit",
+    "sectionDesc": "Chaque fonctionnalité listée ici est connectée à du vrai code, de vraies API et une vraie base de données.",
+    "ctaTitle": "Commencez à construire votre espace de travail de longévité",
+    "ctaDesc": "Créez un vrai compte, suivez de vrais biomarqueurs et gérez la facturation.",
+    "ctaPrimary": "Créer un compte",
+    "ctaSecondary": "Ouvrir le tableau de bord"
+  },
+  "footer": {
+    "tagline": "Rendre la recherche anti-vieillissement accessible à tous grâce à l'IA.",
+    "featuresTitle": "Fonctionnalités",
+    "supportTitle": "Assistance",
+    "legalTitle": "Légal",
+    "compoundMixer": "Mélangeur de composés",
+    "researchSearch": "Recherche scientifique",
+    "helpCenter": "Centre d'aide",
+    "safetyGuidelines": "Consignes de sécurité",
+    "contactUs": "Contactez-nous",
+    "privacyPolicy": "Politique de confidentialité",
+    "termsOfService": "Conditions d'utilisation",
+    "medicalDisclaimer": "Avertissement médical",
+    "copyright": "© 2026 Biozephyra. Tous droits réservés. Cette application est uniquement à des fins éducatives."
+  },
   "hero": {
     "title": "Plateforme de longévité révolutionnaire",
     "subtitle": "Optimisation de la santé par IA avancée pour une espérance de vie prolongée et une vitalité améliorée",

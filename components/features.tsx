@@ -1,6 +1,9 @@
+"use client"
+
 import Link from "next/link"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "@/lib/i18n/useTranslation"
 import {
   Search,
   Shield,
@@ -149,13 +152,14 @@ const getStatusColor = (status: string) => {
 }
 
 export function Features() {
+  const { t } = useTranslation()
   return (
     <section className="py-20 bg-gray-900">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white mb-4">What is actually built</h2>
+          <h2 className="text-4xl font-bold text-white mb-4">{t("features.sectionTitle", "What is actually built")}</h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Every feature listed here is wired to real code, real APIs, and a real database. Nothing is simulated.
+            {t("features.sectionDesc", "Every feature listed here is wired to real code, real APIs, and a real database. Nothing is simulated.")}
           </p>
         </div>
 
@@ -182,16 +186,16 @@ export function Features() {
 
         <div className="text-center mt-16">
           <div className="bg-gradient-to-r from-teal-600/20 to-blue-600/20 rounded-2xl p-8 border border-teal-500/20">
-            <h3 className="text-2xl font-bold text-white mb-4">Start building your longevity workspace</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">{t("features.ctaTitle", "Start building your longevity workspace")}</h3>
             <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-              Create a real account, track real biomarkers, ingest real research, and manage billing — all backed by persistent storage and enterprise controls.
+              {t("features.ctaDesc", "Create a real account, track real biomarkers, ingest real research, and manage billing — all backed by persistent storage and enterprise controls.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/sign-up" className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
-                Create account
+                {t("features.ctaPrimary", "Create account")}
               </Link>
               <Link href="/dashboard" className="border border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-white px-8 py-3 rounded-lg font-medium transition-colors">
-                Open dashboard
+                {t("features.ctaSecondary", "Open dashboard")}
               </Link>
             </div>
           </div>

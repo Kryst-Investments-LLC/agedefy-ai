@@ -77,8 +77,41 @@
     "trustHipaa": "Arquitectura compatible con HIPAA",
     "trustClinician": "Protocolos revisados por clínicos",
     "trustRealData": "Datos reales de biomarcadores — Sin simulaciones"
+  },  "stats": {
+    "sectionTitle": "M\u00e9tricas en vivo de la plataforma",
+    "sectionDesc": "Conteos reales consultados de la base de datos \u2014 sin n\u00fameros de marketing codificados.",
+    "registeredUsers": "Usuarios registrados",
+    "registeredUsersDesc": "Cuentas autenticadas en la base de datos",
+    "researchEntries": "Entradas de investigaci\u00f3n",
+    "researchEntriesDesc": "Art\u00edculos ingeridos desde PubMed",
+    "biomarkerReadings": "Lecturas de biomarcadores",
+    "biomarkerReadingsDesc": "Mediciones reales almacenadas por usuarios",
+    "auditEvents": "Eventos de auditor\u00eda",
+    "auditEventsDesc": "Eventos de gobernanza registrados hasta la fecha"
   },
-  "hero": {
+  "features": {
+    "sectionTitle": "Lo que est\u00e1 realmente construido",
+    "sectionDesc": "Cada funci\u00f3n listada aqu\u00ed est\u00e1 conectada a c\u00f3digo real, APIs reales y una base de datos real. Nada est\u00e1 simulado.",
+    "ctaTitle": "Comienza a construir tu espacio de trabajo de longevidad",
+    "ctaDesc": "Crea una cuenta real, registra biomarcadores reales, ingiere investigaci\u00f3n real y gestiona la facturaci\u00f3n \u2014 todo respaldado por almacenamiento persistente y controles empresariales.",
+    "ctaPrimary": "Crear cuenta",
+    "ctaSecondary": "Abrir panel"
+  },
+  "footer": {
+    "tagline": "Haciendo la investigaci\u00f3n antienvejecimiento accesible para todos mediante perspectivas impulsadas por IA y educaci\u00f3n.",
+    "featuresTitle": "Funciones",
+    "supportTitle": "Soporte",
+    "legalTitle": "Legal",
+    "compoundMixer": "Mezclador de compuestos",
+    "researchSearch": "B\u00fasqueda de investigaci\u00f3n",
+    "helpCenter": "Centro de ayuda",
+    "safetyGuidelines": "Pautas de seguridad",
+    "contactUs": "Cont\u00e1ctenos",
+    "privacyPolicy": "Pol\u00edtica de privacidad",
+    "termsOfService": "T\u00e9rminos de servicio",
+    "medicalDisclaimer": "Aviso m\u00e9dico",
+    "copyright": "\u00a9 2026 Biozephyra. Todos los derechos reservados. Esta aplicaci\u00f3n es solo para fines educativos y no proporciona asesoramiento m\u00e9dico."
+  },  "hero": {
     "title": "Plataforma Revolucionaria de Longevidad",
     "subtitle": "Optimización de salud impulsada por IA avanzada para una vida más larga y vitalidad mejorada",
     "description": "Experimenta el futuro de la salud personalizada con IA de vanguardia, análisis de biomarcadores en tiempo real e intervenciones de longevidad científicamente probadas.",

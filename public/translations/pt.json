@@ -78,6 +78,41 @@
     "trustClinician": "Protocolos revisados por clínicos",
     "trustRealData": "Dados reais de biomarcadores — Sem simulações"
   },
+  "stats": {
+    "sectionTitle": "Métricas ao vivo da plataforma",
+    "sectionDesc": "Contagens reais consultadas do banco de dados — sem números de marketing codificados.",
+    "registeredUsers": "Usuários registrados",
+    "registeredUsersDesc": "Contas autenticadas no banco de dados",
+    "researchEntries": "Entradas de pesquisa",
+    "researchEntriesDesc": "Artigos importados do PubMed",
+    "biomarkerReadings": "Leituras de biomarcadores",
+    "biomarkerReadingsDesc": "Medições reais armazenadas por usuários",
+    "auditEvents": "Eventos de auditoria",
+    "auditEventsDesc": "Eventos de governança registrados até o momento"
+  },
+  "features": {
+    "sectionTitle": "O que está realmente construído",
+    "sectionDesc": "Cada recurso listado aqui está conectado a código real, APIs reais e um banco de dados real.",
+    "ctaTitle": "Comece a construir seu espaço de trabalho de longevidade",
+    "ctaDesc": "Crie uma conta real, rastreie biomarcadores reais e gerencie cobranças.",
+    "ctaPrimary": "Criar conta",
+    "ctaSecondary": "Abrir painel"
+  },
+  "footer": {
+    "tagline": "Tornando a pesquisa antienvelhecimento acessível a todos por meio de insights com IA.",
+    "featuresTitle": "Recursos",
+    "supportTitle": "Suporte",
+    "legalTitle": "Legal",
+    "compoundMixer": "Misturador de compostos",
+    "researchSearch": "Pesquisa científica",
+    "helpCenter": "Central de ajuda",
+    "safetyGuidelines": "Diretrizes de segurança",
+    "contactUs": "Fale conosco",
+    "privacyPolicy": "Política de privacidade",
+    "termsOfService": "Termos de serviço",
+    "medicalDisclaimer": "Aviso médico",
+    "copyright": "© 2026 Biozephyra. Todos os direitos reservados. Este aplicativo é apenas para fins educacionais."
+  },
   "hero": {
     "title": "Plataforma Revolucionária de Longevidade",
     "subtitle": "Otimização de saúde por IA avançada para maior expectativa de vida e vitalidade aprimorada",
