@@ -111,6 +111,19 @@
       "community": "Comunità di esperti"
     }
   },
+  "mixer": {
+    "buildStack": "Costruisci il tuo stack",
+    "buildStackDesc": "Cerca e aggiungi composti per verificare interazioni e copertura dei percorsi.",
+    "searchPlaceholder": "Cerca composti (es. Rapamicina, NMN, Fisetina)\u2026",
+    "yourStack": "Il tuo Stack",
+    "interactions": "Interazioni rilevate",
+    "interactionBetween": "tra",
+    "interactionAnd": "e",
+    "noInteractions": "Nessuna interazione nota rilevata tra i composti selezionati.",
+    "goodToGo": "Sei pronto per partire.",
+    "pathways": "Copertura dei percorsi",
+    "pathwaysNone": "Nessun composto selezionato."
+  },
   "dashboard": {
     "welcome": "Benvenuto su Biozephyra AI",
     "overview": "Panoramica della salute",

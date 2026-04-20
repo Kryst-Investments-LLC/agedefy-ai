@@ -111,6 +111,19 @@
       "community": "专家社区"
     }
   },
+  "mixer": {
+    "buildStack": "构建您的堆栈",
+    "buildStackDesc": "搜索并添加化合物以检查相互作用和途径覆盖范围。",
+    "searchPlaceholder": "搜索化合物（例如：雷帕霉素、NMN、非瑟酮）\u2026",
+    "yourStack": "您的堆栈",
+    "interactions": "检测到的相互作用",
+    "interactionBetween": "之间",
+    "interactionAnd": "和",
+    "noInteractions": "在您选择的化合物之间未检测到已知相互作用。",
+    "goodToGo": "您可以继续。",
+    "pathways": "途径覆盖",
+    "pathwaysNone": "尚未选择任何化合物。"
+  },
   "dashboard": {
     "welcome": "欢迎使用 Biozephyra AI",
     "overview": "健康概览",

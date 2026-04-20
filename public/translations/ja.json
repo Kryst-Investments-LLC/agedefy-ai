@@ -111,6 +111,19 @@
       "community": "専門家コミュニティ"
     }
   },
+  "mixer": {
+    "buildStack": "スタックを構築する",
+    "buildStackDesc": "化合物を検索して追加し、相互作用と経路カバレッジを確認します。",
+    "searchPlaceholder": "化合物を検索（例：ラパマイシン、NMN、フィセチン）\u2026",
+    "yourStack": "あなたのスタック",
+    "interactions": "検出された相互作用",
+    "interactionBetween": "間の",
+    "interactionAnd": "と",
+    "noInteractions": "選択した化合物間に既知の相互作用は検出されませんでした。",
+    "goodToGo": "問題ありません。",
+    "pathways": "経路カバレッジ",
+    "pathwaysNone": "まだ化合物が選択されていません。"
+  },
   "dashboard": {
     "welcome": "Biozephyra AIへようこそ",
     "overview": "健康概要",

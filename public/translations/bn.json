@@ -111,6 +111,19 @@
       "community": "বিশেষজ্ঞ সম্প্রদায়"
     }
   },
+  "mixer": {
+    "buildStack": "Build Your Stack",
+    "buildStackDesc": "Search and add compounds to check interactions and pathway coverage.",
+    "searchPlaceholder": "Search compounds (e.g. Rapamycin, NMN, Fisetin)\u2026",
+    "yourStack": "Your Stack",
+    "interactions": "Detected Interactions",
+    "interactionBetween": "between",
+    "interactionAnd": "and",
+    "noInteractions": "No known interactions detected between your selected compounds.",
+    "goodToGo": "You're good to go.",
+    "pathways": "Pathway Coverage",
+    "pathwaysNone": "No compounds selected yet."
+  },
   "dashboard": {
     "welcome": "Biozephyra AI-তে স্বাগতম",
     "overview": "স্বাস্থ্য সংক্ষিপ্তসার",

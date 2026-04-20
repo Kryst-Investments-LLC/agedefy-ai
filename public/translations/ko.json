@@ -111,6 +111,19 @@
       "community": "전문가 커뮤니티"
     }
   },
+  "mixer": {
+    "buildStack": "스택 구성하기",
+    "buildStackDesc": "화합물을 검색하고 추가하여 상호작용 및 경로 커버리지를 확인하세요.",
+    "searchPlaceholder": "화합물 검색 (예: 라파마이신, NMN, 피세틴)\u2026",
+    "yourStack": "내 스택",
+    "interactions": "감지된 상호작용",
+    "interactionBetween": "사이",
+    "interactionAnd": "와",
+    "noInteractions": "선택한 화합물 사이에 알려진 상호작용이 없습니다.",
+    "goodToGo": "진행하셔도 됩니다.",
+    "pathways": "경로 커버리지",
+    "pathwaysNone": "아직 화합물이 선택되지 않았습니다."
+  },
   "dashboard": {
     "welcome": "Biozephyra AI에 오신 것을 환영합니다",
     "overview": "건강 개요",

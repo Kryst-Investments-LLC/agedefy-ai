@@ -1,0 +1,41 @@
+Total en.json leaf keys: 294
+Top-level sections: common, navigation, landing, stats, features, hero, mixer, dashboard, aiHealthCoach, researchAssistant, virtualAdvisor, predictiveAnalytics, molecularViewer, compoundMixer, wearableIntegration, blockchainHealth, socialNetwork, community, research, clinicalTrials, labTesting, telemedicine, marketplace, pricing, account, footer
+
+=== es.json : 327/294 keys | 0 missing ===
+  (complete)
+
+=== fr.json : 327/294 keys | 0 missing ===
+  (complete)
+
+=== de.json : 318/294 keys | 0 missing ===
+  (complete)
+
+=== pt.json : 327/294 keys | 0 missing ===
+  (complete)
+
+=== it.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== ja.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== zh.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== ko.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== ru.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== hi.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== bn.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== ta.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
+
+=== te.json : 298/294 keys | 11 missing ===
+  MISSING [mixer] (11): mixer.buildStack | mixer.buildStackDesc | mixer.searchPlaceholder | mixer.yourStack | mixer.interactions | mixer.interactionBetween | mixer.interactionAnd | mixer.noInteractions | mixer.goodToGo | mixer.pathways | mixer.pathwaysNone
