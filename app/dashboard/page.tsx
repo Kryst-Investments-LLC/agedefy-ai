@@ -77,7 +77,7 @@ export default async function DashboardPage() {
       orderBy: { receivedAt: "desc" },
       take: 10,
     }),
-    db.bioAgeSnapshot.findFirst({
+    db.biologicalAgeSnapshot.findFirst({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
     }).catch(() => null),
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
               ? {
                   biologicalAge: latestBioAge.biologicalAge,
                   chronologicalAge: latestBioAge.chronologicalAge,
-                  delta: latestBioAge.delta,
+                  delta: latestBioAge.biologicalAge - latestBioAge.chronologicalAge,
                 }
               : null
           }

@@ -8,8 +8,12 @@ function generateNonce(): string {
 }
 
 function buildCspHeader(nonce: string, isDev: boolean): string {
+  // In development, Next.js Turbopack/HMR injects inline scripts that cannot
+  // receive the per-request nonce. To keep the dev overlay and HMR working we
+  // drop 'strict-dynamic' and allow 'unsafe-inline' / 'unsafe-eval' in dev only.
+  // Production keeps the strict nonce-based policy.
   const scriptSrc = isDev
-    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+    ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:`
     : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
 
   return [
@@ -71,7 +75,7 @@ function buildRedirectResponse(request: NextRequest, pathname: string, nonce: st
   return applyCspHeaders(NextResponse.redirect(redirectUrl), nonce)
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = generateNonce()
   const { pathname } = request.nextUrl
   const needsAuth = AUTH_PATHS.some((p) => pathname.startsWith(p))
