@@ -98,21 +98,6 @@
     "ctaPrimary": "Créer un compte",
     "ctaSecondary": "Ouvrir le tableau de bord"
   },
-  "footer": {
-    "tagline": "Rendre la recherche anti-vieillissement accessible à tous grâce à l'IA.",
-    "featuresTitle": "Fonctionnalités",
-    "supportTitle": "Assistance",
-    "legalTitle": "Légal",
-    "compoundMixer": "Mélangeur de composés",
-    "researchSearch": "Recherche scientifique",
-    "helpCenter": "Centre d'aide",
-    "safetyGuidelines": "Consignes de sécurité",
-    "contactUs": "Contactez-nous",
-    "privacyPolicy": "Politique de confidentialité",
-    "termsOfService": "Conditions d'utilisation",
-    "medicalDisclaimer": "Avertissement médical",
-    "copyright": "© 2026 Biozephyra. Tous droits réservés. Cette application est uniquement à des fins éducatives."
-  },
   "hero": {
     "title": "Plateforme de longévité révolutionnaire",
     "subtitle": "Optimisation de la santé par IA avancée pour une espérance de vie prolongée et une vitalité améliorée",
@@ -161,7 +146,7 @@
   "mixer": {
     "buildStack": "Construisez votre pile",
     "buildStackDesc": "Recherchez et ajoutez des composés pour vérifier les interactions et la couverture des voies.",
-    "searchPlaceholder": "Rechercher des composés (ex. Rapamycine, NMN, Fisétine)\u2026",
+    "searchPlaceholder": "Rechercher des composés (ex. Rapamycine, NMN, Fisétine)…",
     "yourStack": "Votre Pile",
     "interactions": "Interactions détectées",
     "interactionBetween": "entre",
@@ -383,6 +368,18 @@
     "newsletter": "Newsletter",
     "subscribe": "S'abonner",
     "email": "Adresse e-mail",
-    "copyright": "© 2024 Biozephyra AI. Tous droits réservés."
+    "copyright": "© 2024 Biozephyra AI. Tous droits réservés.",
+    "compoundMixer": "Mélangeur de composés",
+    "safetyGuidelines": "Consignes de sécurité",
+    "featuresTitle": "Fonctionnalités",
+    "contactUs": "Contactez-nous",
+    "tagline": "Rendre la recherche anti-vieillissement accessible à tous grâce à l'IA.",
+    "researchSearch": "Recherche scientifique",
+    "termsOfService": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité",
+    "medicalDisclaimer": "Avertissement médical",
+    "legalTitle": "Légal",
+    "helpCenter": "Centre d'aide",
+    "supportTitle": "Assistance"
   }
 }

@@ -78,7 +78,7 @@
     "trustClinician": "Protocolli verificati da clinici",
     "trustRealData": "Dati reali di biomarcatori — Nessuna simulazione"
   },
-    "stats": {
+  "stats": {
     "sectionTitle": "Metriche live della piattaforma",
     "sectionDesc": "Conteggi reali dalla banca dati — nessun numero di marketing codificato.",
     "registeredUsers": "Utenti registrati",
@@ -97,21 +97,6 @@
     "ctaDesc": "Crea un account reale, monitora biomarcatori reali e gestisci la fatturazione.",
     "ctaPrimary": "Crea account",
     "ctaSecondary": "Apri il pannello"
-  },
-  "footer": {
-    "tagline": "Rendere la ricerca anti-invecchiamento accessibile a tutti tramite IA.",
-    "featuresTitle": "Funzionalità",
-    "supportTitle": "Supporto",
-    "legalTitle": "Legale",
-    "compoundMixer": "Miscelatore di composti",
-    "researchSearch": "Ricerca scientifica",
-    "helpCenter": "Centro assistenza",
-    "safetyGuidelines": "Linee guida sulla sicurezza",
-    "contactUs": "Contattaci",
-    "privacyPolicy": "Informativa sulla privacy",
-    "termsOfService": "Termini di servizio",
-    "medicalDisclaimer": "Avviso medico",
-    "copyright": "© 2026 Biozephyra. Tutti i diritti riservati. Questa app è solo a scopo educativo."
   },
   "hero": {
     "title": "Piattaforma Rivoluzionaria per la Longevità",
@@ -350,6 +335,18 @@
     "newsletter": "Bollettino",
     "subscribe": "Iscriviti",
     "email": "Indirizzo e-mail",
-    "copyright": "© 2024 Biozephyra AI. Tutti i diritti riservati."
+    "copyright": "© 2024 Biozephyra AI. Tutti i diritti riservati.",
+    "compoundMixer": "Miscelatore di composti",
+    "safetyGuidelines": "Linee guida sulla sicurezza",
+    "featuresTitle": "Funzionalità",
+    "contactUs": "Contattaci",
+    "tagline": "Rendere la ricerca anti-invecchiamento accessibile a tutti tramite IA.",
+    "researchSearch": "Ricerca scientifica",
+    "termsOfService": "Termini di servizio",
+    "privacyPolicy": "Informativa sulla privacy",
+    "medicalDisclaimer": "Avviso medico",
+    "legalTitle": "Legale",
+    "helpCenter": "Centro assistenza",
+    "supportTitle": "Supporto"
   }
 }

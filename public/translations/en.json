@@ -357,5 +357,20 @@
     "privacy": "Privacy",
     "security": "Security",
     "data": "Data"
+  },
+  "footer": {
+    "tagline": "Making anti-aging research accessible to everyone through AI-powered insights and education.",
+    "featuresTitle": "Features",
+    "supportTitle": "Support",
+    "legalTitle": "Legal",
+    "compoundMixer": "Compound Mixer",
+    "researchSearch": "Research Search",
+    "helpCenter": "Help Center",
+    "safetyGuidelines": "Safety Guidelines",
+    "contactUs": "Contact Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "copyright": "\u00a9 2026 Biozephyra. All rights reserved. This app is for educational purposes only and does not provide medical advice."
   }
 } 

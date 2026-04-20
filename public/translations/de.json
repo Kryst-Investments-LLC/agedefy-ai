@@ -355,5 +355,20 @@
     "privacy": "Datenschutz",
     "security": "Sicherheit",
     "data": "Daten"
+  },
+  "footer": {
+    "tagline": "Anti-Aging-Forschung f\u00fcr alle zug\u00e4nglich machen durch KI-gest\u00fctzte Einblicke.",
+    "featuresTitle": "Funktionen",
+    "supportTitle": "Support",
+    "legalTitle": "Rechtliches",
+    "compoundMixer": "Verbindungsmischer",
+    "researchSearch": "Forschungssuche",
+    "helpCenter": "Hilfecenter",
+    "safetyGuidelines": "Sicherheitsrichtlinien",
+    "contactUs": "Kontakt",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsOfService": "Nutzungsbedingungen",
+    "medicalDisclaimer": "Medizinischer Haftungsausschluss",
+    "copyright": "\u00a9 2026 Biozephyra. Alle Rechte vorbehalten. Diese App dient nur zu Bildungszwecken."
   }
 }

@@ -98,22 +98,7 @@
     "ctaPrimary": "계정 만들기",
     "ctaSecondary": "대시보드 열기"
   },
-  "footer": {
-    "tagline": "AI를 통해 노화 방지 연구를 모든 사람에게.",
-    "featuresTitle": "기능",
-    "supportTitle": "지원",
-    "legalTitle": "법적 정보",
-    "compoundMixer": "화합물 믹서",
-    "researchSearch": "연구 검색",
-    "helpCenter": "도움말 센터",
-    "safetyGuidelines": "안전 지침",
-    "contactUs": "문의하기",
-    "privacyPolicy": "개인정보 처리방침",
-    "termsOfService": "서비스 약관",
-    "medicalDisclaimer": "의료 면책 조항",
-    "copyright": "© 2026 Biozephyra. 모든 권리 보유. 이 앱은 교육 목적으로만 사용됩니다."
-  },
-    "hero": {
+  "hero": {
     "title": "혁신적인 장수 플랫폼",
     "subtitle": "첨단 AI 기반 건강 최적화로 수명 연장과 활력 향상",
     "description": "최첨단 AI, 실시간 바이오마커 분석, 과학적으로 검증된 장수 중재로 개인화된 건강의 미래를 경험하세요.",
@@ -350,6 +335,18 @@
     "newsletter": "뉴스레터",
     "subscribe": "구독",
     "email": "이메일 주소",
-    "copyright": "© 2024 Biozephyra AI. 모든 권리 보유."
+    "copyright": "© 2024 Biozephyra AI. 모든 권리 보유.",
+    "compoundMixer": "화합물 믹서",
+    "safetyGuidelines": "안전 지침",
+    "featuresTitle": "기능",
+    "contactUs": "문의하기",
+    "tagline": "AI를 통해 노화 방지 연구를 모든 사람에게.",
+    "researchSearch": "연구 검색",
+    "termsOfService": "이용약관",
+    "privacyPolicy": "개인정보 처리방침",
+    "medicalDisclaimer": "의료 면책 조항",
+    "legalTitle": "법적 정보",
+    "helpCenter": "도움말 센터",
+    "supportTitle": "지원"
   }
 }

@@ -98,22 +98,7 @@
     "ctaPrimary": "Create Account",
     "ctaSecondary": "Open Dashboard"
   },
-  "footer": {
-    "tagline": "Making anti-aging research accessible to everyone through AI.",
-    "featuresTitle": "Features",
-    "supportTitle": "Support",
-    "legalTitle": "Legal",
-    "compoundMixer": "Compound Mixer",
-    "researchSearch": "Research Search",
-    "helpCenter": "Help Center",
-    "safetyGuidelines": "Safety Guidelines",
-    "contactUs": "Contact Us",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service",
-    "medicalDisclaimer": "Medical Disclaimer",
-    "copyright": "© 2026 Biozephyra. All rights reserved. Educational purposes only."
-  },
-    "hero": {
+  "hero": {
     "title": "విప్లవాత్మక దీర్ఘాయువు వేదిక",
     "subtitle": "పొడిగించిన ఆయుర్దాయం మరియు మెరుగైన జీవశక్తి కోసం అధునాతన AI-ఆధారిత ఆరోగ్య ఆప్టిమైజేషన్",
     "description": "అత్యాధునిక AI, నిజ-సమయ బయోమార్కర్ విశ్లేషణ మరియు శాస్త్రీయంగా నిరూపించబడిన దీర్ఘాయువు జోక్యాలతో వ్యక్తిగతీకరించిన ఆరోగ్యం యొక్క భవిష్యత్తును అనుభవించండి.",
@@ -350,6 +335,18 @@
     "newsletter": "న్యూస్‌లెటర్",
     "subscribe": "సబ్‌స్క్రైబ్ చేయండి",
     "email": "ఇమెయిల్ చిరునామా",
-    "copyright": "© 2024 Biozephyra AI. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి."
+    "copyright": "© 2024 Biozephyra AI. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.",
+    "compoundMixer": "Compound Mixer",
+    "safetyGuidelines": "Safety Guidelines",
+    "featuresTitle": "Features",
+    "contactUs": "Contact Us",
+    "tagline": "Making anti-aging research accessible to everyone through AI-powered insights and education.",
+    "researchSearch": "Research Search",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "legalTitle": "Legal",
+    "helpCenter": "Help Center",
+    "supportTitle": "Support"
   }
 }

@@ -98,22 +98,7 @@
     "ctaPrimary": "Create Account",
     "ctaSecondary": "Open Dashboard"
   },
-  "footer": {
-    "tagline": "Making anti-aging research accessible to everyone through AI.",
-    "featuresTitle": "Features",
-    "supportTitle": "Support",
-    "legalTitle": "Legal",
-    "compoundMixer": "Compound Mixer",
-    "researchSearch": "Research Search",
-    "helpCenter": "Help Center",
-    "safetyGuidelines": "Safety Guidelines",
-    "contactUs": "Contact Us",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service",
-    "medicalDisclaimer": "Medical Disclaimer",
-    "copyright": "© 2026 Biozephyra. All rights reserved. Educational purposes only."
-  },
-    "hero": {
+  "hero": {
     "title": "বিপ্লবী দীর্ঘায়ু প্ল্যাটফর্ম",
     "subtitle": "বর্ধিত আয়ু এবং উন্নত জীবনীশক্তির জন্য উন্নত AI-চালিত স্বাস্থ্য অপটিমাইজেশন",
     "description": "অত্যাধুনিক AI, রিয়েল-টাইম বায়োমার্কার বিশ্লেষণ এবং বৈজ্ঞানিকভাবে প্রমাণিত দীর্ঘায়ু হস্তক্ষেপের মাধ্যমে ব্যক্তিগত স্বাস্থ্যের ভবিষ্যৎ অনুভব করুন।",
@@ -350,6 +335,18 @@
     "newsletter": "নিউজলেটার",
     "subscribe": "সাবস্ক্রাইব করুন",
     "email": "ইমেইল ঠিকানা",
-    "copyright": "© 2024 Biozephyra AI. সর্বস্বত্ব সংরক্ষিত।"
+    "copyright": "© 2024 Biozephyra AI. সর্বস্বত্ব সংরক্ষিত।",
+    "compoundMixer": "Compound Mixer",
+    "safetyGuidelines": "Safety Guidelines",
+    "featuresTitle": "Features",
+    "contactUs": "Contact Us",
+    "tagline": "Making anti-aging research accessible to everyone through AI-powered insights and education.",
+    "researchSearch": "Research Search",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "medicalDisclaimer": "Medical Disclaimer",
+    "legalTitle": "Legal",
+    "helpCenter": "Help Center",
+    "supportTitle": "Support"
   }
 }

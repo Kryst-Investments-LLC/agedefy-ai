@@ -98,22 +98,7 @@
     "ctaPrimary": "アカウントを作成",
     "ctaSecondary": "ダッシュボードを開く"
   },
-  "footer": {
-    "tagline": "AIを活用して、アンチエイジング研究をすべての人に。",
-    "featuresTitle": "機能",
-    "supportTitle": "サポート",
-    "legalTitle": "法的情報",
-    "compoundMixer": "化合物ミキサー",
-    "researchSearch": "研究検索",
-    "helpCenter": "ヘルプセンター",
-    "safetyGuidelines": "安全ガイドライン",
-    "contactUs": "お問い合わせ",
-    "privacyPolicy": "プライバシーポリシー",
-    "termsOfService": "利用規約",
-    "medicalDisclaimer": "医療免責事項",
-    "copyright": "© 2026 Biozephyra. 全著作権所有。このアプリは教育目的のみです。"
-  },
-    "hero": {
+  "hero": {
     "title": "革新的な長寿プラットフォーム",
     "subtitle": "高度なAIによる健康最適化で寿命延長と活力向上を実現",
     "description": "最先端AI、リアルタイムバイオマーカー分析、科学的に証明された長寿介入で、パーソナライズされた健康の未来を体験してください。",
@@ -350,6 +335,18 @@
     "newsletter": "ニュースレター",
     "subscribe": "購読",
     "email": "メールアドレス",
-    "copyright": "© 2024 Biozephyra AI. 全著作権所有。"
+    "copyright": "© 2024 Biozephyra AI. 全著作権所有。",
+    "compoundMixer": "化合物ミキサー",
+    "safetyGuidelines": "安全ガイドライン",
+    "featuresTitle": "機能",
+    "contactUs": "お問い合わせ",
+    "tagline": "AIを活用して、アンチエイジング研究をすべての人に。",
+    "researchSearch": "研究検索",
+    "termsOfService": "利用規約",
+    "privacyPolicy": "プライバシーポリシー",
+    "medicalDisclaimer": "医療免責事項",
+    "legalTitle": "法的情報",
+    "helpCenter": "ヘルプセンター",
+    "supportTitle": "サポート"
   }
 }
