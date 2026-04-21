@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { headers } from "next/headers"
 
 import { Providers } from "./providers"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -36,8 +37,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const hdrs = await headers()
-  const nonce = hdrs.get("x-nonce") ?? undefined
+  // Touch headers() so this layout stays dynamic and the proxy.ts CSP/nonce
+  // headers are generated per request even though we no longer inject an
+  // inline <script nonce>.
+  await headers()
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -52,18 +55,7 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <Providers>{children}</Providers>
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
-                });
-              }
-            `,
-          }}
-        />
+        <ServiceWorkerRegister />
       </body>
     </html>
   )
