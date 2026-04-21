@@ -64,6 +64,17 @@ export function InteractionGraph({
     const W = rect.width
     const H = rect.height
 
+    // Resolve theme-aware colors from actual computed CSS (canvas can't parse
+    // hsl(var(--token)) directly).
+    const computed = getComputedStyle(canvas)
+    const fallback = (token: string, dflt: string) => {
+      const raw = computed.getPropertyValue(token).trim()
+      return raw ? `hsl(${raw})` : dflt
+    }
+    const NODE_FILL = fallback('--card', '#1f2937')
+    const NODE_STROKE = fallback('--border', '#475569')
+    const LABEL_FILL = fallback('--foreground', '#f8fafc')
+
     // Initialize nodes in a circle
     const cx = W / 2
     const cy = H / 2
@@ -185,15 +196,15 @@ export function InteractionGraph({
         // Circle
         ctx.beginPath()
         ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI)
-        ctx.fillStyle = 'hsl(var(--card))'
+        ctx.fillStyle = NODE_FILL
         ctx.fill()
-        ctx.strokeStyle = 'hsl(var(--border))'
+        ctx.strokeStyle = NODE_STROKE
         ctx.lineWidth = 2
         ctx.stroke()
 
         // Label
         ctx.font = 'bold 11px system-ui, sans-serif'
-        ctx.fillStyle = 'hsl(var(--foreground))'
+        ctx.fillStyle = LABEL_FILL
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         const label =
@@ -249,6 +260,12 @@ export function InteractionGraph({
         aria-label={`Interaction graph showing ${compounds.length} compounds and ${interactions.length} interactions`}
         role="img"
       />
+      {interactions.length === 0 && (
+        <p className="px-4 pb-4 text-xs text-muted-foreground">
+          No documented direct interactions between the selected compounds in our database. The nodes are shown without
+          connecting edges. Absence of a recorded interaction is not the same as proven safety — always review with a clinician.
+        </p>
+      )}
     </div>
   )
 }

@@ -15,9 +15,24 @@ export function MarketplacePage({ initialSnapshot }: { initialSnapshot: Marketpl
         <MarketplaceHeader />
         <Tabs defaultValue="scientist" className="space-y-6">
           <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-slate-900/90 p-1 text-white">
-            <TabsTrigger value="scientist">Scientist Dashboard</TabsTrigger>
-            <TabsTrigger value="sponsor">Sponsor Dashboard</TabsTrigger>
-            <TabsTrigger value="deal">Deal Room</TabsTrigger>
+            <TabsTrigger
+              value="scientist"
+              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-slate-300 hover:text-white"
+            >
+              Scientist Dashboard
+            </TabsTrigger>
+            <TabsTrigger
+              value="sponsor"
+              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-slate-300 hover:text-white"
+            >
+              Sponsor Dashboard
+            </TabsTrigger>
+            <TabsTrigger
+              value="deal"
+              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-slate-300 hover:text-white"
+            >
+              Deal Room
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="scientist">
             <ScientistDashboard />

@@ -70,8 +70,17 @@ export default function MarketplacePage() {
           fetch(url),
           session ? fetch("/api/marketplace/orders") : Promise.resolve(null),
         ])
-        if (prodRes.ok) setProducts(await prodRes.json())
-        if (ordRes?.ok) setOrders(await ordRes.json())
+        if (prodRes.ok) {
+          const data = await prodRes.json()
+          // API returns { items, nextCursor }; legacy callers may receive a bare array.
+          const list: Product[] = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []
+          setProducts(list)
+        }
+        if (ordRes?.ok) {
+          const ordData = await ordRes.json()
+          const ordList: Order[] = Array.isArray(ordData) ? ordData : Array.isArray(ordData?.items) ? ordData.items : []
+          setOrders(ordList)
+        }
       } finally {
         setLoading(false)
       }

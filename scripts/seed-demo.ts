@@ -179,6 +179,35 @@ async function main() {
   })
   console.log(`✅  Audit log entry created`)
 
+  // ─── 5. Active Plus subscription (unlocks premium features) ──────────────
+  // The platform's `hasPremiumEntitlement()` check looks for an ACTIVE/TRIALING
+  // Subscription whose plan name is in the premium set ("Plus", "Clinic & Research",
+  // "Enterprise"). We need this so the demo can walk through AI Personalization,
+  // Lab Testing, Clinical Trials Explorer, etc., during the grant video.
+  const existingSub = await db.subscription.findFirst({
+    where: { userId: user.id, status: { in: ["ACTIVE", "TRIALING"] } },
+  })
+  if (!existingSub) {
+    await db.subscription.create({
+      data: {
+        userId: user.id,
+        tenantId: "default",
+        plan: "Plus",
+        status: "ACTIVE",
+        provider: "manual",
+        priceCents: 4900,
+        currency: "USD",
+        billingCycle: "monthly",
+        seatQuantity: 1,
+        monthlyAICreditAllowance: 500,
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    })
+    console.log(`✅  Active "Plus" subscription created (premium features unlocked)`)
+  } else {
+    console.log(`ℹ️  Active subscription already present (plan: ${existingSub.plan})`)
+  }
+
   // ─── Summary ──────────────────────────────────────────────────────────────
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

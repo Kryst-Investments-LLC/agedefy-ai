@@ -106,6 +106,15 @@ export default function TelemedicinePage() {
           <p className="mt-2 text-gray-400">
             Browse clinician consultation workflows for longevity medicine, hormone health, and preventive care. Clinical availability, appropriateness, and treatment decisions depend on licensure and physician judgment.
           </p>
+          <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
+            <p className="font-semibold">Demo / pilot directory</p>
+            <p className="mt-1 text-amber-100/80">
+              Provider records shown below are placeholder profiles used for the pilot demo. Real clinics and physician
+              groups can self-onboard via the upcoming Provider Portal: today this requires a manual onboarding ticket
+              (clinic agreement, NPI verification, state licensure proof, malpractice attestation). Self-serve clinic
+              upload of their own clinicians is on the roadmap, not yet shipped.
+            </p>
+          </div>
         </div>
 
         {loading ? (

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
+import { ResearchQuickSearch } from "@/components/research-quick-search"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 
@@ -44,36 +45,41 @@ export default async function ResearchPage() {
             <p className="text-gray-300">Sign in to view your research collections.</p>
             <Link href="/sign-in"><Button className="mt-4 bg-teal-600 hover:bg-teal-700">Sign in</Button></Link>
           </div>
-        ) : collections.length === 0 ? (
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center">
-            <p className="text-gray-300">No research collections yet.</p>
-            <p className="mt-2 text-sm text-gray-500">Use the Enterprise Operations panel on the dashboard to ingest PubMed articles.</p>
-            <Link href="/dashboard"><Button className="mt-4 bg-teal-600 hover:bg-teal-700">Open dashboard</Button></Link>
-          </div>
         ) : (
           <>
-            <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {collections.map((col) => (
-                <div key={col.id} className="rounded-2xl border border-gray-800 bg-gray-950 p-5">
-                  <p className="font-semibold">{col.name}</p>
-                  {col.description ? <p className="mt-1 text-sm text-gray-400">{col.description}</p> : null}
-                  <p className="mt-3 text-xs text-gray-500">{col._count.entries} entries · updated {new Date(col.updatedAt).toLocaleDateString()}</p>
-                </div>
-              ))}
-            </section>
+            <ResearchQuickSearch />
 
-            <section className="mt-10">
-              <h2 className="text-2xl font-semibold">Recent articles</h2>
-              <div className="mt-4 space-y-3">
-                {recentEntries.map((entry) => (
-                  <div key={entry.id} className="rounded-xl border border-gray-800 bg-gray-950 p-4">
-                    <p className="font-medium">{entry.title}</p>
-                    <p className="mt-1 text-xs text-gray-400">{entry.authors ?? "Unknown authors"} · {entry.source.toLowerCase()}{entry.externalId ? ` · ${entry.externalId}` : ""}</p>
-                    {entry.url ? <a href={entry.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs text-teal-400 hover:underline">Open source</a> : null}
-                  </div>
-                ))}
+            {collections.length === 0 ? (
+              <div className="mt-8 rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center">
+                <p className="text-gray-300">No research collections yet.</p>
+                <p className="mt-2 text-sm text-gray-500">Run a PubMed search above to create your first collection.</p>
               </div>
-            </section>
+            ) : (
+              <>
+                <section className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {collections.map((col) => (
+                    <div key={col.id} className="rounded-2xl border border-gray-800 bg-gray-950 p-5">
+                      <p className="font-semibold">{col.name}</p>
+                      {col.description ? <p className="mt-1 text-sm text-gray-400">{col.description}</p> : null}
+                      <p className="mt-3 text-xs text-gray-500">{col._count.entries} entries · updated {new Date(col.updatedAt).toLocaleDateString()}</p>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="mt-10">
+                  <h2 className="text-2xl font-semibold">Recent articles</h2>
+                  <div className="mt-4 space-y-3">
+                    {recentEntries.map((entry) => (
+                      <div key={entry.id} className="rounded-xl border border-gray-800 bg-gray-950 p-4">
+                        <p className="font-medium">{entry.title}</p>
+                        <p className="mt-1 text-xs text-gray-400">{entry.authors ?? "Unknown authors"} · {entry.source.toLowerCase()}{entry.externalId ? ` · ${entry.externalId}` : ""}</p>
+                        {entry.url ? <a href={entry.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs text-teal-400 hover:underline">Open source</a> : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
           </>
         )}
       </main>
