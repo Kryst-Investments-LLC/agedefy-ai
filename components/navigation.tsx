@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GlobalSearch } from "@/components/global-search"
@@ -29,6 +30,9 @@ import {
   GitBranch,
   Sparkles,
   Handshake,
+  LogIn,
+  LogOut,
+  Activity,
 } from "lucide-react"
 
 const BADGE_CLS = "ml-auto bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-600/20 dark:text-teal-300 dark:border-teal-500/20 text-xs"
@@ -44,6 +48,7 @@ type NavItem = {
 const navigation: NavItem[] = [
   { i18nKey: "home", fallback: "Home", href: "/", icon: Home },
   { i18nKey: "dashboard", fallback: "Dashboard", href: "/dashboard", icon: BarChart3 },
+  { i18nKey: "bioAge", fallback: "Bio-Age", href: "/bio-age", icon: Activity },
   { i18nKey: "research", fallback: "Research", href: "/research", icon: Search },
   { i18nKey: "predictiveAnalytics", fallback: "Intelligence", href: "/intelligence", icon: Sparkles, badge: "New" },
   { i18nKey: "compoundMixer", fallback: "Compound Mixer", href: "/mixer", icon: TestTube },
@@ -75,6 +80,8 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const { t } = useTranslation()
+  const { data: session, status } = useSession()
+  const isAuthed = status === "authenticated" && !!session?.user
 
   function label(item: NavItem) {
     const translated = t(`navigation.${item.i18nKey}`)
@@ -127,12 +134,38 @@ export function Navigation() {
               {label({ i18nKey: "pricing", fallback: "Pricing", href: "/pricing", icon: DollarSign })}
             </Button>
           </Link>
-          <Link href="/account" className="hidden md:inline-flex">
-            <Button variant="ghost" className="text-gray-300 hover:text-white">
-              <User className="mr-1 h-4 w-4" />
-              {label({ i18nKey: "account", fallback: "Account", href: "/account", icon: User })}
-            </Button>
-          </Link>
+          {isAuthed ? (
+            <>
+              <Link href="/account" className="hidden md:inline-flex">
+                <Button variant="ghost" className="text-gray-300 hover:text-white">
+                  <User className="mr-1 h-4 w-4" />
+                  {label({ i18nKey: "account", fallback: "Account", href: "/account", icon: User })}
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="hidden md:inline-flex text-gray-300 hover:text-white"
+              >
+                <LogOut className="mr-1 h-4 w-4" />
+                {label({ i18nKey: "signOut", fallback: "Sign Out", href: "#", icon: LogOut })}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" className="hidden md:inline-flex">
+                <Button variant="ghost" className="text-gray-300 hover:text-white">
+                  <LogIn className="mr-1 h-4 w-4" />
+                  {label({ i18nKey: "signIn", fallback: "Sign In", href: "/sign-in", icon: LogIn })}
+                </Button>
+              </Link>
+              <Link href="/sign-up" className="hidden md:inline-flex">
+                <Button className="bg-teal-600 text-white hover:bg-teal-700">
+                  {label({ i18nKey: "getStarted", fallback: "Get Started", href: "/sign-up", icon: User })}
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -175,10 +208,36 @@ export function Navigation() {
             })}
           </ul>
         </nav>
-        <div className="border-t border-border p-3">
-          <Button className="w-full bg-teal-600 text-white hover:bg-teal-700">
-            {label({ i18nKey: "getStarted", fallback: "Get Started", href: "#", icon: User })}
-          </Button>
+        <div className="space-y-2 border-t border-border p-3">
+          {isAuthed ? (
+            <>
+              <p className="truncate px-1 text-xs text-muted-foreground" title={session?.user?.email ?? ""}>
+                {session?.user?.email ?? session?.user?.name}
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                {label({ i18nKey: "signOut", fallback: "Sign Out", href: "#", icon: LogOut })}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" className="block">
+                <Button variant="outline" className="w-full">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  {label({ i18nKey: "signIn", fallback: "Sign In", href: "/sign-in", icon: LogIn })}
+                </Button>
+              </Link>
+              <Link href="/sign-up" className="block">
+                <Button className="w-full bg-teal-600 text-white hover:bg-teal-700">
+                  {label({ i18nKey: "getStarted", fallback: "Get Started", href: "/sign-up", icon: User })}
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </aside>
 
@@ -259,6 +318,37 @@ export function Navigation() {
             </li>
           </ul>
         </nav>
+        <div className="space-y-2 border-t border-gray-700 p-3">
+          {isAuthed ? (
+            <>
+              <p className="truncate px-1 text-xs text-gray-400" title={session?.user?.email ?? ""}>
+                {session?.user?.email ?? session?.user?.name}
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setIsOpen(false); signOut({ callbackUrl: "/" }) }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                {label({ i18nKey: "signOut", fallback: "Sign Out", href: "#", icon: LogOut })}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" className="block" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" className="w-full">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  {label({ i18nKey: "signIn", fallback: "Sign In", href: "/sign-in", icon: LogIn })}
+                </Button>
+              </Link>
+              <Link href="/sign-up" className="block" onClick={() => setIsOpen(false)}>
+                <Button className="w-full bg-teal-600 text-white hover:bg-teal-700">
+                  {label({ i18nKey: "getStarted", fallback: "Get Started", href: "/sign-up", icon: User })}
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
       </aside>
     </>
   )

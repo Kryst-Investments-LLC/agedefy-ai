@@ -208,6 +208,101 @@ async function main() {
     console.log(`ℹ️  Active subscription already present (plan: ${existingSub.plan})`)
   }
 
+  // ─── 6. Compounds + interaction edges (Compound Mixer demo) ──────────────
+  // Seed three well-known longevity compounds plus pairwise CompoundInteraction
+  // records so the Compound Mixer's interaction graph renders edges instead of
+  // an empty "no documented interactions" message during the grant video.
+  const compoundSeeds = [
+    {
+      name: "NMN",
+      category: "supplement",
+      mechanism:
+        "NAD+ precursor (nicotinamide mononucleotide). Supports sirtuin activity and mitochondrial function.",
+      casNumber: "1094-61-7",
+      description: "β-Nicotinamide mononucleotide; oral NAD+ precursor studied for age-related metabolic decline.",
+    },
+    {
+      name: "Rapamycin",
+      category: "drug",
+      mechanism: "mTORC1 inhibitor. Extends lifespan in mice; clinical use as immunosuppressant (sirolimus).",
+      casNumber: "53123-88-9",
+      description:
+        "Macrolide originally isolated from Streptomyces hygroscopicus; selective mTORC1 inhibition at low intermittent doses.",
+    },
+    {
+      name: "Fisetin",
+      category: "supplement",
+      mechanism: "Senolytic flavonoid; selectively induces apoptosis in some senescent cell populations.",
+      casNumber: "528-48-3",
+      description: "Plant-derived flavonol with senolytic activity demonstrated in mouse models.",
+    },
+  ] as const
+
+  const compoundIds: Record<string, string> = {}
+  for (const c of compoundSeeds) {
+    const compound = await db.compound.upsert({
+      where: { name: c.name },
+      update: { category: c.category, mechanism: c.mechanism, description: c.description },
+      create: { ...c },
+    })
+    compoundIds[c.name] = compound.id
+  }
+  console.log(`✅  Upserted ${compoundSeeds.length} demo compounds`)
+
+  const interactionSeeds: Array<{
+    a: string
+    b: string
+    severity: "BENEFICIAL" | "NEUTRAL" | "CAUTION" | "DANGEROUS" | "UNKNOWN"
+    description: string
+    source?: string
+  }> = [
+    {
+      a: "NMN",
+      b: "Rapamycin",
+      severity: "CAUTION",
+      description:
+        "Mechanistically distinct (NAD+ precursor vs mTOR inhibitor). Limited human co-administration data; rapamycin can blunt some anabolic responses, so monitor metabolic biomarkers when stacked.",
+      source: "Mechanistic review; no high-quality human interaction RCT as of 2025.",
+    },
+    {
+      a: "NMN",
+      b: "Fisetin",
+      severity: "BENEFICIAL",
+      description:
+        "Complementary mechanisms in mouse models: NMN restores NAD+, fisetin clears senescent cells. Often discussed as a complementary stack in longevity literature; clinical evidence in humans is limited.",
+      source: "Yousefzadeh et al. 2018 (fisetin); Mills et al. 2016 (NMN).",
+    },
+    {
+      a: "Rapamycin",
+      b: "Fisetin",
+      severity: "NEUTRAL",
+      description:
+        "No documented direct interaction. Both target aging-related pathways via different mechanisms (mTOR inhibition vs senolysis); always discuss combination dosing with a clinician.",
+    },
+  ]
+
+  let ixCount = 0
+  for (const ix of interactionSeeds) {
+    const aId = compoundIds[ix.a]
+    const bId = compoundIds[ix.b]
+    if (!aId || !bId) continue
+    // Order the pair deterministically so the unique index protects against duplicates
+    const [first, second] = aId < bId ? [aId, bId] : [bId, aId]
+    await db.compoundInteraction.upsert({
+      where: { compoundAId_compoundBId: { compoundAId: first, compoundBId: second } },
+      update: { severity: ix.severity, description: ix.description, source: ix.source },
+      create: {
+        compoundAId: first,
+        compoundBId: second,
+        severity: ix.severity,
+        description: ix.description,
+        source: ix.source,
+      },
+    })
+    ixCount++
+  }
+  console.log(`✅  Upserted ${ixCount} compound-interaction edges`)
+
   // ─── Summary ──────────────────────────────────────────────────────────────
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
