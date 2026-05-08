@@ -37,6 +37,20 @@ inputs:
     required: false
     description: Upstream trace correlation identifier.
 
+outputs:
+  - name: response
+    type: object
+    required: true
+    description: Final composed response payload returned to the caller.
+  - name: trace
+    type: array
+    required: true
+    description: Structured execution trace (ordered list of agent decisions).
+  - name: status
+    type: string
+    required: true
+    description: Overall status of orchestration (ok, partial, fallback, error).
+
 sub_agents:
   - name: ux-ui-agent
   - name: design-system-agent
