@@ -34,9 +34,8 @@ jobs:
       - run: npm install -g ajv-cli@5 ajv-formats@3 js-yaml@4
 
       - name: Convert YAML to JSON (for ajv)
-        env:
-          NODE_PATH: /usr/local/lib/node_modules
         run: |
+          export NODE_PATH="$(npm root -g)"
           mkdir -p .ci/json
           find agents workflows metadata jurisdictions -name '*.yml' -print0 | while IFS= read -r -d '' f; do
             out=".ci/json/${f//\//__}.json"

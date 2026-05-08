@@ -20,4 +20,5 @@ jobs:
       - name: Validate legal rules
         shell: pwsh
         run: |
+          Install-Module powershell-yaml -Scope CurrentUser -Force
           ./tools/validate-legal-rules.ps1
