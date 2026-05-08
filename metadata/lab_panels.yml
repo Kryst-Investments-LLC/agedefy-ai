@@ -1,0 +1,19 @@
+version: 1.0.0
+description: Controlled vocabulary of lab panels offered by the platform.
+panels:
+  - id: cmp
+    name: "Comprehensive Metabolic Panel"
+    biomarkers: [fasting_glucose, hba1c]
+  - id: lipid_advanced
+    name: "Advanced Lipid Panel"
+    biomarkers: [ldl_c, hdl_c, apob, lp_a]
+  - id: inflammation
+    name: "Inflammation Panel"
+    biomarkers: [hs_crp, homocysteine, ferritin]
+  - id: hormones_full
+    name: "Full Hormone Panel"
+    biomarkers: []
+    requires_clinician_review: true
+  - id: longevity_premium
+    name: "Longevity Premium"
+    biomarkers: [hba1c, apob, lp_a, hs_crp, vitamin_d, epi_age]

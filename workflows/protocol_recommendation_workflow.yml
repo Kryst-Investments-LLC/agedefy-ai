@@ -1,0 +1,45 @@
+name: protocol_recommendation_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: longevity.protocol_recommendation
+description: Generate, fork, or refine a longevity protocol with compound stacks.
+feature_module: protocol-engine
+plan_gating: [pro, enterprise]
+preconditions:
+  - "user.authenticated"
+  - "user.has_baseline_biomarkers"
+legal_checks: ["supplement_legality", "medical_advice_disclaimer"]
+audit_events:
+  - "protocol.created"
+  - "protocol.forked"
+  - "protocol.published"
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: load_template
+    agent: business-agent
+    action: load_protocol_template
+  - id: safety
+    agent: safety-agent
+    action: check_compound_interactions
+    on_error: "block_and_explain"
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "protocol_publish" }
+  - id: personalize
+    agent: ai-personalization-agent
+    action: tailor_to_biomarkers
+  - id: clinician_review
+    agent: clinician-review-agent
+    action: enqueue_if_high_risk
+  - id: persist
+    agent: business-agent
+    action: save_protocol
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 5000

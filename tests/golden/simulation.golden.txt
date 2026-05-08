@@ -1,0 +1,13 @@
+--- SIMULATION (V3) ---
+Platform: biozephyra-ai
+Sample query: Interpret basic biomarkers for longevity context.
+Detected intent:   longevity.biomarker_context
+Selected workflow: biomarker_interpretation_workflow
+
+--- ORCHESTRATOR TRACE (V3) ---
+[entry-agent] parsed query -> intent: longevity.biomarker_context
+[orchestrator] route: domain-agent -> business-agent -> law-awareness-agent
+[domain-agent] applies domain reasoning for intent: longevity.biomarker_context
+[business-agent] runs workflow: biomarker_interpretation_workflow
+[law-awareness-agent] checks jurisdiction rules
+[final] composed answer

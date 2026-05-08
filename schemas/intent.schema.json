@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agedefy.ai/schemas/intent.schema.json",
+  "title": "AgeDefy Intent Taxonomy",
+  "type": "object",
+  "required": ["version", "intents"],
+  "properties": {
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "intents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "workflow", "examples"],
+        "properties": {
+          "id":          { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z0-9_]+$" },
+          "description": { "type": "string", "minLength": 5 },
+          "workflow":    { "type": "string" },
+          "slots":       { "type": "array", "items": { "type": "string" } },
+          "fallback":    { "type": "string" },
+          "examples":    { "type": "array", "minItems": 2, "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

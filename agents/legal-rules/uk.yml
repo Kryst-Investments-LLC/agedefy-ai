@@ -1,3 +1,59 @@
-﻿jurisdiction: uk
+﻿jurisdiction:
+  code: "uk"
+  name: "United Kingdom"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - uk_gdpr_data_protection
+  - mhra_medicines_regulation
+  - mhra_medical_device
+  - asa_cap_advertising
+  - food_supplement_regulations
+
 rules:
-  - placeholder: true
+  - id: uk.gdpr.health_data_consent
+    description: Explicit consent required to process health data.
+    severity: critical
+    category: biomarker_privacy
+    when: ["workflow processes health data of a UK subject"]
+    then: ["require explicit consent", "record lawful basis"]
+    citations:
+      - title: "UK GDPR Article 9"
+        url: "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/lawful-basis/special-category-data/"
+
+  - id: uk.mhra.unlicensed_medicines_block
+    description: Unlicensed medicines may not be supplied to the public.
+    severity: critical
+    category: supplement_legality
+    when: ["product flagged unlicensed_medicine"]
+    then: ["block marketplace listing"]
+    citations:
+      - title: "Human Medicines Regulations 2012"
+        url: "https://www.legislation.gov.uk/uksi/2012/1916/contents"
+
+  - id: uk.asa.misleading_health_claims
+    description: |
+      Health claims in UK marketing must be substantiated and comply with
+      the CAP Code.
+    severity: high
+    category: marketing
+    when: ["AI-generated marketing copy includes health claim"]
+    then: ["block unsubstantiated claim", "require evidence reference"]
+    citations:
+      - title: "CAP Code Section 12"
+        url: "https://www.asa.org.uk/codes-and-rulings/advertising-codes/non-broadcast-code.html"
+
+  - id: uk.mhra.samd_classification
+    description: Software providing medical device functions requires MHRA registration.
+    severity: high
+    category: medical_device_rules
+    when: ["feature provides diagnostic suggestion"]
+    then: ["label informational only", "evaluate SaMD classification"]
+    citations:
+      - title: "MHRA Software and AI as a Medical Device"
+        url: "https://www.gov.uk/government/publications/software-and-artificial-intelligence-ai-as-a-medical-device"
+
+notes: "Post-Brexit divergence may grow; revisit annually."

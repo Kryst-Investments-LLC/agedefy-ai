@@ -1,0 +1,32 @@
+# Default ownership
+*                              @kryst-investments-llc/platform
+
+# Agents
+/agents/                       @kryst-investments-llc/platform
+/agents/safety-agent.yml       @kryst-investments-llc/safety @kryst-investments-llc/clinical
+/agents/clinician-review-agent.yml @kryst-investments-llc/clinical
+/agents/billing-agent.yml      @kryst-investments-llc/billing
+/agents/marketplace-agent.yml  @kryst-investments-llc/commerce
+/agents/community-moderation-agent.yml @kryst-investments-llc/community
+/agents/research-agent.yml     @kryst-investments-llc/research
+/agents/knowledge-graph-agent.yml @kryst-investments-llc/research
+/agents/ai-personalization-agent.yml @kryst-investments-llc/ai
+/agents/audit-governance-agent.yml @kryst-investments-llc/legal @kryst-investments-llc/platform
+/agents/law-awareness-agent.yml @kryst-investments-llc/legal @kryst-investments-llc/platform
+/agents/ux-ui-agent.yml        @kryst-investments-llc/design
+/agents/design-system-agent.yml @kryst-investments-llc/design
+/agents/brand-consistency-agent.yml @kryst-investments-llc/brand
+
+# Legal rules — counsel approval required
+/agents/legal-rules/           @kryst-investments-llc/legal
+
+# Workflows
+/workflows/                    @kryst-investments-llc/platform
+
+# Schemas + CI
+/schemas/                      @kryst-investments-llc/platform
+/.github/                      @kryst-investments-llc/platform
+
+# Tests
+/tests/                        @kryst-investments-llc/platform
+/tests/redteam/                @kryst-investments-llc/security @kryst-investments-llc/safety

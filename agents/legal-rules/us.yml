@@ -1,3 +1,115 @@
-﻿jurisdiction: us
+﻿jurisdiction:
+  code: "us"
+  name: "United States"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - hipaa_privacy
+  - fda_dshea_supplements
+  - fda_medical_device
+  - ftc_endorsement
+  - clia_lab_testing
+  - telemedicine_state_licensing
+  - dea_controlled_substances
+
 rules:
-  - placeholder: true
+  - id: us.hipaa.phi_minimum_necessary
+    description: |
+      PHI must only be accessed and disclosed for the minimum necessary
+      purpose. AI workflows must redact identifiers before sending to
+      third-party providers unless a BAA is in place.
+    severity: critical
+    category: biomarker_privacy
+    when:
+      - "workflow processes user health data"
+      - "third-party provider invoked"
+    then:
+      - "redact PHI before egress unless BAA confirmed"
+      - "log disclosure to audit trail"
+    citations:
+      - title: "45 CFR §164.502(b) – Minimum necessary"
+        url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.502"
+
+  - id: us.fda.dshea_no_disease_claims
+    description: |
+      Dietary supplements may not be marketed with claims to diagnose,
+      cure, mitigate, treat, or prevent disease.
+    severity: high
+    category: supplement_legality
+    when:
+      - "marketplace product is supplement category"
+      - "AI generates description or recommendation copy"
+    then:
+      - "block disease-treatment claims"
+      - "append DSHEA structure/function disclaimer"
+    citations:
+      - title: "21 USC §343(r)(6) – DSHEA structure/function"
+        url: "https://www.fda.gov/food/dietary-supplements-guidance-documents-regulatory-information/structurefunction-claims"
+
+  - id: us.ftc.material_connection_disclosure
+    description: |
+      Endorsements, testimonials, and influencer content must clearly
+      disclose any material connection.
+    severity: high
+    category: marketing
+    when:
+      - "user-generated content includes endorsement"
+      - "monetization or affiliate link present"
+    then:
+      - "require visible #ad / sponsored disclosure"
+    citations:
+      - title: "FTC Endorsement Guides 16 CFR Part 255"
+        url: "https://www.ftc.gov/legal-library/browse/rules/guides-concerning-use-endorsements-testimonials-advertising"
+
+  - id: us.telemedicine.state_licensure_required
+    description: |
+      Clinicians must be licensed in the state where the patient is
+      physically located at the time of consultation.
+    severity: critical
+    category: clinician_licensing
+    when:
+      - "workflow == telemedicine_routing_workflow"
+    then:
+      - "match provider license to user state"
+      - "block consult if no licensed provider available"
+    citations:
+      - title: "FSMB Telemedicine Policy"
+        url: "https://www.fsmb.org/policy/advocacy-policy/policy-documents/"
+
+  - id: us.clia.lab_oversight
+    description: |
+      Clinical laboratory tests on humans must be performed by a
+      CLIA-certified facility. Direct-to-consumer test marketing must
+      disclose interpretive limitations.
+    severity: high
+    category: lab_testing_regulation
+    when:
+      - "workflow == lab_order_workflow"
+    then:
+      - "verify partner lab CLIA certification"
+      - "include interpretive disclaimer in results UI"
+    citations:
+      - title: "CMS CLIA program"
+        url: "https://www.cms.gov/regulations-and-guidance/legislation/clia"
+
+  - id: us.dea.controlled_substance_block
+    description: |
+      Controlled substances (Schedules I–V) cannot be sold via the
+      marketplace and require DEA-registered prescribers via telehealth.
+    severity: critical
+    category: prescription_compliance
+    when:
+      - "compound flagged controlled_substance == true"
+    then:
+      - "block marketplace listing"
+      - "route prescription to DEA-registered clinician"
+    citations:
+      - title: "21 USC §812 – Schedules of controlled substances"
+        url: "https://www.deadiversion.usdoj.gov/21cfr/21usc/812.htm"
+
+notes: |
+  HHS / FDA / FTC / CMS rules evolve frequently. Re-review at least
+  every 12 months and after any agency rule change.

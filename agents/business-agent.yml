@@ -1,8 +1,84 @@
-﻿workflows:
+﻿name: business-agent
+version: 1.0.0
+role: Workflow execution, plan-tier gating, tool invocation, persistence
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Executes the workflow selected by the orchestrator, enforces
+  subscription plan gating, invokes tools, and persists results.
+
+capabilities:
+  - load_protocol_template
+  - persist_entry
+  - persist_post
+  - persist_article
+  - save_protocol
+  - create_lab_order
+  - create_consultation_request
+  - create_marketplace_order
+  - update_subscription
+  - index_paper
+  - save_trial
+  - load_lab_panel
+
+inputs:
+  - name: workflow
+    description: Workflow id to execute.
+    required: true
+  - name: context
+    description: Slots, user, jurisdiction, plan.
+    required: true
+
+outputs:
+  - name: result
+    description: Workflow result payload.
+  - name: audit_events
+    description: Emitted audit events.
+
+error_handling:
+  on_db_failure: "retry_with_backoff"
+  on_plan_gate_violation: "block_and_explain"
+  retry_policy: { max_attempts: 3, backoff_ms: 200 }
+
+sla:
+  p50_latency_ms: 400
+  p99_latency_ms: 2000
+  availability: "99.9%"
+
+workflows:
   - biomarker_interpretation_workflow
+  - protocol_recommendation_workflow
+  - lab_order_workflow
+  - telemedicine_routing_workflow
+  - marketplace_purchase_workflow
+  - subscription_billing_workflow
+  - community_moderation_workflow
+  - learning_content_workflow
+  - clinical_trial_search_workflow
+  - research_ingestion_workflow
+  - global_search_workflow
+  - account_gdpr_workflow
+  - admin_audit_workflow
 
 workflowMap:
   longevity.biomarker_context: biomarker_interpretation_workflow
+  longevity.protocol_recommendation: protocol_recommendation_workflow
+  knowledge.compound_interaction: compound_interaction_workflow
+  knowledge.graph_query: knowledge_graph_workflow
+  lab.order_panel: lab_order_workflow
+  telemedicine.consultation_request: telemedicine_routing_workflow
+  marketplace.place_order: marketplace_purchase_workflow
+  billing.subscription_change: subscription_billing_workflow
+  community.post_action: community_moderation_workflow
+  learn.article_action: learning_content_workflow
+  research.clinical_trial_search: clinical_trial_search_workflow
+  research.paper_ingest: research_ingestion_workflow
+  ai.personalized_recommendation: ai_personalization_workflow
+  search.global_query: global_search_workflow
+  account.gdpr_request: account_gdpr_workflow
+  admin.audit_query: admin_audit_workflow
+  i18n.locale_resolve: i18n_resolution_workflow
 
 tools:
   - analyze-biomarkers.ps1
+  - search-rules.ps1
+  - validate-legal-rules.ps1

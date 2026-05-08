@@ -1,0 +1,35 @@
+jurisdiction:
+  code: "us-ca"
+  name: "California (USA)"
+  parent: "us"
+
+last_reviewed: "2026-04-01"
+applies_to: [workflows, forms, recommendations, calculations]
+legal_domains: [ccpa_cpra_privacy, ca_telehealth, ca_consumer_protection]
+
+rules:
+  - id: us-ca.cpra.health_data_notice
+    description: |
+      Sensitive personal information (incl. health data) requires a
+      separate notice + opt-out under CPRA.
+    severity: critical
+    category: biomarker_privacy
+    when: ["user.state == 'CA'", "workflow processes health data"]
+    then: ["display CPRA notice", "honor 'Limit Use of Sensitive PI' signal"]
+    citations:
+      - title: "California Privacy Rights Act"
+        url: "https://oag.ca.gov/privacy/ccpa"
+
+  - id: us-ca.dtc_lab_disclosure
+    description: |
+      California requires direct-to-consumer lab tests to disclose that
+      the result is not a medical diagnosis.
+    severity: high
+    category: lab_testing_regulation
+    when: ["workflow == lab_order_workflow", "user.state == 'CA'"]
+    then: ["render DTC disclosure on order and results pages"]
+    citations:
+      - title: "Cal. Bus. & Prof. Code §1288"
+        url: "https://leginfo.legislature.ca.gov/faces/codes.xhtml"
+
+notes: ""

@@ -1,0 +1,25 @@
+name: i18n_resolution_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: i18n.locale_resolve
+description: Resolve user locale and load translations for the requested keys.
+feature_module: i18n
+plan_gating: [starter, pro, enterprise]
+preconditions: []
+audit_events: ["i18n.locale.changed"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: resolve
+    agent: i18n-agent
+    action: resolve_locale
+  - id: load
+    agent: i18n-agent
+    action: load_translations
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 80
+  p99_latency_ms: 300

@@ -1,3 +1,96 @@
-﻿jurisdiction: eu
+﻿jurisdiction:
+  code: "eu"
+  name: "European Union"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - gdpr_data_protection
+  - eu_mdr_medical_device
+  - eu_health_claims_regulation
+  - eu_food_supplement_directive
+  - ai_act
+
 rules:
-  - placeholder: true
+  - id: eu.gdpr.lawful_basis_health_data
+    description: |
+      Processing of health data (special category) requires explicit
+      consent or another Article 9 lawful basis.
+    severity: critical
+    category: biomarker_privacy
+    when:
+      - "workflow processes health data of an EU subject"
+    then:
+      - "require explicit, granular consent"
+      - "record lawful basis in audit log"
+    citations:
+      - title: "GDPR Article 9"
+        url: "https://gdpr-info.eu/art-9-gdpr/"
+
+  - id: eu.gdpr.data_subject_rights
+    description: |
+      Subjects have rights of access, rectification, erasure, restriction,
+      portability, and objection — fulfilled within one month.
+    severity: high
+    category: data_governance
+    when:
+      - "workflow == account_gdpr_workflow"
+    then:
+      - "fulfil request within 30 days"
+      - "log fulfilment to audit trail"
+    citations:
+      - title: "GDPR Articles 15–22"
+        url: "https://gdpr-info.eu/chapter-3/"
+
+  - id: eu.health_claims.authorisation_required
+    description: |
+      Health claims on foods/supplements must appear on the EU register
+      of authorised claims.
+    severity: high
+    category: supplement_legality
+    when:
+      - "marketplace listing or AI copy includes a health claim"
+    then:
+      - "validate against EU register"
+      - "block unauthorised claim"
+    citations:
+      - title: "Regulation (EC) No 1924/2006"
+        url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006R1924"
+
+  - id: eu.mdr.software_as_medical_device
+    description: |
+      Software intended for diagnosis, prevention, or monitoring of disease
+      can qualify as a medical device under MDR and requires CE marking.
+    severity: critical
+    category: medical_device_rules
+    when:
+      - "AI feature provides diagnostic suggestion"
+    then:
+      - "label clearly as informational, not diagnostic"
+      - "evaluate MDR classification before launch"
+    citations:
+      - title: "Regulation (EU) 2017/745 (MDR)"
+        url: "https://eur-lex.europa.eu/eli/reg/2017/745/oj"
+
+  - id: eu.ai_act.high_risk_health
+    description: |
+      AI systems used in health contexts may qualify as high-risk under
+      the EU AI Act and require risk management, transparency, and
+      human oversight.
+    severity: high
+    category: ai_governance
+    when:
+      - "AI agent generates health recommendation for an EU user"
+    then:
+      - "log model, version, and prompt"
+      - "expose human-readable explanation"
+      - "ensure human-override path exists"
+    citations:
+      - title: "EU AI Act"
+        url: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj"
+
+notes: |
+  Member-state-specific rules (e.g. Germany BfArM, France CNIL guidance)
+  may impose additional requirements; consult local counsel for launches.

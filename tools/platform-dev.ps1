@@ -347,13 +347,15 @@ function Show-Menu {
 }
 
 if ($Action) {
-    switch ($Action) {
-        'dashboard' { Show-Dashboard }
-        'map'       { Show-CapabilityMap }
-        'sim'       { Run-Simulation }
-        'tools'     { Run-Tools }
-        'test'      { Test-Platform }
-        default     { Show-Menu }
+    switch ($Action.ToLower()) {
+        'dashboard'    { Show-Dashboard }
+        'map'          { Show-CapabilityMap }
+        'capabilities' { Show-CapabilityMap }
+        'sim'          { Run-Simulation }
+        'simulation'   { Run-Simulation }
+        'tools'        { Run-Tools }
+        'test'         { Test-Platform }
+        default        { Write-Host "Unknown action: $Action"; exit 1 }
     }
 } else {
     Show-Menu

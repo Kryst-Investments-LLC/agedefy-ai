@@ -1,0 +1,39 @@
+version: 1.0.0
+description: ISO country / state code → legal-rules file mapping.
+
+countries:
+  us: "agents/legal-rules/us.yml"
+  ca: "agents/legal-rules/ca.yml"
+  uk: "agents/legal-rules/uk.yml"
+  eu: "agents/legal-rules/eu.yml"
+  au: "agents/legal-rules/au.yml"
+  br: "agents/legal-rules/br.yml"
+  in: "agents/legal-rules/in.yml"
+
+us_states:
+  ca: "agents/legal-rules/us-states/ca.yml"
+  ny: "agents/legal-rules/us-states/ny.yml"
+  tx: "agents/legal-rules/us-states/tx.yml"
+  fl: "agents/legal-rules/us-states/fl.yml"
+
+eu_member_states_using_eu_pack:
+  - de
+  - fr
+  - it
+  - es
+  - nl
+  - pl
+  - se
+  - dk
+  - ie
+  - fi
+  - pt
+  - be
+  - at
+  - cz
+  - gr
+  - hu
+  - ro
+
+defaults:
+  fallback: us

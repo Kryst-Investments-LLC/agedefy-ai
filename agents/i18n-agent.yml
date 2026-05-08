@@ -1,0 +1,48 @@
+name: i18n-agent
+version: 1.0.0
+role: Locale resolution + translation lookup
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Resolves the user's locale (BCP-47), loads the translation bundle,
+  and returns translated strings for the requested keys. Mirrors the
+  10-locale scaffold of the product layer.
+
+capabilities:
+  - resolve_locale
+  - load_translations
+  - fallback_to_default
+
+inputs:
+  - name: locale_hint
+    description: Optional BCP-47 hint.
+    required: false
+  - name: keys
+    description: Translation keys to resolve.
+    required: false
+
+outputs:
+  - name: locale
+    description: Resolved BCP-47 locale.
+  - name: translations
+    description: Map of key → translated string.
+
+error_handling:
+  on_missing_translation: "return_key_with_warning"
+
+sla:
+  p50_latency_ms: 30
+  p99_latency_ms: 150
+  availability: "99.99%"
+
+supported_locales:
+  - en
+  - es
+  - fr
+  - de
+  - it
+  - pt
+  - nl
+  - ja
+  - zh
+  - ar
+default_locale: en

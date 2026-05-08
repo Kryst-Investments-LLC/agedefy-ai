@@ -1,0 +1,35 @@
+jurisdiction:
+  code: "us-tx"
+  name: "Texas (USA)"
+  parent: "us"
+
+last_reviewed: "2026-04-01"
+applies_to: [workflows, forms, recommendations, calculations]
+legal_domains: [tx_data_privacy_security_act, tx_medical_practice]
+
+rules:
+  - id: us-tx.tdpsa.consent_for_sensitive_data
+    description: |
+      Texas Data Privacy and Security Act requires opt-in consent for
+      processing sensitive data (incl. health information).
+    severity: high
+    category: biomarker_privacy
+    when: ["user.state == 'TX'", "workflow processes sensitive data"]
+    then: ["require opt-in consent", "log consent event"]
+    citations:
+      - title: "Texas Data Privacy and Security Act"
+        url: "https://capitol.texas.gov/tlodocs/88R/billtext/pdf/HB00004F.pdf"
+
+  - id: us-tx.medboard.telemedicine_standards
+    description: |
+      Texas Medical Board telemedicine rules require clinician to
+      establish standard of care equivalent to in-person visit.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow", "user.state == 'TX'"]
+    then: ["verify TMB licensure", "document clinical reasoning"]
+    citations:
+      - title: "TMB Telemedicine Rules"
+        url: "https://www.tmb.state.tx.us/"
+
+notes: ""

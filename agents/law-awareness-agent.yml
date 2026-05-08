@@ -1,4 +1,78 @@
-﻿jurisdiction_rules:
-  - health_claims
-  - biomarker_disclosure
-  - wellness_guidelines
+﻿name: law-awareness-agent
+version: 1.0.0
+role: Jurisdiction-specific legal validator
+owners:
+  - "@kryst-investments-llc/legal"
+  - "@kryst-investments-llc/platform"
+description: |
+  Enforces jurisdiction-specific legal rules for the AgeDefy AI platform.
+  Detects the user's country/region/state, loads the correct legal framework,
+  validates workflows, and blocks or warns about actions that violate local law.
+
+platform_domain: "longevity-medicine"
+
+capabilities:
+  - detect_jurisdiction
+  - load_legal_rules
+  - validate_actions
+  - enforce_compliance
+  - generate_warnings
+  - adapt_platform_behavior
+  - emit_compliance_trace
+
+mcpServers:
+  legal_rules:
+    type: file
+    path: ./legal-rules
+
+jurisdiction_rules:
+  path: "./legal-rules"
+  loader: "load_rules"
+  fallback: "us"
+
+inputs:
+  - name: jurisdiction_hint
+    description: ISO country/state code, IP-derived locale, or explicit user setting.
+    required: false
+  - name: action
+    description: Workflow, form submission, recommendation, or calculation under evaluation.
+    required: true
+
+outputs:
+  - name: decision
+    description: One of allow | warn | block.
+  - name: reasons
+    description: List of rule IDs and human-readable explanations.
+  - name: trace
+    description: Structured JSON trace entry for observability.
+
+error_handling:
+  on_missing_jurisdiction: "fallback_to_default_and_warn"
+  on_schema_violation: "block_and_log"
+  on_rule_load_failure: "block_and_alert_oncall"
+
+sla:
+  p50_latency_ms: 50
+  p99_latency_ms: 250
+  availability: "99.9%"
+
+instructions: |
+  1. Detect the user's jurisdiction using the supplied hint, request locale,
+     or account profile.
+  2. Load the matching YAML from ./legal-rules/<country>.yml. For US users
+     with state context overlay ./legal-rules/us-states/<state>.yml.
+  3. Apply the legal_domains relevant to this platform_domain.
+  4. Validate every workflow, form, recommendation, and calculation.
+  5. Block or warn about actions that violate local law.
+  6. Adapt platform behavior automatically based on jurisdiction.
+  7. Emit a structured compliance trace for every decision.
+
+examples:
+  - input:
+      jurisdiction_hint: "us-ca"
+      action: "order_lab_panel:hormone_full"
+    output:
+      decision: "warn"
+      reasons:
+        - "us.lab_testing.direct_to_consumer_disclosure"
+        - "us-ca.ccpa.health_data_notice"

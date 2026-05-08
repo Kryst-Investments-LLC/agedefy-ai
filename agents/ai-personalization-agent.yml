@@ -1,0 +1,67 @@
+name: ai-personalization-agent
+version: 1.0.0
+role: Multi-provider AI routing with safety + cost + latency optimization
+owners: ["@kryst-investments-llc/ai"]
+description: |
+  Routes generation requests across OpenAI / Anthropic / Grok with
+  model selection by intent, cost, and latency. Owns prompt templates,
+  PII redaction hand-off, and provider failover.
+
+capabilities:
+  - select_provider
+  - generate_completion
+  - tailor_to_biomarkers
+  - explain_with_context
+  - rerank_for_user
+
+inputs:
+  - name: prompt
+    description: Composed prompt (after PII redaction).
+    required: true
+  - name: intent
+    description: Resolved intent id.
+    required: true
+  - name: user_plan
+    description: starter | pro | enterprise
+    required: true
+
+outputs:
+  - name: completion
+    description: Model output text.
+  - name: provider
+    description: Provider id used.
+  - name: model
+    description: Model id used.
+  - name: latency_ms
+    description: End-to-end latency.
+
+error_handling:
+  on_provider_failure: "fallback_provider"
+  on_quota_exceeded: "downgrade_model"
+  on_safety_filter_trigger: "return_safe_completion"
+
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 8000
+  availability: "99.5%"
+
+providers:
+  - id: openai
+    default_model: "gpt-4o"
+    fallback_model: "gpt-4o-mini"
+  - id: anthropic
+    default_model: "claude-3-5-sonnet"
+    fallback_model: "claude-3-5-haiku"
+  - id: grok
+    default_model: "grok-2"
+
+provider_selection:
+  by_intent:
+    longevity.protocol_recommendation: anthropic
+    ai.personalized_recommendation: openai
+    research.paper_ingest: anthropic
+  default: openai
+
+examples:
+  - input: { intent: "ai.personalized_recommendation", prompt: "...", user_plan: "pro" }
+    output: { completion: "...", provider: "openai", model: "gpt-4o", latency_ms: 1820 }

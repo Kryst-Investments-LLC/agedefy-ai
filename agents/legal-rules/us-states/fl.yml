@@ -1,0 +1,33 @@
+jurisdiction:
+  code: "us-fl"
+  name: "Florida (USA)"
+  parent: "us"
+
+last_reviewed: "2026-04-01"
+applies_to: [workflows, forms, recommendations, calculations]
+legal_domains: [fl_information_protection_act, fl_telehealth]
+
+rules:
+  - id: us-fl.fipa.breach_notification
+    description: |
+      Florida Information Protection Act mandates breach notification
+      within 30 days for personal information including health data.
+    severity: high
+    category: biomarker_privacy
+    when: ["user.state == 'FL'", "data breach involving private info"]
+    then: ["notify within 30 days", "log breach event"]
+    citations:
+      - title: "Fla. Stat. §501.171"
+        url: "http://www.leg.state.fl.us/Statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html"
+
+  - id: us-fl.telehealth.registration
+    description: Out-of-state providers must register with FL DOH for telehealth.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow", "user.state == 'FL'", "provider.licensure != FL"]
+    then: ["verify FL DOH out-of-state registration"]
+    citations:
+      - title: "Fla. Stat. §456.47"
+        url: "http://www.leg.state.fl.us/Statutes/index.cfm"
+
+notes: ""

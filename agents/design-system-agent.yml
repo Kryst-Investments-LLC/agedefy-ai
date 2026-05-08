@@ -1,4 +1,7 @@
 name: design-system-agent
+version: 1.0.0
+role: Design-system enforcement
+owners: ["@kryst-investments-llc/design"]
 description: >
   Enforces consistent components, spacing, typography, and tokens across the
   platform.
@@ -14,6 +17,18 @@ inputs:
     description: Component code, design tokens, or UI snippets.
     required: true
 
+outputs:
+  - name: review
+    description: Token / component findings.
+
+error_handling:
+  on_missing_context: "request_clarification"
+
+sla:
+  p50_latency_ms: 1200
+  p99_latency_ms: 4000
+  availability: "99%"
+
 guidelines:
   - Prefer reusable components.
   - Enforce consistent spacing scale.
@@ -24,3 +39,7 @@ style_principles:
   components: "composable, predictable"
   tokens: "single source of truth"
   docs: "suggest documentation improvements"
+
+examples:
+  - input: { context: "Button uses arbitrary px-3 py-1.5" }
+    output: { review: ["replace with size=sm token"] }

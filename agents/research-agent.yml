@@ -1,0 +1,36 @@
+name: research-agent
+version: 1.0.0
+role: Paper ingestion + clinical-trial search
+owners: ["@kryst-investments-llc/research"]
+description: |
+  Ingests research papers (PubMed, bioRxiv, DOI), normalizes metadata,
+  links to compounds + pathways, and powers the clinical-trial search.
+
+capabilities:
+  - ingest_paper
+  - search_external_trials
+  - dedupe_and_normalize
+  - link_to_compounds
+
+inputs:
+  - name: source
+    description: pubmed | biorxiv | doi | clinicaltrials_gov
+    required: true
+  - name: identifier
+    description: DOI / PMID / NCT id.
+    required: true
+
+outputs:
+  - name: paper
+    description: Normalized paper record.
+  - name: links
+    description: Linked compound / pathway ids.
+
+error_handling:
+  on_external_api_failure: "retry_with_backoff"
+  on_paywall: "store_metadata_only"
+
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 6000
+  availability: "99%"

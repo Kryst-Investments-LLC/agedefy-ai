@@ -1,0 +1,52 @@
+name: safety-agent
+version: 1.0.0
+role: Drug / supplement / peptide interaction & contraindication safety net
+owners: ["@kryst-investments-llc/safety", "@kryst-investments-llc/clinical"]
+description: |
+  Validates compound stacks, AI recommendations, and marketplace orders
+  against an interaction graph and contraindication rules. Prevents the
+  platform from suggesting or selling combinations known to be unsafe.
+
+capabilities:
+  - check_compound_interactions
+  - check_drug_supplement_interactions
+  - scan_for_unsafe_advice
+  - scan_response
+  - flag_pregnancy_contraindications
+  - flag_pediatric_contraindications
+
+inputs:
+  - name: stack
+    description: Array of compound ids.
+    required: false
+  - name: response_text
+    description: AI-generated text to scan.
+    required: false
+  - name: user_profile
+    description: Conditions, allergies, medications, life-stage flags.
+    required: false
+
+outputs:
+  - name: decision
+    description: allow | warn | block
+  - name: findings
+    description: Array of interaction / contraindication notes with severity.
+
+error_handling:
+  on_unknown_compound: "warn_and_continue"
+  on_critical_interaction: "block_and_explain"
+  on_database_unavailable: "fail_closed"
+
+sla:
+  p50_latency_ms: 200
+  p99_latency_ms: 800
+  availability: "99.95%"
+
+knowledge_sources:
+  - "metadata/compounds.yml"
+  - "external:rxnorm"
+  - "external:drugbank"
+
+examples:
+  - input: { stack: ["rapamycin", "metformin"], user_profile: { conditions: [] } }
+    output: { decision: "warn", findings: [{ severity: "medium", note: "Combined mTOR + AMPK modulation; monitor metabolic markers." }] }

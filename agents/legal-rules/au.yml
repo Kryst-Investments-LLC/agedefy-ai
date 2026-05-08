@@ -1,3 +1,56 @@
-﻿jurisdiction: au
+﻿jurisdiction:
+  code: "au"
+  name: "Australia"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - privacy_act_app
+  - tga_therapeutic_goods
+  - tga_medical_device
+  - ahpra_clinician_registration
+
 rules:
-  - placeholder: true
+  - id: au.privacy.app11_security
+    description: Reasonable steps required to protect personal info.
+    severity: high
+    category: biomarker_privacy
+    when: ["workflow stores health data of Australian user"]
+    then: ["enforce encryption at rest and in transit", "log access"]
+    citations:
+      - title: "Australian Privacy Principle 11"
+        url: "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-quick-reference"
+
+  - id: au.tga.artg_listing_required
+    description: Therapeutic goods supplied in Australia must be on the ARTG.
+    severity: critical
+    category: supplement_legality
+    when: ["marketplace product targets AU buyer", "category in [supplements, peptides, devices]"]
+    then: ["require ARTG number", "block listing if missing"]
+    citations:
+      - title: "Therapeutic Goods Act 1989"
+        url: "https://www.legislation.gov.au/C2004A03952/latest"
+
+  - id: au.tga.no_disease_claims_supplements
+    description: Listed supplements may only carry low-risk indications.
+    severity: high
+    category: marketing
+    when: ["AI copy includes high-level therapeutic claim for listed supplement"]
+    then: ["block claim", "downgrade to permitted indication"]
+    citations:
+      - title: "Permissible Indications List (TGA)"
+        url: "https://www.tga.gov.au/listed-medicines-permissible-indications"
+
+  - id: au.ahpra.registered_practitioner
+    description: Clinicians providing telehealth in AU must be AHPRA-registered.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow"]
+    then: ["verify AHPRA registration"]
+    citations:
+      - title: "AHPRA Telehealth Guidelines"
+        url: "https://www.ahpra.gov.au/"
+
+notes: ""

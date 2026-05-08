@@ -1,0 +1,29 @@
+name: research_ingestion_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/research"]
+intent: research.paper_ingest
+description: Paper ingestion, deduplication, and indexing into the research feed.
+feature_module: research-hub
+plan_gating: [enterprise]
+preconditions: ["user.authenticated", "user.role in [RESEARCHER, ADMIN]"]
+legal_checks: ["copyright_attribution", "data_redistribution"]
+audit_events: ["research.paper.ingested"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: ingest
+    agent: research-agent
+    action: ingest_paper
+  - id: classify
+    agent: knowledge-graph-agent
+    action: link_to_compounds
+  - id: persist
+    agent: business-agent
+    action: index_paper
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 2000
+  p99_latency_ms: 8000

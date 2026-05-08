@@ -1,0 +1,44 @@
+name: telemedicine-agent
+version: 1.0.0
+role: Provider directory + consultation routing
+owners: ["@kryst-investments-llc/clinical"]
+description: |
+  Owns the telehealth provider directory, matches consultation requests
+  to a licensed provider in the user's jurisdiction, manages scheduling
+  and notifications.
+
+capabilities:
+  - match_provider
+  - notify_provider
+  - schedule_slot
+  - cancel_consult
+
+inputs:
+  - name: consultation_type
+    description: initial | follow_up | lab_review | protocol_review
+    required: true
+  - name: user_jurisdiction
+    description: ISO country/state code.
+    required: true
+  - name: specialty
+    description: Optional preferred specialty.
+    required: false
+
+outputs:
+  - name: provider
+    description: Matched provider record.
+  - name: slot
+    description: Scheduled time slot.
+
+error_handling:
+  on_no_match: "block_and_suggest_alternatives"
+  on_scheduler_failure: "retry_with_backoff"
+
+sla:
+  p50_latency_ms: 400
+  p99_latency_ms: 1500
+  availability: "99.9%"
+
+examples:
+  - input: { consultation_type: "follow_up", user_jurisdiction: "us-ca" }
+    output: { provider: { id: "prov_123", name: "Dr. Smith" }, slot: "2026-05-12T15:00Z" }

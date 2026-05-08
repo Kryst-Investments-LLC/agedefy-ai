@@ -1,0 +1,53 @@
+# AgeDefy AI — Eval Harness Dataset
+# Used by tests/eval/eval.tests.ps1 + CI eval job to score regression.
+version: 1.0.0
+
+cases:
+  - id: eval_biomarker_basic
+    query: "Interpret my fasting glucose of 95"
+    expected_intent: "longevity.biomarker_context"
+    expected_workflow: "biomarker_interpretation_workflow"
+    expected_jurisdiction_decision: "allow"
+
+  - id: eval_protocol_recommendation
+    query: "Recommend a sleep optimization protocol"
+    expected_intent: "longevity.protocol_recommendation"
+    expected_workflow: "protocol_recommendation_workflow"
+    expected_jurisdiction_decision: "allow"
+
+  - id: eval_marketplace_supplement_us
+    query: "Buy NMN 500mg"
+    expected_intent: "marketplace.place_order"
+    expected_workflow: "marketplace_purchase_workflow"
+    expected_jurisdiction_decision: "warn"   # DSHEA disclaimer required
+
+  - id: eval_telemedicine_us_ca
+    query: "Book a follow-up with a longevity doctor"
+    user_jurisdiction: "us-ca"
+    expected_intent: "telemedicine.consultation_request"
+    expected_workflow: "telemedicine_routing_workflow"
+    expected_jurisdiction_decision: "allow"
+
+  - id: eval_compound_interaction_block
+    query: "Stack rapamycin with metformin"
+    expected_intent: "knowledge.compound_interaction"
+    expected_workflow: "compound_interaction_workflow"
+    expected_jurisdiction_decision: "warn"
+
+  - id: eval_gdpr_export_eu
+    query: "Export my data"
+    user_jurisdiction: "eu"
+    expected_intent: "account.gdpr_request"
+    expected_workflow: "account_gdpr_workflow"
+    expected_jurisdiction_decision: "allow"
+
+  - id: eval_unknown_fallback
+    query: "asdfjkl"
+    expected_intent: "fallback.unknown"
+    expected_workflow: "ai_personalization_workflow"
+    expected_jurisdiction_decision: "allow"
+
+regression_budget:
+  intent_accuracy_min: 0.90
+  workflow_accuracy_min: 0.90
+  jurisdiction_decision_accuracy_min: 0.85

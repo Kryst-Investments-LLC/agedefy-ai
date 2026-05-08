@@ -1,0 +1,37 @@
+name: telemedicine_routing_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: telemedicine.consultation_request
+description: Match a consultation request to a licensed provider in the user's jurisdiction.
+feature_module: telemedicine
+plan_gating: [pro, enterprise]
+preconditions: ["user.authenticated", "user.profile.complete"]
+legal_checks: ["clinician_licensing", "telemedicine_regulation", "biomarker_privacy"]
+audit_events: ["telemedicine.consult.requested", "telemedicine.consult.cancelled"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: jurisdiction
+    agent: law-awareness-agent
+    action: detect_jurisdiction
+  - id: licensing_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "telemedicine_consult" }
+    on_error: "block_and_explain"
+  - id: match_provider
+    agent: telemedicine-agent
+    action: match_provider
+  - id: persist
+    agent: business-agent
+    action: create_consultation_request
+  - id: notify
+    agent: telemedicine-agent
+    action: notify_provider
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 700
+  p99_latency_ms: 2500

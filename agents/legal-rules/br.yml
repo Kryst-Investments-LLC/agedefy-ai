@@ -1,3 +1,46 @@
-﻿jurisdiction: br
+﻿jurisdiction:
+  code: "br"
+  name: "Brazil"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - lgpd_data_protection
+  - anvisa_supplement_regulation
+  - anvisa_medical_device
+  - cfm_telemedicine
+
 rules:
-  - placeholder: true
+  - id: br.lgpd.sensitive_data_consent
+    description: Health data is sensitive personal data; explicit consent required.
+    severity: critical
+    category: biomarker_privacy
+    when: ["workflow processes health data of Brazilian user"]
+    then: ["require specific consent", "appoint DPO contact"]
+    citations:
+      - title: "LGPD Art. 11"
+        url: "https://www.gov.br/anpd/pt-br"
+
+  - id: br.anvisa.food_supplement_regulation
+    description: Food supplements must comply with ANVISA RDC 243/2018.
+    severity: high
+    category: supplement_legality
+    when: ["marketplace product targets BR buyer", "category == supplements"]
+    then: ["verify ANVISA registration", "use permitted health declarations only"]
+    citations:
+      - title: "RDC 243/2018"
+        url: "https://www.gov.br/anvisa/pt-br"
+
+  - id: br.cfm.telemedicine_resolution
+    description: Telemedicine governed by CFM Resolution 2.314/2022.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow"]
+    then: ["verify CRM registration", "store electronic record per CFM rules"]
+    citations:
+      - title: "CFM Resolution 2.314/2022"
+        url: "https://portal.cfm.org.br/"
+
+notes: ""

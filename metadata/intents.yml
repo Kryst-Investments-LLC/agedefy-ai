@@ -1,0 +1,130 @@
+version: 1.0.0
+description: Controlled intent taxonomy for the AgeDefy AI platform.
+
+intents:
+  - id: longevity.biomarker_context
+    description: Interpret biomarker entries in a longevity context.
+    workflow: biomarker_interpretation_workflow
+    slots: [biomarker_name, value, unit, timestamp]
+    examples:
+      - "Interpret my fasting glucose of 95"
+      - "What do these lipid markers mean for my healthspan?"
+  - id: longevity.protocol_recommendation
+    description: Generate or refine a longevity protocol.
+    workflow: protocol_recommendation_workflow
+    slots: [goal, baseline_biomarkers, allergies]
+    examples:
+      - "Recommend a sleep optimization protocol"
+      - "Build a stack for cognitive longevity"
+  - id: knowledge.compound_interaction
+    description: Check interactions between compounds.
+    workflow: compound_interaction_workflow
+    slots: [compounds]
+    examples:
+      - "Does NAD+ interact with rapamycin?"
+      - "Are berberine and metformin safe together?"
+  - id: knowledge.graph_query
+    description: Query the knowledge graph.
+    workflow: knowledge_graph_workflow
+    slots: [entity, relation]
+    examples:
+      - "Show pathways affected by spermidine"
+      - "What compounds target mTOR?"
+  - id: lab.order_panel
+    description: Order a lab panel.
+    workflow: lab_order_workflow
+    slots: [panel_name]
+    examples:
+      - "Order the comprehensive metabolic panel"
+      - "I want a hormone panel"
+  - id: telemedicine.consultation_request
+    description: Request a telehealth consultation.
+    workflow: telemedicine_routing_workflow
+    slots: [consultation_type, jurisdiction]
+    examples:
+      - "Book a follow-up with a longevity doctor"
+      - "I need a lab review consult"
+  - id: marketplace.place_order
+    description: Place a marketplace order.
+    workflow: marketplace_purchase_workflow
+    slots: [product, quantity]
+    examples:
+      - "Buy NMN 500mg"
+      - "Order a continuous glucose monitor"
+  - id: billing.subscription_change
+    description: Change subscription plan.
+    workflow: subscription_billing_workflow
+    slots: [target_plan]
+    examples:
+      - "Upgrade to Pro"
+      - "Cancel my subscription"
+  - id: community.post_action
+    description: Create or moderate a community post.
+    workflow: community_moderation_workflow
+    slots: [category, body]
+    examples:
+      - "Post in the Compounds forum"
+      - "Report this post"
+  - id: learn.article_action
+    description: Manage Learning Center articles.
+    workflow: learning_content_workflow
+    slots: [slug, body]
+    examples:
+      - "Publish my draft article on autophagy"
+      - "Update the senolytics article"
+  - id: research.clinical_trial_search
+    description: Search clinical trials.
+    workflow: clinical_trial_search_workflow
+    slots: [condition, phase]
+    examples:
+      - "Find phase 2 trials on rapamycin"
+      - "Search trials for VO2 max improvement"
+  - id: research.paper_ingest
+    description: Ingest a research paper.
+    workflow: research_ingestion_workflow
+    slots: [doi, source]
+    examples:
+      - "Ingest this PubMed paper"
+      - "Index DOI 10.1038/s41586-024-..."
+  - id: ai.personalized_recommendation
+    description: Generate a personalized AI recommendation.
+    workflow: ai_personalization_workflow
+    slots: [topic]
+    examples:
+      - "Coach me through today"
+      - "Suggest tweaks based on my last labs"
+  - id: search.global_query
+    description: Run a global search.
+    workflow: global_search_workflow
+    slots: [query]
+    examples:
+      - "Search for autophagy"
+      - "Find articles about sirtuins"
+  - id: account.gdpr_request
+    description: GDPR data export or deletion.
+    workflow: account_gdpr_workflow
+    slots: [request_type]
+    examples:
+      - "Export my data"
+      - "Delete my account"
+  - id: admin.audit_query
+    description: Query the audit log.
+    workflow: admin_audit_workflow
+    slots: [filter]
+    examples:
+      - "Show audit events for user X"
+      - "Export last week's audit log"
+  - id: i18n.locale_resolve
+    description: Resolve user locale.
+    workflow: i18n_resolution_workflow
+    slots: [locale]
+    examples:
+      - "Switch to Spanish"
+      - "Use system locale"
+  - id: fallback.unknown
+    description: Fallback when no intent matches.
+    workflow: ai_personalization_workflow
+    fallback: ai.personalized_recommendation
+    examples:
+      - "Hello"
+      - "Help"

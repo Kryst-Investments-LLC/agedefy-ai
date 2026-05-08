@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agedefy.ai/schemas/agent.schema.json",
+  "title": "AgeDefy Agent Spec",
+  "type": "object",
+  "required": ["name", "version", "role", "owners", "description", "capabilities", "inputs", "outputs", "error_handling", "sla"],
+  "additionalProperties": true,
+  "properties": {
+    "name":         { "type": "string", "pattern": "^[a-z][a-z0-9-]*-agent$" },
+    "version":      { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "role":         { "type": "string", "minLength": 5 },
+    "owners":       { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "description":  { "type": "string", "minLength": 20 },
+    "platform_domain": { "type": "string" },
+    "capabilities": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "inputs":  { "type": "array", "items": { "$ref": "#/$defs/io" } },
+    "outputs": { "type": "array", "items": { "$ref": "#/$defs/io" } },
+    "error_handling": { "type": "object", "minProperties": 1 },
+    "sla": {
+      "type": "object",
+      "required": ["p50_latency_ms", "p99_latency_ms", "availability"],
+      "properties": {
+        "p50_latency_ms": { "type": "integer", "minimum": 1 },
+        "p99_latency_ms": { "type": "integer", "minimum": 1 },
+        "availability":   { "type": "string", "pattern": "^[0-9]{1,3}(\\.[0-9]+)?%$" }
+      }
+    },
+    "examples": { "type": "array", "items": { "type": "object" } },
+    "route":         { "type": "array", "items": { "type": "string" } },
+    "sub_agents":    { "type": "array", "items": { "type": "object" } },
+    "routing_rules": { "type": "array", "items": { "type": "object" } },
+    "tracing":       { "type": "object" }
+  },
+  "$defs": {
+    "io": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name":        { "type": "string" },
+        "description": { "type": "string" },
+        "required":    { "type": "boolean" },
+        "type":        { "type": "string" }
+      }
+    }
+  }
+}

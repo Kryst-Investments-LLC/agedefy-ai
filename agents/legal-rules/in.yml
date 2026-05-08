@@ -1,3 +1,60 @@
-﻿jurisdiction: in
+jurisdiction:
+  code: "in"
+  name: "India"
+
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
+
+legal_domains:
+  - dpdp_data_protection
+  - cdsco_drugs_cosmetics
+  - fssai_supplements
+  - mci_telemedicine
+
 rules:
-  - placeholder: true
+  - id: in.dpdp.consent_for_health_data
+    description: |
+      Digital Personal Data Protection Act 2023 requires free, specific,
+      informed consent before processing personal data.
+    severity: critical
+    category: biomarker_privacy
+    when: ["workflow processes health data of an Indian user"]
+    then: ["require granular consent", "publish notice in 22 listed languages where applicable"]
+    citations:
+      - title: "DPDP Act 2023"
+        url: "https://www.meity.gov.in/digital-personal-data-protection-act-2023"
+
+  - id: in.fssai.nutraceutical_compliance
+    description: |
+      Nutraceuticals/health supplements must comply with FSSAI
+      Nutraceutical Regulations 2022.
+    severity: high
+    category: supplement_legality
+    when: ["marketplace product targets IN buyer", "category == supplements"]
+    then: ["verify FSSAI licence number", "use only permitted ingredients"]
+    citations:
+      - title: "FSSAI Nutraceutical Regulations 2022"
+        url: "https://www.fssai.gov.in/"
+
+  - id: in.cdsco.prescription_only
+    description: Prescription drugs may not be supplied without a registered prescription.
+    severity: critical
+    category: prescription_compliance
+    when: ["product flagged prescription_only"]
+    then: ["block marketplace sale", "route via licensed pharmacy"]
+    citations:
+      - title: "Drugs and Cosmetics Act 1940"
+        url: "https://cdsco.gov.in/opencms/opencms/en/Acts-Rules/"
+
+  - id: in.telemedicine.bmpg_2020
+    description: Telemedicine Practice Guidelines 2020 govern clinician–patient consults.
+    severity: high
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow"]
+    then: ["verify NMC registration", "store consultation record 3 years minimum"]
+    citations:
+      - title: "Telemedicine Practice Guidelines 2020"
+        url: "https://www.nmc.org.in/"
+
+notes: ""

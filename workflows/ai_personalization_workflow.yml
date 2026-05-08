@@ -1,0 +1,38 @@
+name: ai_personalization_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/ai"]
+intent: ai.personalized_recommendation
+description: Multi-provider AI routing (OpenAI / Anthropic / Grok) with safety + legal gates.
+feature_module: ai-personalization
+plan_gating: [pro, enterprise]
+preconditions: ["user.authenticated", "user.consent.ai_processing == true"]
+legal_checks: ["ai_disclosure", "biomarker_privacy", "medical_advice_disclaimer"]
+audit_events: ["ai.recommendation.generated", "ai.provider.selected"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: select_provider
+    agent: ai-personalization-agent
+    action: select_provider
+  - id: redact
+    agent: audit-governance-agent
+    action: redact_pii
+  - id: generate
+    agent: ai-personalization-agent
+    action: generate_completion
+    timeout_ms: 8000
+    on_error: "fallback_provider"
+  - id: safety
+    agent: safety-agent
+    action: scan_response
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "ai_recommendation" }
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 2500
+  p99_latency_ms: 9000

@@ -1,6 +1,6 @@
-﻿{
-  ""platform"": ""agedefy"",
-  ""version"": ""0.1.0"",
-  ""releaseChannel"": ""dev"",
-  ""owner"": ""Kryst-Investments-LLC""
+{
+  "platform": "agedefy",
+  "version": "2.0.0",
+  "releaseChannel": "stable",
+  "owner": "Kryst-Investments-LLC"
 }

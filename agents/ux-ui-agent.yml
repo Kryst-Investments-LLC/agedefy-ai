@@ -1,4 +1,7 @@
 name: ux-ui-agent
+version: 1.0.0
+role: UX / UI design reviewer
+owners: ["@kryst-investments-llc/design"]
 description: >
   Platform-specific UX/UI design agent. Provides UX flow review, UI layout
   critique, accessibility checks, and copy improvements.
@@ -18,6 +21,20 @@ inputs:
     description: Optional UX goals.
     required: false
 
+outputs:
+  - name: review
+    description: List of concrete UX improvements.
+  - name: a11y_findings
+    description: WCAG findings.
+
+error_handling:
+  on_missing_context: "request_clarification"
+
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 5000
+  availability: "99%"
+
 guidelines:
   - Provide clear, actionable UX/UI improvements.
   - Suggest accessibility fixes.
@@ -28,3 +45,7 @@ style_principles:
   tone: "clear, helpful, user-centered"
   visual: "clean, modern, accessible"
   accessibility: "WCAG AA or better"
+
+examples:
+  - input: { context: "Dashboard hero card with 4 stats" }
+    output: { review: ["increase contrast on subtitle", "use semantic h2 for stat labels"] }

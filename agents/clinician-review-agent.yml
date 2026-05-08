@@ -1,0 +1,48 @@
+name: clinician-review-agent
+version: 1.0.0
+role: Human-in-the-loop escalation queue
+owners: ["@kryst-investments-llc/clinical"]
+description: |
+  Routes high-risk actions, ambiguous AI outputs, and flagged community
+  posts to a licensed clinician for review before they reach the user.
+
+capabilities:
+  - enqueue_if_high_risk
+  - enqueue_if_medical_claim
+  - assign_clinician
+  - track_sla
+  - notify_clinician
+  - close_review
+
+inputs:
+  - name: item
+    description: Object under review (recommendation, post, lab interpretation).
+    required: true
+  - name: risk_score
+    description: 0.0–1.0 risk score from upstream agent.
+    required: false
+
+outputs:
+  - name: review_id
+    description: Identifier of the queued review item.
+  - name: status
+    description: queued | in_review | approved | rejected
+
+error_handling:
+  on_no_available_clinician: "warn_and_hold_for_<sla_threshold_ms>"
+  on_sla_breach: "alert_oncall"
+
+sla:
+  p50_latency_ms: 100
+  p99_latency_ms: 500
+  review_completion_p95_minutes: 240
+  availability: "99.95%"
+
+routing:
+  by_jurisdiction: true
+  by_specialty: true
+  fallback: "in_house_pool"
+
+examples:
+  - input: { item: { type: "protocol", contains: ["rapamycin"] }, risk_score: 0.78 }
+    output: { review_id: "rev_01H...", status: "queued" }

@@ -1,0 +1,70 @@
+version: 1.0.0
+description: Controlled vocabulary of biomarkers tracked by the platform.
+biomarkers:
+  - id: hba1c
+    name: "Hemoglobin A1c"
+    unit: "%"
+    range: { low: 4.0, high: 5.6 }
+    pathway: glucose_metabolism
+  - id: fasting_glucose
+    name: "Fasting Glucose"
+    unit: "mg/dL"
+    range: { low: 70, high: 99 }
+    pathway: glucose_metabolism
+  - id: ldl_c
+    name: "LDL Cholesterol"
+    unit: "mg/dL"
+    range: { low: 0, high: 100 }
+    pathway: cardiovascular
+  - id: hdl_c
+    name: "HDL Cholesterol"
+    unit: "mg/dL"
+    range: { low: 40, high: 100 }
+    pathway: cardiovascular
+  - id: apob
+    name: "Apolipoprotein B"
+    unit: "mg/dL"
+    range: { low: 0, high: 90 }
+    pathway: cardiovascular
+  - id: lp_a
+    name: "Lipoprotein(a)"
+    unit: "nmol/L"
+    range: { low: 0, high: 75 }
+    pathway: cardiovascular
+  - id: hs_crp
+    name: "hs-CRP"
+    unit: "mg/L"
+    range: { low: 0, high: 1.0 }
+    pathway: inflammation
+  - id: homocysteine
+    name: "Homocysteine"
+    unit: "umol/L"
+    range: { low: 0, high: 10 }
+    pathway: inflammation
+  - id: vitamin_d
+    name: "25-OH Vitamin D"
+    unit: "ng/mL"
+    range: { low: 40, high: 80 }
+    pathway: immune_modulation
+  - id: ferritin
+    name: "Ferritin"
+    unit: "ng/mL"
+    range: { low: 30, high: 200 }
+    pathway: inflammation
+  - id: vo2_max
+    name: "VO2 Max"
+    unit: "mL/kg/min"
+    range: { low: 35, high: 80 }
+    pathway: cardiovascular
+  - id: grip_strength
+    name: "Grip Strength"
+    unit: "kg"
+    pathway: neuromuscular
+  - id: dexa_visceral_fat
+    name: "Visceral Fat (DEXA)"
+    unit: "g"
+    pathway: glucose_metabolism
+  - id: epi_age
+    name: "Epigenetic Age (DNAmAge)"
+    unit: "years"
+    pathway: sirtuin_activation

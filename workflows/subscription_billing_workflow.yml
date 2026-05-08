@@ -1,0 +1,36 @@
+name: subscription_billing_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/billing"]
+intent: billing.subscription_change
+description: Stripe checkout, webhook reconciliation, customer-portal sessions.
+feature_module: stripe-billing
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated"]
+legal_checks: ["consumer_protection", "auto_renewal_disclosure", "tax_collection"]
+audit_events:
+  - "billing.checkout.created"
+  - "billing.subscription.updated"
+  - "billing.invoice.paid"
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "billing_change" }
+  - id: checkout
+    agent: billing-agent
+    action: create_checkout_or_portal
+  - id: reconcile
+    agent: billing-agent
+    action: handle_webhook
+  - id: persist
+    agent: business-agent
+    action: update_subscription
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 800
+  p99_latency_ms: 3000
