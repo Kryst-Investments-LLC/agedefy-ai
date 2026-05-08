@@ -38,3 +38,5 @@ coverage/
 *.tgz
 .tmp-*
 typecheck-output.txt
+
+testResults.xml
