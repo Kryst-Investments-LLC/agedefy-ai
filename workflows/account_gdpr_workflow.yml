@@ -1,0 +1,37 @@
+name: account_gdpr_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/legal", "@kryst-investments-llc/platform"]
+intent: account.gdpr_request
+description: GDPR data export and account deletion with audit trail.
+feature_module: account-governance
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated", "user.identity_verified"]
+legal_checks: ["gdpr_right_to_access", "gdpr_right_to_erasure", "data_retention"]
+audit_events:
+  - "account.export.requested"
+  - "account.export.delivered"
+  - "account.delete.requested"
+  - "account.delete.completed"
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "gdpr_request" }
+  - id: collect
+    agent: audit-governance-agent
+    action: gather_user_data
+  - id: redact
+    agent: audit-governance-agent
+    action: redact_third_party
+  - id: deliver
+    agent: audit-governance-agent
+    action: deliver_or_delete
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 6000

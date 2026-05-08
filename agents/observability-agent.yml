@@ -1,0 +1,43 @@
+name: observability-agent
+version: 1.0.0
+role: Trace, metric, and log emission across the agent graph
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Emits structured JSON Lines traces (per schemas/trace.schema.json),
+  Prometheus textfile metrics, and forwards to the audit log when an
+  event is also a compliance event.
+
+capabilities:
+  - emit_trace
+  - emit_metric
+  - forward_audit
+  - sample
+  - redact_pii_in_trace
+
+inputs:
+  - name: event
+    description: Trace event payload.
+    required: true
+
+outputs:
+  - name: trace_record
+    description: Persisted record reference.
+
+error_handling:
+  on_sink_unavailable: "buffer_and_retry"
+  on_buffer_overflow: "drop_with_metric"
+
+sla:
+  p50_latency_ms: 5
+  p99_latency_ms: 50
+  availability: "99.99%"
+
+sinks:
+  trace:
+    path: "./traces/orchestrator.jsonl"
+    schema: "schemas/trace.schema.json"
+  metrics:
+    format: "prometheus_textfile"
+    path: "./traces/metrics.prom"
+  audit:
+    forward_to: "audit-governance-agent"

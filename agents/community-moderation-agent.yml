@@ -1,0 +1,32 @@
+name: community-moderation-agent
+version: 1.0.0
+role: Community forum moderation pipeline
+owners: ["@kryst-investments-llc/community"]
+description: |
+  Classifies forum posts, scans for unsafe medical advice, applies the
+  CAP/FTC marketing rules, and routes flagged content to clinician review.
+
+capabilities:
+  - classify_post
+  - detect_spam
+  - detect_medical_claim
+  - escalate_to_clinician_review
+
+inputs:
+  - name: post
+    description: Post body, category, author.
+    required: true
+
+outputs:
+  - name: decision
+    description: allow | warn | hold | remove
+  - name: tags
+    description: Classifier tags.
+
+error_handling:
+  on_classifier_failure: "hold_for_human_review"
+
+sla:
+  p50_latency_ms: 250
+  p99_latency_ms: 1000
+  availability: "99.9%"

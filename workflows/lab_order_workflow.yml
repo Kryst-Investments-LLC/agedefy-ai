@@ -1,0 +1,34 @@
+name: lab_order_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: lab.order_panel
+description: Place a lab panel order with COA tracking and jurisdiction checks.
+feature_module: lab-testing
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated", "user.shipping_address"]
+legal_checks: ["lab_testing_regulation", "direct_to_consumer_disclosure", "biomarker_privacy"]
+audit_events: ["lab.order.placed", "lab.order.coa_received"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "order_lab_panel" }
+    on_error: "block_and_explain"
+  - id: catalog
+    agent: business-agent
+    action: load_lab_panel
+  - id: payment
+    agent: billing-agent
+    action: charge_or_apply_subscription
+  - id: persist
+    agent: business-agent
+    action: create_lab_order
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 900
+  p99_latency_ms: 3000

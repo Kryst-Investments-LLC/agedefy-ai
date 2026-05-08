@@ -1,0 +1,32 @@
+name: Pester Tests
+
+on:
+  push:
+    paths:
+      - 'tools/**'
+      - 'tools-v3/**'
+      - 'tests/**'
+      - '.github/workflows/pester-tests.yml'
+  pull_request:
+
+jobs:
+  pester:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pester + powershell-yaml
+        shell: pwsh
+        run: |
+          Install-Module Pester       -MinimumVersion 5.5 -Scope CurrentUser -Force
+          Install-Module powershell-yaml -Scope CurrentUser -Force
+      - name: Run Pester
+        shell: pwsh
+        run: |
+          $cfg = New-PesterConfiguration
+          $cfg.Run.Path        = './tests'
+          $cfg.Run.Exit        = $true
+          $cfg.Output.Verbosity= 'Detailed'
+          $cfg.CodeCoverage.Enabled = $true
+          $cfg.CodeCoverage.Path    = @('./tools/*.ps1','./tools-v3/*.ps1')
+          $cfg.CodeCoverage.CoveragePercentTarget = 80
+          Invoke-Pester -Configuration $cfg

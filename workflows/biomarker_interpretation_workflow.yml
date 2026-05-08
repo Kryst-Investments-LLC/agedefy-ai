@@ -1,0 +1,55 @@
+name: biomarker_interpretation_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: longevity.biomarker_context
+description: |
+  Record or interpret a biomarker entry, validate ranges, fetch trends,
+  detect risk markers, and surface personalized longevity context.
+feature_module: biomarker-tracking
+plan_gating: [starter, pro, enterprise]
+preconditions:
+  - "user.authenticated"
+  - "user.consent.health_data == true"
+legal_checks:
+  - "biomarker_privacy"
+  - "lab_result_disclosure"
+audit_events:
+  - "biomarker.entry.created"
+  - "biomarker.entry.interpreted"
+steps:
+  - id: parse
+    agent: entry-agent
+    action: extract_biomarker_terms
+    timeout_ms: 200
+  - id: validate_ranges
+    agent: domain-agent
+    action: map_biomarkers_to_domains
+    timeout_ms: 300
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "biomarker_interpretation" }
+    timeout_ms: 150
+  - id: trend
+    agent: knowledge-graph-agent
+    action: fetch_trend
+    timeout_ms: 400
+  - id: personalize
+    agent: ai-personalization-agent
+    action: explain_with_context
+    timeout_ms: 1200
+  - id: persist
+    agent: business-agent
+    action: persist_entry
+    timeout_ms: 250
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+fallbacks:
+  - on: timeout
+    do: "return_partial_with_disclaimer"
+sla:
+  p50_latency_ms: 800
+  p99_latency_ms: 2500
+telemetry:
+  metrics: [biomarker_entries_total, biomarker_warnings_total]

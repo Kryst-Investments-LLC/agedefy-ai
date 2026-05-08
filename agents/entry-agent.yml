@@ -1,3 +1,84 @@
-﻿parse:
+﻿name: entry-agent
+version: 1.0.0
+role: NLU front door — detect intent, extract slots, normalize locale & jurisdiction
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Receives raw user queries, classifies them against the controlled
+  intent taxonomy in metadata/intents.yml, extracts domain slots
+  (biomarkers, compounds, panels, etc.), and emits a normalized request
+  for the master orchestrator.
+
+capabilities:
+  - detect_intent
+  - extract_biomarker_terms
+  - extract_compounds
+  - extract_lab_panel
+  - normalize_locale
+  - normalize_jurisdiction_hint
+  - emit_fallback
+
+inputs:
+  - name: query
+    description: Raw user input string.
+    required: true
+  - name: locale
+    description: Optional BCP-47 locale hint.
+    required: false
+  - name: jurisdiction_hint
+    description: Optional ISO country/state code.
+    required: false
+
+outputs:
+  - name: intent
+    description: One id from metadata/intents.yml or fallback.unknown.
+  - name: slots
+    description: Extracted typed slot values.
+  - name: confidence
+    description: 0.0–1.0 classifier confidence.
+  - name: jurisdiction
+    description: Normalized ISO code.
+
+nlu:
+  taxonomy: "metadata/intents.yml"
+  primary_model: "gpt-4o-mini"
+  fallback_model: "claude-3-5-sonnet"
+  threshold_confidence: 0.55
+  fallback_intent: "fallback.unknown"
+
+slot_extractors:
+  - name: biomarker
+    source: "metadata/biomarkers.yml"
+  - name: compound
+    source: "metadata/compounds.yml"
+  - name: lab_panel
+    source: "metadata/lab_panels.yml"
+  - name: pathway
+    source: "metadata/pathways.yml"
+
+error_handling:
+  on_low_confidence: "emit_fallback"
+  on_extractor_failure: "continue_without_slot"
+  on_model_unavailable: "fallback_model"
+
+sla:
+  p50_latency_ms: 200
+  p99_latency_ms: 800
+  availability: "99.9%"
+
+examples:
+  - input: { query: "Interpret my fasting glucose of 95" }
+    output:
+      intent: "longevity.biomarker_context"
+      slots: { biomarker: "fasting_glucose", value: 95, unit: "mg/dL" }
+      confidence: 0.92
+  - input: { query: "Book a follow-up with a longevity doctor", jurisdiction_hint: "us-ca" }
+    output:
+      intent: "telemedicine.consultation_request"
+      slots: { consultation_type: "follow_up" }
+      jurisdiction: "us-ca"
+      confidence: 0.88
+
+# Legacy keys retained for backwards-compatibility with platform-dev.ps1
+parse:
   - detect_intent
   - extract_biomarker_terms

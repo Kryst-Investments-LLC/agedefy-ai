@@ -1,0 +1,31 @@
+name: compound_interaction_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: knowledge.compound_interaction
+description: Evaluate compound stacks for known interactions and contraindications.
+feature_module: compound-mixer
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated"]
+legal_checks: ["medical_advice_disclaimer", "supplement_legality"]
+audit_events: ["mixer.stack.evaluated"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: extract_compounds
+  - id: graph
+    agent: knowledge-graph-agent
+    action: load_interactions
+  - id: safety
+    agent: safety-agent
+    action: check_compound_interactions
+    on_error: "warn_and_continue"
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "compound_recommendation" }
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 600
+  p99_latency_ms: 2000

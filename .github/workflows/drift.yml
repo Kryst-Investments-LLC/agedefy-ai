@@ -1,0 +1,25 @@
+name: Legal Drift
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   # daily 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install powershell-yaml
+        shell: pwsh
+        run: Install-Module powershell-yaml -Scope CurrentUser -Force
+      - name: Validate freshness (warn-only on >365 days)
+        shell: pwsh
+        run: ./tools-v3/v3-jurisdiction-validator.ps1
+      - name: Open issue if any rule older than 12 months
+        if: failure()
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Legal rule freshness check failed"
+          content-filepath: .github/ISSUE_TEMPLATE/legal-drift.md
+          labels: legal, drift

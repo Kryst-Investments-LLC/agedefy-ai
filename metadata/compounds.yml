@@ -1,0 +1,70 @@
+version: 1.0.0
+description: Controlled vocabulary of compounds referenced by agents and workflows.
+compounds:
+  - id: nmn
+    name: "Nicotinamide Mononucleotide"
+    aliases: ["NMN"]
+    category: NAD_precursor
+    pathways: [nad_metabolism, sirtuin_activation]
+  - id: nr
+    name: "Nicotinamide Riboside"
+    aliases: ["NR"]
+    category: NAD_precursor
+    pathways: [nad_metabolism]
+  - id: rapamycin
+    name: "Rapamycin"
+    aliases: ["Sirolimus"]
+    category: mtor_inhibitor
+    pathways: [mtor, autophagy]
+    prescription_only: true
+  - id: metformin
+    name: "Metformin"
+    category: ampk_activator
+    pathways: [ampk, glucose_metabolism]
+    prescription_only: true
+  - id: berberine
+    name: "Berberine"
+    category: ampk_activator
+    pathways: [ampk, glucose_metabolism]
+  - id: spermidine
+    name: "Spermidine"
+    category: autophagy_inducer
+    pathways: [autophagy]
+  - id: resveratrol
+    name: "Resveratrol"
+    category: sirtuin_activator
+    pathways: [sirtuin_activation]
+  - id: fisetin
+    name: "Fisetin"
+    category: senolytic
+    pathways: [senescence_clearance]
+  - id: quercetin
+    name: "Quercetin"
+    category: senolytic
+    pathways: [senescence_clearance]
+  - id: dasatinib
+    name: "Dasatinib"
+    category: senolytic
+    pathways: [senescence_clearance]
+    prescription_only: true
+  - id: glycine
+    name: "Glycine"
+    category: amino_acid
+    pathways: [glutathione_synthesis, sleep_quality]
+  - id: nac
+    name: "N-Acetylcysteine"
+    aliases: ["NAC"]
+    category: antioxidant
+    pathways: [glutathione_synthesis]
+  - id: omega3
+    name: "Omega-3 EPA/DHA"
+    category: lipid
+    pathways: [inflammation, cardiovascular]
+  - id: vitamin_d3
+    name: "Vitamin D3"
+    category: vitamin
+    pathways: [bone_health, immune_modulation]
+  - id: magnesium_glycinate
+    name: "Magnesium Glycinate"
+    category: mineral
+    pathways: [sleep_quality, neuromuscular]

@@ -1,0 +1,45 @@
+version: 1.0.0
+description: Controlled vocabulary of aging pathways (López-Otín hallmarks aligned).
+pathways:
+  - id: nad_metabolism
+    name: "NAD+ Metabolism"
+    hallmark: mitochondrial_dysfunction
+  - id: sirtuin_activation
+    name: "Sirtuin Activation"
+    hallmark: epigenetic_alterations
+  - id: mtor
+    name: "mTOR Signaling"
+    hallmark: deregulated_nutrient_sensing
+  - id: ampk
+    name: "AMPK Signaling"
+    hallmark: deregulated_nutrient_sensing
+  - id: autophagy
+    name: "Autophagy"
+    hallmark: loss_of_proteostasis
+  - id: senescence_clearance
+    name: "Cellular Senescence Clearance"
+    hallmark: cellular_senescence
+  - id: glutathione_synthesis
+    name: "Glutathione Synthesis"
+    hallmark: oxidative_stress
+  - id: inflammation
+    name: "Chronic Inflammation"
+    hallmark: chronic_inflammation
+  - id: glucose_metabolism
+    name: "Glucose Metabolism"
+    hallmark: deregulated_nutrient_sensing
+  - id: cardiovascular
+    name: "Cardiovascular Health"
+    hallmark: chronic_inflammation
+  - id: sleep_quality
+    name: "Sleep Quality"
+    hallmark: circadian_disruption
+  - id: bone_health
+    name: "Bone Health"
+    hallmark: stem_cell_exhaustion
+  - id: immune_modulation
+    name: "Immune Modulation"
+    hallmark: altered_intercellular_communication
+  - id: neuromuscular
+    name: "Neuromuscular Function"
+    hallmark: stem_cell_exhaustion

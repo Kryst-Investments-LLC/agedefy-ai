@@ -1,12 +1,43 @@
+name: master-orchestrator-agent
+version: 1.0.0
+role: Top-level router and orchestrator for the AgeDefy AI platform
+owners:
+  - "@kryst-investments-llc/platform"
+description: |
+  Coordinates the full agent graph. Receives parsed intents from the
+  entry-agent, fans out to domain / business / law-awareness / safety
+  agents, invokes feature sub-agents, and assembles a final response
+  with a structured execution trace.
+
 route:
   - domain-agent
   - business-agent
   - law-awareness-agent
+  - safety-agent
+
+capabilities:
+  - intent_dispatch
+  - sub_agent_fan_out
+  - response_composition
+  - trace_emission
+  - sla_enforcement
+  - error_recovery_with_fallback
 
 sub_agents:
   - name: ux-ui-agent
   - name: design-system-agent
   - name: brand-consistency-agent
+  - name: ai-personalization-agent
+  - name: telemedicine-agent
+  - name: marketplace-agent
+  - name: billing-agent
+  - name: community-moderation-agent
+  - name: research-agent
+  - name: knowledge-graph-agent
+  - name: clinician-review-agent
+  - name: observability-agent
+  - name: audit-governance-agent
+  - name: i18n-agent
 
 routing_rules:
   - if: "request involves UI, UX, screens, flows, or user journeys"
@@ -15,3 +46,48 @@ routing_rules:
     route_to: "design-system-agent"
   - if: "request involves tone, brand voice, naming, or visual identity"
     route_to: "brand-consistency-agent"
+  - if: "request involves biomarker entry, trends, or interpretation"
+    route_to: "domain-agent"
+  - if: "request involves protocol creation, fork, or recommendation"
+    route_to: "business-agent"
+  - if: "request involves drug, supplement, or peptide interactions / contraindications"
+    route_to: "safety-agent"
+  - if: "request involves a clinician consultation, escalation, or review queue"
+    route_to: "clinician-review-agent"
+  - if: "request involves provider directory or consultation scheduling"
+    route_to: "telemedicine-agent"
+  - if: "request involves products, supplements, peptides, kits, devices, orders"
+    route_to: "marketplace-agent"
+  - if: "request involves Stripe, subscription, plan, checkout, or invoice"
+    route_to: "billing-agent"
+  - if: "request involves community posts, comments, moderation, or reports"
+    route_to: "community-moderation-agent"
+  - if: "request involves clinical trials, papers, or research ingestion"
+    route_to: "research-agent"
+  - if: "request involves pathways, compounds, or knowledge-graph queries"
+    route_to: "knowledge-graph-agent"
+  - if: "request involves locale, translation, or language switching"
+    route_to: "i18n-agent"
+  - if: "request involves audit logs, GDPR export, or account deletion"
+    route_to: "audit-governance-agent"
+  - if: "request involves AI personalization, recommendations, or coaching"
+    route_to: "ai-personalization-agent"
+
+error_handling:
+  on_unknown_intent: "route_to:domain-agent with fallback flag"
+  on_agent_timeout_ms: 5000
+  on_agent_failure: "circuit_breaker_open + fallback_response"
+  retry_policy:
+    max_attempts: 2
+    backoff_ms: 250
+
+sla:
+  p50_latency_ms: 400
+  p99_latency_ms: 1500
+  availability: "99.9%"
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, intent, agent, decision, latencyMs, jurisdiction, errorCode]
+  sink: "./traces/orchestrator.jsonl"

@@ -1,0 +1,30 @@
+name: learning_content_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/content"]
+intent: learn.article_action
+description: CRUD for Learning Center articles with slug-based routing.
+feature_module: learning-center
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated"]
+legal_checks: ["medical_advice_disclaimer", "copyright_attribution"]
+audit_events: ["learn.article.published", "learn.article.removed"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: classify
+    agent: brand-consistency-agent
+    action: enforce_voice
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "learn_article" }
+  - id: persist
+    agent: business-agent
+    action: persist_article
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 500
+  p99_latency_ms: 2000

@@ -1,0 +1,44 @@
+name: knowledge-graph-agent
+version: 1.0.0
+role: Pathway / compound / interaction / effect graph
+owners: ["@kryst-investments-llc/research"]
+description: |
+  Owns the knowledge graph derived from metadata/* and ingested papers.
+  Powers the compound mixer, pathway pages, and global search.
+
+capabilities:
+  - traverse_graph
+  - load_interactions
+  - fetch_trend
+  - search_all_indexes
+  - link_to_compounds
+
+inputs:
+  - name: query
+    description: Free text or structured (entity + relation).
+    required: true
+
+outputs:
+  - name: nodes
+    description: Matched nodes.
+  - name: edges
+    description: Matched edges.
+
+error_handling:
+  on_index_corruption: "fail_closed_and_alert"
+  on_partial_index: "warn_and_continue"
+
+sla:
+  p50_latency_ms: 200
+  p99_latency_ms: 800
+  availability: "99.9%"
+
+indexes:
+  - name: compounds
+    source: "metadata/compounds.yml"
+  - name: pathways
+    source: "metadata/pathways.yml"
+  - name: biomarkers
+    source: "metadata/biomarkers.yml"
+  - name: lab_panels
+    source: "metadata/lab_panels.yml"

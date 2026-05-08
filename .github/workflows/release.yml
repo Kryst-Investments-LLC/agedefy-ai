@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0
+        with: { format: spdx-json, output-file: sbom.spdx.json }
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign SBOM
+        run: cosign sign-blob --yes sbom.spdx.json --output-signature sbom.sig
+        env: { COSIGN_EXPERIMENTAL: "1" }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sbom.spdx.json
+            sbom.sig
+            version.json

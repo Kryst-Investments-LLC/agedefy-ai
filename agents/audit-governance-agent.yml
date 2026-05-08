@@ -1,0 +1,45 @@
+name: audit-governance-agent
+version: 1.0.0
+role: Audit log, GDPR rights, RBAC enforcement, PII redaction
+owners: ["@kryst-investments-llc/legal", "@kryst-investments-llc/platform"]
+description: |
+  Persists audit events, enforces role-based access, fulfills GDPR
+  access / erasure requests, and runs the PII redactor used by every
+  outbound call to a third-party provider.
+
+capabilities:
+  - record_audit_event
+  - query_audit_log
+  - export_csv_if_requested
+  - enforce_admin_role
+  - redact_pii
+  - redact_third_party
+  - gather_user_data
+  - deliver_or_delete
+
+inputs:
+  - name: action
+    description: Action to log or evaluate.
+    required: true
+  - name: user
+    description: User context.
+    required: true
+
+outputs:
+  - name: event_id
+    description: Recorded audit event id.
+  - name: decision
+    description: For RBAC checks.
+
+error_handling:
+  on_audit_sink_failure: "fail_closed"
+  on_redactor_failure: "fail_closed"
+
+sla:
+  p50_latency_ms: 30
+  p99_latency_ms: 200
+  availability: "99.99%"
+
+retention:
+  audit_log_days: 2555   # 7 years
+  trace_log_days: 90

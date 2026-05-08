@@ -1,0 +1,26 @@
+name: clinical_trial_search_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/research"]
+intent: research.clinical_trial_search
+description: External clinical-trial search and saved-trial management.
+feature_module: clinical-trials
+plan_gating: [pro, enterprise]
+preconditions: ["user.authenticated"]
+legal_checks: ["data_redistribution"]
+audit_events: ["research.trial.searched", "research.trial.saved"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: search
+    agent: research-agent
+    action: search_external_trials
+  - id: persist
+    agent: business-agent
+    action: save_trial
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 1200
+  p99_latency_ms: 4000

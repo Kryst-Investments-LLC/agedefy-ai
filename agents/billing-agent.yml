@@ -1,0 +1,50 @@
+name: billing-agent
+version: 1.0.0
+role: Stripe billing + subscription lifecycle
+owners: ["@kryst-investments-llc/billing"]
+description: |
+  Owns Stripe checkout, customer-portal sessions, webhook reconciliation,
+  and plan-tier mapping for the AgeDefy product layer.
+
+capabilities:
+  - create_checkout_session
+  - create_checkout_or_portal
+  - charge_or_apply_subscription
+  - handle_webhook
+  - reconcile_subscription
+  - apply_proration
+
+inputs:
+  - name: user_id
+    description: Authenticated user id.
+    required: true
+  - name: target_plan
+    description: starter | pro | enterprise
+    required: false
+  - name: webhook_event
+    description: Stripe event payload.
+    required: false
+
+outputs:
+  - name: session_url
+    description: Stripe checkout / portal URL.
+  - name: subscription
+    description: Updated subscription record.
+
+error_handling:
+  on_webhook_signature_invalid: "block_and_alert_security"
+  on_idempotency_conflict: "return_existing_result"
+  on_stripe_outage: "queue_for_retry"
+
+sla:
+  p50_latency_ms: 500
+  p99_latency_ms: 2500
+  availability: "99.95%"
+
+plans:
+  starter:
+    feature_flags: [biomarkers, community, marketplace_basic]
+  pro:
+    feature_flags: [biomarkers, community, marketplace_full, telemedicine, ai_personalization]
+  enterprise:
+    feature_flags: [all]

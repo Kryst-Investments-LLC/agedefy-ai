@@ -4,22 +4,73 @@ on:
   push:
     paths:
       - 'agents/**'
+      - 'workflows/**'
+      - 'metadata/**'
+      - 'jurisdictions/**'
+      - 'schemas/**'
       - 'tools/**'
-      - 'platform-dev.ps1'
+      - 'tools-v3/**'
+      - '.github/workflows/validate-agents.yml'
   pull_request:
-    paths:
-      - 'agents/**'
-      - 'tools/**'
-      - 'platform-dev.ps1'
+  workflow_dispatch:
 
 jobs:
-  validate:
+  yaml-and-schema:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Validate YAML
+      - name: Install yamllint
+        run: pip install yamllint==1.35.1
+
+      - name: Run yamllint (no duplicate keys, no orphan files)
         run: |
-          echo 'Validating agents and legal rules...'
-          # Hook in real validators here (PowerShell, Node, etc.)
+          yamllint -d "{extends: default, rules: {line-length: disable, document-start: disable, truthy: disable}}" \
+            agents workflows metadata jurisdictions
+
+      - name: Setup Node + ajv-cli
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install -g ajv-cli@5 ajv-formats@3 js-yaml@4
+
+      - name: Convert YAML to JSON (for ajv)
+        run: |
+          mkdir -p .ci/json
+          for f in $(find agents workflows metadata jurisdictions -name '*.yml'); do
+            out=".ci/json/${f//\//__}.json"
+            node -e "const y=require('js-yaml');const fs=require('fs');fs.writeFileSync('$out', JSON.stringify(y.load(fs.readFileSync('$f','utf8'))))"
+          done
+
+      - name: Validate agents
+        run: |
+          for f in .ci/json/agents__*-agent.yml.json; do
+            ajv validate -s schemas/agent.schema.json -d "$f" --spec=draft2020 -c ajv-formats || exit 1
+          done
+
+      - name: Validate workflows
+        run: |
+          for f in .ci/json/workflows__*.yml.json; do
+            ajv validate -s schemas/workflow.schema.json -d "$f" --spec=draft2020 -c ajv-formats || exit 1
+          done
+
+      - name: Validate legal-rules
+        run: |
+          for f in .ci/json/agents__legal-rules__*.yml.json; do
+            ajv validate -s schemas/legal-rule.schema.json -d "$f" --spec=draft2020 -c ajv-formats || exit 1
+          done
+
+      - name: Validate intent taxonomy
+        run: |
+          ajv validate -s schemas/intent.schema.json -d .ci/json/metadata__intents.yml.json --spec=draft2020 -c ajv-formats
+
+      - name: Reject orphan YAML files (basename starts with .)
+        run: |
+          if find agents workflows metadata jurisdictions -type f -name '.yml' | grep -q .; then
+            echo "::error ::Orphan .yml files committed"; exit 1
+          fi
+
+      - name: Run jurisdiction validator (PowerShell)
+        shell: pwsh
+        run: |
+          Install-Module powershell-yaml -Scope CurrentUser -Force
+          ./tools-v3/v3-jurisdiction-validator.ps1

@@ -2,39 +2,45 @@
   code: "br"
   name: "Brazil"
 
-applies_to:
-  - workflows
-  - forms
-  - recommendations
-  - calculations
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
 
 legal_domains:
-  - telemedicine_regulation
-  - supplement_legality
-  - biomarker_privacy
-  - clinician_licensing
-  - medical_device_rules
+  - lgpd_data_protection
+  - anvisa_supplement_regulation
+  - anvisa_medical_device
+  - cfm_telemedicine
 
 rules:
-  - id: example_rule_1
-    description: "Describe a key legal constraint for this jurisdiction."
+  - id: br.lgpd.sensitive_data_consent
+    description: Health data is sensitive personal data; explicit consent required.
+    severity: critical
+    category: biomarker_privacy
+    when: ["workflow processes health data of Brazilian user"]
+    then: ["require specific consent", "appoint DPO contact"]
+    citations:
+      - title: "LGPD Art. 11"
+        url: "https://www.gov.br/anpd/pt-br"
+
+  - id: br.anvisa.food_supplement_regulation
+    description: Food supplements must comply with ANVISA RDC 243/2018.
     severity: high
-    category: general
-    when:
-      - "Describe the condition when this rule applies."
-    then:
-      - "Describe what must be enforced, blocked, or warned."
+    category: supplement_legality
+    when: ["marketplace product targets BR buyer", "category == supplements"]
+    then: ["verify ANVISA registration", "use permitted health declarations only"]
+    citations:
+      - title: "RDC 243/2018"
+        url: "https://www.gov.br/anvisa/pt-br"
 
-  - id: example_rule_2
-    description: "Another important legal rule for this jurisdiction."
-    severity: medium
-    category: domain_specific
-    when:
-      - "Describe the triggering context."
-    then:
-      - "Describe the required platform behavior."
+  - id: br.cfm.telemedicine_resolution
+    description: Telemedicine governed by CFM Resolution 2.314/2022.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow"]
+    then: ["verify CRM registration", "store electronic record per CFM rules"]
+    citations:
+      - title: "CFM Resolution 2.314/2022"
+        url: "https://portal.cfm.org.br/"
 
-notes: |
-  Add any jurisdiction-specific nuances, exceptions, or references here.
-  This file is a template and should be customized for real compliance.
-
+notes: ""

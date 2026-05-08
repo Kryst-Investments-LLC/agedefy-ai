@@ -1,4 +1,45 @@
-﻿intent:
+﻿name: domain-agent
+version: 1.0.0
+role: Longevity-medicine domain reasoning
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Applies longevity-medicine reasoning over biomarkers, pathways,
+  compounds, and risk markers. Acts as the first specialist invoked by
+  the orchestrator for health-context intents.
+
+capabilities:
+  - map_biomarkers_to_domains
+  - detect_risk_markers
+  - interpret_age_related_signals
+  - link_pathways_to_compounds
+
+inputs:
+  - name: biomarker_entry
+    description: Optional biomarker reading with value and unit.
+    required: false
+  - name: pathway
+    description: Optional pathway focus.
+    required: false
+
+outputs:
+  - name: interpretation
+    description: Human-readable interpretation with disclaimers.
+  - name: risk_flags
+    description: Structured list of risk markers detected.
+
+error_handling:
+  on_missing_metadata: "warn_and_continue"
+
+sla:
+  p50_latency_ms: 300
+  p99_latency_ms: 1500
+  availability: "99.9%"
+
+examples:
+  - input: { biomarker_entry: { id: "hba1c", value: 5.9 } }
+    output: { interpretation: "above optimal — discuss with clinician", risk_flags: ["pre_diabetic_range"] }
+
+intent:
   - longevity.biomarker_context
   - longevity.healthspan_analysis
 
@@ -9,3 +50,4 @@ reasoning:
   - map_biomarkers_to_domains
   - detect_risk_markers
   - interpret_age_related_signals
+  - link_pathways_to_compounds

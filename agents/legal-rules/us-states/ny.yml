@@ -1,0 +1,35 @@
+jurisdiction:
+  code: "us-ny"
+  name: "New York (USA)"
+  parent: "us"
+
+last_reviewed: "2026-04-01"
+applies_to: [workflows, forms, recommendations, calculations]
+legal_domains: [ny_shield_act, ny_telehealth]
+
+rules:
+  - id: us-ny.shield.security_safeguards
+    description: |
+      NY SHIELD Act requires reasonable administrative, technical, and
+      physical safeguards for private information.
+    severity: high
+    category: biomarker_privacy
+    when: ["user.state == 'NY'", "workflow processes private information"]
+    then: ["enforce SHIELD-compliant safeguards", "log access"]
+    citations:
+      - title: "NY Gen. Bus. Law §899-bb"
+        url: "https://www.nysenate.gov/legislation/laws/GBS/899-BB"
+
+  - id: us-ny.telehealth.parity_documentation
+    description: |
+      NY telehealth requires informed consent and parity documentation
+      for reimbursable consults.
+    severity: medium
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow", "user.state == 'NY'"]
+    then: ["capture e-consent", "store telehealth modality in record"]
+    citations:
+      - title: "NYS DOH Telehealth Guidance"
+        url: "https://www.health.ny.gov/health_care/medicaid/redesign/telehealth/"
+
+notes: ""

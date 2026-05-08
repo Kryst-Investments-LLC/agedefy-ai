@@ -1,0 +1,30 @@
+name: admin_audit_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: admin.audit_query
+description: Admin console queries against the audit log with role enforcement.
+feature_module: admin-console
+plan_gating: [enterprise]
+preconditions: ["user.authenticated", "user.role == ADMIN"]
+legal_checks: ["audit_log_access", "least_privilege"]
+audit_events: ["admin.audit.queried", "admin.audit.exported"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: rbac
+    agent: audit-governance-agent
+    action: enforce_admin_role
+    on_error: "block_and_explain"
+  - id: query
+    agent: audit-governance-agent
+    action: query_audit_log
+  - id: export
+    agent: audit-governance-agent
+    action: export_csv_if_requested
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 700
+  p99_latency_ms: 2500

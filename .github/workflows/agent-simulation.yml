@@ -1,0 +1,43 @@
+name: Agent Simulation
+
+on:
+  push:
+    paths:
+      - 'agents/**'
+      - 'workflows/**'
+      - 'metadata/**'
+      - 'tools/**'
+      - 'tools-v3/**'
+      - 'tests/golden/**'
+      - '.github/workflows/agent-simulation.yml'
+  pull_request:
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        shell: pwsh
+        run: Install-Module powershell-yaml -Scope CurrentUser -Force
+
+      - name: Run platform Test + Simulation
+        shell: pwsh
+        run: |
+          $log = New-TemporaryFile
+          ./tools/platform-dev.ps1 -Action Test       *>&1 | Tee-Object -FilePath "$log.test.txt"
+          ./tools/platform-dev.ps1 -Action Simulation *>&1 | Tee-Object -FilePath "$log.sim.txt"
+
+          $expected = Get-Content tests/golden/simulation.golden.txt -Raw
+          $actual   = Get-Content "$log.sim.txt" -Raw
+          # Loose contains-check: every golden line must appear in actual output
+          $missing = @()
+          foreach ($line in ($expected -split "`n" | Where-Object { $_.Trim() })) {
+              if ($actual -notmatch [regex]::Escape($line.Trim())) { $missing += $line }
+          }
+          if ($missing.Count -gt 0) {
+              Write-Host '::error ::Golden simulation diff failed. Missing lines:'
+              $missing | ForEach-Object { Write-Host "  - $_" }
+              exit 1
+          }
+          Write-Host 'Golden simulation match: OK'

@@ -1,0 +1,37 @@
+name: marketplace_purchase_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: marketplace.place_order
+description: Catalog → cart → legal/safety check → payment → fulfillment hand-off.
+feature_module: marketplace
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated", "user.shipping_address"]
+legal_checks: ["supplement_legality", "import_restrictions", "consumer_protection"]
+audit_events: ["marketplace.order.placed", "marketplace.order.cancelled"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: catalog
+    agent: marketplace-agent
+    action: load_product
+  - id: safety
+    agent: safety-agent
+    action: check_compound_interactions
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "marketplace_purchase" }
+    on_error: "block_and_explain"
+  - id: payment
+    agent: billing-agent
+    action: create_checkout_session
+  - id: persist
+    agent: business-agent
+    action: create_marketplace_order
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 1000
+  p99_latency_ms: 3500

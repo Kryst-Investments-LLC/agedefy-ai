@@ -1,0 +1,23 @@
+name: knowledge_graph_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: knowledge.graph_query
+description: Query the pathway → compound → interaction → effect graph.
+feature_module: knowledge-graph
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated"]
+legal_checks: ["medical_advice_disclaimer"]
+audit_events: ["knowledge.graph.queried"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: query
+    agent: knowledge-graph-agent
+    action: traverse_graph
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 400
+  p99_latency_ms: 1500

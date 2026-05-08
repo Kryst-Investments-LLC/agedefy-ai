@@ -1,0 +1,25 @@
+name: global_search_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/platform"]
+intent: search.global_query
+description: Unified search across pathways, compounds, articles, lab panels.
+feature_module: global-search
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated"]
+audit_events: ["search.global.executed"]
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: fanout
+    agent: knowledge-graph-agent
+    action: search_all_indexes
+  - id: rerank
+    agent: ai-personalization-agent
+    action: rerank_for_user
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 350
+  p99_latency_ms: 1200

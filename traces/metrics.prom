@@ -1,0 +1,18 @@
+# HELP agedefy_agents_total Total number of agent specs
+# TYPE agedefy_agents_total gauge
+agedefy_agents_total 20
+# HELP agedefy_workflows_total Total number of workflow specs
+# TYPE agedefy_workflows_total gauge
+agedefy_workflows_total 17
+# HELP agedefy_legal_rules_total Total legal-rule files
+# TYPE agedefy_legal_rules_total gauge
+agedefy_legal_rules_total 11
+# HELP agedefy_legal_rule_age_days_mean Mean days since last_reviewed
+# TYPE agedefy_legal_rule_age_days_mean gauge
+agedefy_legal_rule_age_days_mean 37.3
+# HELP agedefy_legal_rules_stale Rules older than 365 days
+# TYPE agedefy_legal_rules_stale gauge
+agedefy_legal_rules_stale 0
+# HELP agedefy_metrics_generated_at Unix timestamp of last emission
+# TYPE agedefy_metrics_generated_at gauge
+agedefy_metrics_generated_at 1778248758

@@ -2,39 +2,48 @@
   code: "ca"
   name: "Canada"
 
-applies_to:
-  - workflows
-  - forms
-  - recommendations
-  - calculations
+last_reviewed: "2026-04-01"
+
+applies_to: [workflows, forms, recommendations, calculations]
 
 legal_domains:
-  - telemedicine_regulation
-  - supplement_legality
-  - biomarker_privacy
-  - clinician_licensing
-  - medical_device_rules
+  - pipeda_privacy
+  - phipa_provincial_privacy
+  - health_canada_nnhpd
+  - cmdr_medical_device
+  - provincial_telehealth
 
 rules:
-  - id: example_rule_1
-    description: "Describe a key legal constraint for this jurisdiction."
+  - id: ca.pipeda.consent_for_health_info
+    description: Knowledge and consent required for collection/use of personal health info.
+    severity: critical
+    category: biomarker_privacy
+    when: ["workflow processes health data of a Canadian user"]
+    then: ["request explicit consent", "publish privacy notice"]
+    citations:
+      - title: "PIPEDA Principle 3 – Consent"
+        url: "https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/p_principle/principles/p_consent/"
+
+  - id: ca.nnhpd.npn_required
+    description: |
+      Natural Health Products sold in Canada must carry an NPN/DIN-HM
+      issued by Health Canada.
     severity: high
-    category: general
-    when:
-      - "Describe the condition when this rule applies."
-    then:
-      - "Describe what must be enforced, blocked, or warned."
+    category: supplement_legality
+    when: ["marketplace product targets Canadian buyer", "category == supplements"]
+    then: ["require NPN field", "block listing if missing"]
+    citations:
+      - title: "Health Canada NHPD"
+        url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription.html"
 
-  - id: example_rule_2
-    description: "Another important legal rule for this jurisdiction."
-    severity: medium
-    category: domain_specific
-    when:
-      - "Describe the triggering context."
-    then:
-      - "Describe the required platform behavior."
+  - id: ca.telehealth.provincial_licence
+    description: Clinicians must be licensed by the patient's province.
+    severity: critical
+    category: clinician_licensing
+    when: ["workflow == telemedicine_routing_workflow"]
+    then: ["match provider to province"]
+    citations:
+      - title: "FMRAC Telemedicine Policy"
+        url: "https://fmrac.ca/"
 
-notes: |
-  Add any jurisdiction-specific nuances, exceptions, or references here.
-  This file is a template and should be customized for real compliance.
-
+notes: "Quebec adds Law 25 obligations; treat QC users with stricter rules."

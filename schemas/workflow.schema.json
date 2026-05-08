@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agedefy.ai/schemas/workflow.schema.json",
+  "title": "AgeDefy Workflow Spec",
+  "type": "object",
+  "required": ["name", "version", "owners", "intent", "description", "steps"],
+  "additionalProperties": true,
+  "properties": {
+    "name":        { "type": "string", "pattern": "^[a-z][a-z0-9_]*_workflow$" },
+    "version":     { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "owners":      { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "intent":      { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z0-9_]+$" },
+    "description": { "type": "string", "minLength": 10 },
+    "feature_module": { "type": "string" },
+    "plan_gating": {
+      "type": "array",
+      "items": { "enum": ["starter", "pro", "enterprise"] }
+    },
+    "preconditions":  { "type": "array", "items": { "type": "string" } },
+    "postconditions": { "type": "array", "items": { "type": "string" } },
+    "legal_checks":   { "type": "array", "items": { "type": "string" } },
+    "audit_events":   { "type": "array", "items": { "type": "string" } },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "agent", "action"],
+        "properties": {
+          "id":         { "type": "string" },
+          "agent":      { "type": "string" },
+          "action":     { "type": "string" },
+          "inputs":     { "type": "object" },
+          "outputs":    { "type": "array", "items": { "type": "string" } },
+          "on_error":   { "type": "string" },
+          "timeout_ms": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "fallbacks": { "type": "array", "items": { "type": "object" } },
+    "sla": {
+      "type": "object",
+      "properties": {
+        "p50_latency_ms": { "type": "integer", "minimum": 1 },
+        "p99_latency_ms": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "telemetry": { "type": "object" }
+  }
+}

@@ -1,0 +1,39 @@
+name: community_moderation_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/community"]
+intent: community.post_action
+description: Create / edit / delete community posts with moderation pipeline.
+feature_module: community-forum
+plan_gating: [starter, pro, enterprise]
+preconditions: ["user.authenticated", "user.email_verified"]
+legal_checks: ["medical_advice_disclaimer", "user_generated_content_liability"]
+audit_events:
+  - "community.post.created"
+  - "community.post.flagged"
+  - "community.post.removed"
+steps:
+  - id: parse
+    agent: entry-agent
+    action: detect_intent
+  - id: classify
+    agent: community-moderation-agent
+    action: classify_post
+  - id: safety
+    agent: safety-agent
+    action: scan_for_unsafe_advice
+  - id: legal_check
+    agent: law-awareness-agent
+    action: validate_actions
+    inputs: { action: "community_post" }
+  - id: persist
+    agent: business-agent
+    action: persist_post
+  - id: review
+    agent: clinician-review-agent
+    action: enqueue_if_medical_claim
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+sla:
+  p50_latency_ms: 600
+  p99_latency_ms: 2000

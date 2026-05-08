@@ -1,0 +1,17 @@
+version: 1.0.0
+description: Controlled vocabulary of marketplace product categories and gating.
+categories:
+  - id: supplements
+    name: "Supplements"
+    legal_domain: supplement_legality
+  - id: peptides
+    name: "Peptides"
+    legal_domain: peptide_regulation
+    requires_clinician: true
+  - id: test_kits
+    name: "Test Kits"
+    legal_domain: lab_testing_regulation
+  - id: devices
+    name: "Devices"
+    legal_domain: medical_device_rules
+products: []  # populated from product database; categories above are authoritative

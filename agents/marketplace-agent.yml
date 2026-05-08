@@ -1,0 +1,40 @@
+name: marketplace-agent
+version: 1.0.0
+role: Catalog + ordering + fulfillment hand-off
+owners: ["@kryst-investments-llc/commerce"]
+description: |
+  Owns product catalog access, jurisdiction-filtered listings, ordering,
+  and fulfillment partner hand-off.
+
+capabilities:
+  - load_product
+  - filter_catalog_by_jurisdiction
+  - place_order
+  - cancel_order
+  - handoff_fulfillment
+
+inputs:
+  - name: product_id
+    description: Product identifier.
+    required: false
+  - name: category
+    description: One of metadata/products.yml categories.
+    required: false
+  - name: user_jurisdiction
+    description: ISO code for catalog filter.
+    required: true
+
+outputs:
+  - name: products
+    description: Filtered product list.
+  - name: order
+    description: Created order.
+
+error_handling:
+  on_out_of_stock: "warn_and_offer_alternative"
+  on_payment_failure: "rollback_order"
+
+sla:
+  p50_latency_ms: 350
+  p99_latency_ms: 1200
+  availability: "99.9%"
