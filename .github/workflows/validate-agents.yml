@@ -29,10 +29,13 @@ jobs:
 
       - name: Setup Node + ajv-cli
         uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with:
+          node-version: '20'
       - run: npm install -g ajv-cli@5 ajv-formats@3 js-yaml@4
 
       - name: Convert YAML to JSON (for ajv)
+        env:
+          NODE_PATH: /usr/local/lib/node_modules
         run: |
           mkdir -p .ci/json
           find agents workflows metadata jurisdictions -name '*.yml' -print0 | while IFS= read -r -d '' f; do
