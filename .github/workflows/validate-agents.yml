@@ -35,7 +35,8 @@ jobs:
 
       - name: Convert YAML to JSON (for ajv)
         run: |
-          export NODE_PATH="$(npm root -g)"
+          NODE_PATH="$(npm root -g)"
+          export NODE_PATH
           mkdir -p .ci/json
           find agents workflows metadata jurisdictions -name '*.yml' -print0 | while IFS= read -r -d '' f; do
             out=".ci/json/${f//\//__}.json"

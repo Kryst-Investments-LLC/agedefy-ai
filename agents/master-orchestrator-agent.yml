@@ -23,6 +23,20 @@ capabilities:
   - sla_enforcement
   - error_recovery_with_fallback
 
+inputs:
+  - name: intent
+    type: string
+    required: true
+    description: Parsed intent identifier handed off from the entry-agent.
+  - name: payload
+    type: object
+    required: false
+    description: Structured payload accompanying the intent (user, locale, jurisdiction, request body).
+  - name: trace_id
+    type: string
+    required: false
+    description: Upstream trace correlation identifier.
+
 sub_agents:
   - name: ux-ui-agent
   - name: design-system-agent
