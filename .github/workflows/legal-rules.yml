@@ -17,15 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: PowerShell/PowerShell@v1
-        with:
-          pwsh-version: '7.4.x'
-
-      - name: Validate legal rules (
-Biozephyra
-)
+      - name: Validate legal rules
         shell: pwsh
         run: |
-          cd 
           ./tools/validate-legal-rules.ps1

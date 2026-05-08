@@ -25,8 +25,7 @@ jobs:
 
       - name: Run yamllint (no duplicate keys, no orphan files)
         run: |
-          yamllint -d "{extends: default, rules: {line-length: disable, document-start: disable, truthy: disable}}" \
-            agents workflows metadata jurisdictions
+          yamllint -c .yamllint.yml agents workflows metadata jurisdictions
 
       - name: Setup Node + ajv-cli
         uses: actions/setup-node@v4
@@ -36,7 +35,7 @@ jobs:
       - name: Convert YAML to JSON (for ajv)
         run: |
           mkdir -p .ci/json
-          for f in $(find agents workflows metadata jurisdictions -name '*.yml'); do
+          find agents workflows metadata jurisdictions -name '*.yml' -print0 | while IFS= read -r -d '' f; do
             out=".ci/json/${f//\//__}.json"
             node -e "const y=require('js-yaml');const fs=require('fs');fs.writeFileSync('$out', JSON.stringify(y.load(fs.readFileSync('$f','utf8'))))"
           done
