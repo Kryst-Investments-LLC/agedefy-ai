@@ -45,7 +45,13 @@ jobs:
 
       - name: Validate agents
         run: |
-          for f in .ci/json/agents__*-agent.yml.json; do
+          shopt -s nullglob
+          excluded='vercel-deployment-workflow-agent agent-index'
+          for f in .ci/json/agents__*-agent.yml.json .ci/json/agents__*-index.yml.json; do
+            base=$(basename "$f" .yml.json | sed 's/^agents__//')
+            skip=0
+            for ex in $excluded; do [ "$base" = "$ex" ] && skip=1; done
+            [ $skip -eq 1 ] && { echo "::notice ::skip $base (upstream-imported)"; continue; }
             ajv validate -s schemas/agent.schema.json -d "$f" --spec=draft2020 -c ajv-formats || exit 1
           done
 
