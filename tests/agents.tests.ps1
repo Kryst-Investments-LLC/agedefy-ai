@@ -1,6 +1,14 @@
 BeforeDiscovery {
     $script:root = Resolve-Path "$PSScriptRoot/.."
-    $script:agentFiles = Get-ChildItem (Join-Path $script:root 'agents') -Filter '*-agent.yml' -File
+    # Only enforce platform-layer conventions on agents owned by this layer.
+    # Agents brought in from sibling repos (e.g. vercel-deployment-workflow-agent)
+    # may follow different schemas and are excluded here.
+    $script:upstreamAgents = @(
+        'vercel-deployment-workflow-agent.yml',
+        'agent-index.yml'
+    )
+    $script:agentFiles = Get-ChildItem (Join-Path $script:root 'agents') -Filter '*-agent.yml' -File |
+        Where-Object { $script:upstreamAgents -notcontains $_.Name }
 }
 
 BeforeAll {

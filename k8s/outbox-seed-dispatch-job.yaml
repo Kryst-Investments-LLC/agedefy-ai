@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: biozephyra-outbox-seed-dispatch
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: outbox-seed-dispatch
+          image: biozephyra-outbox:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - >-
+              pnpm outbox:seed:biomarker &&
+              pnpm outbox:dispatch -- --batch-size ${OUTBOX_BATCH_SIZE:-100}
+              --max-attempts ${OUTBOX_MAX_ATTEMPTS:-5}
+              --retry-delay-ms ${OUTBOX_RETRY_DELAY_MS:-30000}
+          envFrom:
+            - configMapRef:
+                name: biozephyra-outbox-dispatch-config
+            - secretRef:
+                name: biozephyra-outbox-dispatch-secrets

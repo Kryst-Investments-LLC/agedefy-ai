@@ -1,6 +1,6 @@
-﻿param([string]$Action)
+param([string]$Action)
 
-$platformName  = 'agedefy-ai'
+$platformName  = 'biozephyra-ai'
 $sampleQuery   = 'Interpret basic biomarkers for longevity context.'
 $primaryTool   = 'analyze-biomarkers.ps1'
 
@@ -8,6 +8,10 @@ $platformRoot  = Split-Path $PSScriptRoot -Parent
 $agentsPath    = Join-Path $platformRoot 'agents'
 $toolsPath     = Join-Path $platformRoot 'tools'
 $legalRulesDir = Join-Path $agentsPath 'legal-rules'
+$marketplaceModulePath = Join-Path $platformRoot 'modules\marketplace'
+$marketplacePrimaryRoute = Join-Path $platformRoot 'app\scientist-sponsor-marketplace\page.tsx'
+$marketplaceAliasRoute = Join-Path $platformRoot 'app\scientist-sponsor\page.tsx'
+$marketplaceContractTest = Join-Path $platformRoot '__tests__\marketplace-module-components.test.ts'
 
 # ================================
 # YAML HELPERS
@@ -53,6 +57,13 @@ function Show-Dashboard {
     if (Test-Path $legalRulesDir) {
         Get-ChildItem $legalRulesDir -Filter '*.yml' | ForEach-Object { '  - ' + $_.Name }
     }
+
+    ''
+    '[Marketplace Module]'
+    '  module path: ' + $marketplaceModulePath
+    '  canonical route present: ' + (Test-Path $marketplacePrimaryRoute)
+    '  alias route present: ' + (Test-Path $marketplaceAliasRoute)
+    '  contract test present: ' + (Test-Path $marketplaceContractTest)
 }
 
 # ================================
@@ -82,6 +93,12 @@ function Show-CapabilityMap {
             '  workflowMap keys: ' + ($businessYaml.workflowMap.Keys -join ', ')
         }
     }
+
+    ''
+    'Marketplace integration:'
+    '  auth + role bridge: modules/marketplace + scientist-sponsor-marketplace identity integration'
+    '  route aliases: /scientist-sponsor-marketplace, /scientist-sponsor'
+    '  core systems: notifications, payments, audit logging, admin console, account links'
 }
 
 # ================================
@@ -225,6 +242,32 @@ function Test-Platform {
 
     if (-not (Test-Path $legalRulesDir)) {
         $errors += 'legal-rules folder missing'
+    }
+
+    if (-not (Test-Path $marketplaceModulePath)) {
+        $errors += 'marketplace module folder missing'
+    }
+
+    if (-not (Test-Path $marketplacePrimaryRoute)) {
+        $errors += 'marketplace canonical route missing'
+    }
+
+    if (-not (Test-Path $marketplaceAliasRoute)) {
+        $errors += 'marketplace alias route missing'
+    }
+
+    if (-not (Test-Path $marketplaceContractTest)) {
+        $errors += 'marketplace module contract test missing'
+    }
+
+    if ((Test-Path $marketplacePrimaryRoute)) {
+        $routeContent = Get-Content $marketplacePrimaryRoute -Raw
+        if ($routeContent -notmatch '@/modules/marketplace/pages') {
+            $errors += 'marketplace canonical route is not importing from modules/marketplace/pages'
+        }
+        if ($routeContent -notmatch '@/modules/marketplace/services') {
+            $errors += 'marketplace canonical route is not importing from modules/marketplace/services'
+        }
     }
 
     if ($errors.Count -eq 0) {

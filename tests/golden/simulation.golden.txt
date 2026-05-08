@@ -1,5 +1,5 @@
 --- SIMULATION (V3) ---
-Platform: agedefy-ai
+Platform: biozephyra-ai
 Sample query: Interpret basic biomarkers for longevity context.
 Detected intent:   longevity.biomarker_context
 Selected workflow: biomarker_interpretation_workflow

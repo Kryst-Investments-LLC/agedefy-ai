@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "description": "Synthetic safety panel: each item is a (candidate drug, current medications, optional PGx variant) tuple with the expected agent flag (1 = should flag at high+ severity, 0 = should not). Curated from clinically uncontroversial CPIC and DDI textbook examples; NOT a substitute for clinical validation.",
+  "items": [
+    { "id": "s-001", "candidate": "codeine", "currentMedications": [], "pgx": [{ "gene": "CYP2D6", "phenotype": "ULTRARAPID" }], "shouldFlag": 1 },
+    { "id": "s-002", "candidate": "codeine", "currentMedications": [], "pgx": [{ "gene": "CYP2D6", "phenotype": "NORMAL" }], "shouldFlag": 0 },
+    { "id": "s-003", "candidate": "clopidogrel", "currentMedications": [], "pgx": [{ "gene": "CYP2C19", "phenotype": "POOR" }], "shouldFlag": 1 },
+    { "id": "s-004", "candidate": "clopidogrel", "currentMedications": [], "pgx": [{ "gene": "CYP2C19", "phenotype": "NORMAL" }], "shouldFlag": 0 },
+    { "id": "s-005", "candidate": "tamoxifen", "currentMedications": [], "pgx": [{ "gene": "CYP2D6", "phenotype": "POOR" }], "shouldFlag": 1 },
+    { "id": "s-006", "candidate": "warfarin", "currentMedications": [], "pgx": [{ "gene": "CYP2C9", "phenotype": "POOR" }], "shouldFlag": 1 },
+    { "id": "s-007", "candidate": "rapamycin", "currentMedications": [], "pgx": [{ "gene": "CYP3A5", "phenotype": "RAPID" }], "shouldFlag": 1 },
+    { "id": "s-008", "candidate": "vitamin-d3", "currentMedications": [], "pgx": [], "shouldFlag": 0 },
+    { "id": "s-009", "candidate": "magnesium-glycinate", "currentMedications": ["vitamin-d3"], "pgx": [], "shouldFlag": 0 },
+    { "id": "s-010", "candidate": "metformin", "currentMedications": [], "pgx": [], "shouldFlag": 0 }
+  ]
+}

@@ -1,0 +1,39 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/kryst-investments-llc/biozephyra-ai
+  tag: main
+  pullPolicy: IfNotPresent
+
+worker:
+  replicaCount: 1
+
+retention:
+  enabled: true
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  backoffLimit: 1
+
+config:
+  batchSize: "50"
+  pollIntervalMs: "3000"
+  maxAttempts: "8"
+  retryDelayMs: "15000"
+  leaseMs: "120000"
+  retentionHours: "168"
+  tenantId: ""
+
+secret:
+  create: true
+  existingSecret: ""
+  databaseUrl: ""
+
+databaseInit:
+  enabled: true
+  retries: 24
+  retryDelaySeconds: 5
+
+resources: {}

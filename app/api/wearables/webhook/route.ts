@@ -1,0 +1,155 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
+
+import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { detectDrift } from '@/lib/agents/drift-detector'
+import { claimWebhookDelivery } from '@/lib/webhook-idempotency'
+import { promoteWearableMetrics } from '@/lib/wearables/biomarker-bridge'
+import { verifyWebhookSignature } from '@/lib/wearables/terra-client'
+import { normalizeTerraPayload } from '@/lib/wearables/normalizer'
+
+/**
+ * POST /api/wearables/webhook
+ *
+ * Receives Terra webhook events, validates them, normalises the data, and
+ * stores it as PartnerDataRecords with source=WEARABLE.
+ *
+ * Terra sends: auth events, body, activity, sleep, daily, nutrition data.
+ */
+export async function POST(request: NextRequest) {
+  const rawBody = await request.text()
+
+  // Verify webhook signature — reject if missing or invalid (fail-closed)
+  const signature = request.headers.get('terra-signature')
+  if (!signature || !verifyWebhookSignature(rawBody, signature)) {
+    logger.warn('Terra webhook signature verification failed', { hasSignature: !!signature })
+    return NextResponse.json({ error: 'Invalid or missing signature' }, { status: 401 })
+  }
+
+  // Idempotency guard — Terra retries deliveries; reject duplicates.
+  // Terra does not send a stable event id, so we hash the signed body.
+  const deliveryId = createHash('sha256').update(rawBody).digest('hex')
+  const claim = await claimWebhookDelivery({
+    provider: 'terra',
+    route: '/api/wearables/webhook',
+    eventId: deliveryId,
+  })
+  if (!claim.claimed) {
+    logger.info('Terra webhook duplicate delivery ignored', { deliveryId })
+    return NextResponse.json({ ok: true, duplicate: true })
+  }
+
+  let payload: Record<string, unknown>
+  try {
+    payload = JSON.parse(rawBody)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const eventType = payload.type as string | undefined
+  const user = payload.user as { user_id?: string; reference_id?: string; provider?: string } | undefined
+
+  // Handle user auth events (connection/deauth)
+  if (eventType === 'auth') {
+    const referenceId = user?.reference_id
+    const terraUserId = user?.user_id
+    const provider = (user?.provider ?? 'unknown').toLowerCase()
+
+    if (referenceId && terraUserId) {
+      await db.wearableConnection.upsert({
+        where: { userId_provider: { userId: referenceId, provider } },
+        update: {
+          externalUserId: terraUserId,
+          status: 'active',
+          connectedAt: new Date(),
+        },
+        create: {
+          userId: referenceId,
+          provider,
+          externalUserId: terraUserId,
+          status: 'active',
+        },
+      })
+      logger.info('Wearable connected via Terra', { userId: referenceId, provider })
+    }
+    return NextResponse.json({ ok: true })
+  }
+
+  if (eventType === 'deauth') {
+    const referenceId = user?.reference_id
+    const provider = (user?.provider ?? 'unknown').toLowerCase()
+    if (referenceId) {
+      await db.wearableConnection.updateMany({
+        where: { userId: referenceId, provider },
+        data: { status: 'disconnected' },
+      })
+      logger.info('Wearable disconnected via Terra', { userId: referenceId, provider })
+    }
+    return NextResponse.json({ ok: true })
+  }
+
+  // Data events: body, activity, sleep, daily, nutrition
+  const referenceId = user?.reference_id
+  if (!referenceId) {
+    logger.warn('Terra webhook missing reference_id', { type: eventType })
+    return NextResponse.json({ ok: true }) // Acknowledge but skip
+  }
+
+  // Normalize and store
+  const normalized = normalizeTerraPayload(payload as unknown as Parameters<typeof normalizeTerraPayload>[0])
+
+  for (const event of normalized) {
+    await db.partnerDataRecord.create({
+      data: {
+        userId: referenceId,
+        source: 'WEARABLE',
+        partnerId: `terra:${user?.provider?.toLowerCase() ?? 'unknown'}`,
+        label: `${event.deviceManufacturer ?? 'Wearable'} ${event.activityContext ?? 'data'}`,
+        payload: JSON.stringify(event),
+      },
+    })
+  }
+
+  // Update last sync timestamp
+  const provider = (user?.provider ?? 'unknown').toLowerCase()
+  await db.wearableConnection.updateMany({
+    where: { userId: referenceId, provider },
+    data: { lastSyncAt: new Date() },
+  })
+
+  // Promote eligible wearable metrics to biomarker records
+  const allMetrics = normalized.flatMap((e) => e.metrics)
+  const promotion = await promoteWearableMetrics(referenceId, allMetrics, provider)
+
+  // Run drift detection when new biomarkers were promoted
+  let driftFindings = 0
+  if (promotion.promoted > 0) {
+    try {
+      const drift = await detectDrift(referenceId)
+      driftFindings = drift.findings.length
+      if (driftFindings > 0) {
+        logger.info('Drift detected after wearable sync', {
+          userId: referenceId,
+          findings: driftFindings,
+        })
+      }
+    } catch (err) {
+      logger.error('Drift detection failed after wearable sync', { err })
+    }
+  }
+
+  logger.info('Terra wearable data ingested', {
+    userId: referenceId,
+    type: eventType,
+    eventCount: normalized.length,
+    promoted: promotion.promoted,
+    driftFindings,
+  })
+
+  return NextResponse.json({
+    ok: true,
+    ingested: normalized.length,
+    promoted: promotion.promoted,
+  })
+}

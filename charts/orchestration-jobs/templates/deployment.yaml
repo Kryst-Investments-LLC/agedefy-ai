@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orchestration-jobs.fullname" . }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "orchestration-jobs.name" . }}
+      app.kubernetes.io/instance: {{ include "orchestration-jobs.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "orchestration-jobs.name" . }}
+        app.kubernetes.io/instance: {{ include "orchestration-jobs.fullname" . }}
+    spec:
+      containers:
+        - name: orchestration-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - pnpm
+            - jobs:worker
+          envFrom:
+            - configMapRef:
+                name: {{ include "orchestration-jobs.configMapName" . }}
+            - secretRef:
+                name: {{ include "orchestration-jobs.secretName" . }}

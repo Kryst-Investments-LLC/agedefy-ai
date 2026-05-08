@@ -1,0 +1,40 @@
+parse:
+  - detect_intent
+  - extract_biomarker_terms
+
+intent:
+  - deployment.vercel_preview
+  - deployment.vercel_production
+  - deployment.environment_sync
+  - deployment.database_migration_gate
+  - deployment.release_observability
+
+workflows:
+  - vercel_preview_deploy_workflow
+  - vercel_production_deploy_workflow
+  - vercel_environment_sync_workflow
+  - database_migration_gate_workflow
+
+workflowMap:
+  deployment.vercel_preview: vercel_preview_deploy_workflow
+  deployment.vercel_production: vercel_production_deploy_workflow
+  deployment.environment_sync: vercel_environment_sync_workflow
+  deployment.database_migration_gate: database_migration_gate_workflow
+  deployment.release_observability: vercel_production_deploy_workflow
+
+tools:
+  - pipeline_analytics
+  - send_notification
+
+runtime:
+  files:
+    - next.config.mjs
+    - docs/README.md
+  routes:
+    - app/api/cron/route.ts
+
+reasoning:
+  - validate_vercel_environment_alignment
+  - gate_deployment_on_schema_migration_safety
+  - verify_cron_and_runtime_assumptions
+  - review_deployment_observability_and_rollback

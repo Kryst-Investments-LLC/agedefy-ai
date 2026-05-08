@@ -1,0 +1,10 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/Users/yanp0/VSC platforms/VSC platforms/your-workspace-folder/biozephyra-ai[39m
+
+ [32mΓ£ô[39m __tests__/jwt-for-tests-route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 160[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 17:17:40
+[2m   Duration [22m 79.49s[2m (transform 131ms, setup 0ms, import 369ms, tests 160ms, environment 0ms)[22m
+

@@ -1,0 +1,35 @@
+{{- if .Values.databaseInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "orchestration-jobs.fullname" . }}-db-init
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "10"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: orchestration-db-init
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - >-
+              attempt=0;
+              until pnpm db:deploy:postgres; do
+                attempt=$((attempt + 1));
+                if [ "$attempt" -ge {{ .Values.databaseInit.retries }} ]; then
+                  exit 1;
+                fi;
+                sleep {{ .Values.databaseInit.retryDelaySeconds }};
+              done
+          envFrom:
+            - configMapRef:
+                name: {{ include "orchestration-jobs.configMapName" . }}
+            - secretRef:
+                name: {{ include "orchestration-jobs.secretName" . }}
+{{- end }}

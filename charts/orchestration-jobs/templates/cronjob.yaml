@@ -1,0 +1,29 @@
+{{- if .Values.retention.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "orchestration-jobs.fullname" . }}-retention
+spec:
+  schedule: {{ .Values.retention.schedule | quote }}
+  concurrencyPolicy: {{ .Values.retention.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.retention.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.retention.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.retention.backoffLimit }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: orchestration-retention
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - pnpm
+                - jobs:retention
+              envFrom:
+                - configMapRef:
+                    name: {{ include "orchestration-jobs.configMapName" . }}
+                - secretRef:
+                    name: {{ include "orchestration-jobs.secretName" . }}
+{{- end }}

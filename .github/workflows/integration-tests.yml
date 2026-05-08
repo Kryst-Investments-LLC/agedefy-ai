@@ -1,0 +1,43 @@
+name: integration-tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./prisma/dev.db
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-development-secret-change-before-production
+      ADMIN_EMAILS: admin@example.com
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate:runtime
+
+      - name: Apply Prisma migrations
+        run: pnpm db:deploy
+
+      - name: Integration Tests
+        run: pnpm test:integration

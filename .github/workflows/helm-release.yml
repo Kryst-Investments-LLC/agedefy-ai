@@ -1,0 +1,107 @@
+name: helm-release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Container image tag to deploy
+        required: false
+        default: main
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.POSTGRES_DATABASE_URL || secrets.DATABASE_URL }}
+      POSTGRES_DATABASE_URL: ${{ secrets.POSTGRES_DATABASE_URL || secrets.DATABASE_URL }}
+      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
+      OTEL_SERVICE_NAME: ${{ vars.OTEL_SERVICE_NAME || 'biozephyra-ai' }}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      APP_ENV: production
+      RUNTIME_REQUIREMENTS_ENFORCED: 'true'
+      PRISMA_RUNTIME: postgres
+      KUBE_NAMESPACE: ${{ vars.KUBE_NAMESPACE || 'Biozephyra' }}
+      ORCHESTRATION_RELEASE_NAME: ${{ vars.ORCHESTRATION_RELEASE_NAME || 'orchestration-jobs' }}
+      OUTBOX_RELEASE_NAME: ${{ vars.OUTBOX_RELEASE_NAME || 'outbox-dispatch' }}
+      IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY || 'ghcr.io/kryst-investments-llc/biozephyra-ai' }}
+      IMAGE_TAG: ${{ inputs.image-tag || github.sha }}
+      APP_DATABASE_SECRET_NAME: ${{ vars.APP_DATABASE_SECRET_NAME || '' }}
+      OUTBOX_SECRET_NAME: ${{ vars.OUTBOX_SECRET_NAME || '' }}
+      KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release configuration
+        run: |
+          test -n "$DATABASE_URL" || { echo "DATABASE_URL secret is required"; exit 1; }
+          test -n "$NEXTAUTH_URL" || { echo "NEXTAUTH_URL secret is required"; exit 1; }
+          test -n "$NEXTAUTH_SECRET" || { echo "NEXTAUTH_SECRET secret is required"; exit 1; }
+          test -n "$REDIS_URL" || { echo "REDIS_URL secret is required"; exit 1; }
+          test -n "$REDIS_TOKEN" || { echo "REDIS_TOKEN secret is required"; exit 1; }
+          test -n "$OTEL_EXPORTER_OTLP_ENDPOINT" || { echo "OTEL_EXPORTER_OTLP_ENDPOINT secret is required"; exit 1; }
+          test -n "$KUBE_CONFIG_DATA" || { echo "KUBE_CONFIG_DATA secret is required"; exit 1; }
+          test -n "$APP_DATABASE_SECRET_NAME" || { echo "APP_DATABASE_SECRET_NAME var is required"; exit 1; }
+          test -n "$OUTBOX_SECRET_NAME" || { echo "OUTBOX_SECRET_NAME var is required"; exit 1; }
+
+      - name: Generate Postgres Prisma runtime client
+        run: pnpm db:generate:postgres:runtime
+
+      - name: Validate runtime baseline
+        run: pnpm validate:runtime
+
+      - name: Apply Postgres migrations
+        run: pnpm db:deploy:postgres
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > "$HOME/.kube/config"
+
+      - name: Helm lint charts
+        run: |
+          helm lint ./charts/outbox-dispatch
+          helm lint ./charts/orchestration-jobs
+
+      - name: Deploy outbox chart
+        run: |
+          helm upgrade --install "$OUTBOX_RELEASE_NAME" ./charts/outbox-dispatch \
+            --namespace "$KUBE_NAMESPACE" \
+            --create-namespace \
+            --set-string image.repository="$IMAGE_REPOSITORY" \
+            --set-string image.tag="$IMAGE_TAG" \
+            --set-string secret.existingSecret="$OUTBOX_SECRET_NAME"
+
+      - name: Deploy orchestration chart
+        run: |
+          helm upgrade --install "$ORCHESTRATION_RELEASE_NAME" ./charts/orchestration-jobs \
+            --namespace "$KUBE_NAMESPACE" \
+            --create-namespace \
+            --set-string image.repository="$IMAGE_REPOSITORY" \
+            --set-string image.tag="$IMAGE_TAG" \
+            --set-string secret.existingSecret="$APP_DATABASE_SECRET_NAME"

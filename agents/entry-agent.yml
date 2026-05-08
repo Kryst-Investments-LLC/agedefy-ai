@@ -82,3 +82,17 @@ examples:
 parse:
   - detect_intent
   - extract_biomarker_terms
+
+routeRules:
+  - whenAnyIntent:
+      - deployment.vercel_preview
+      - deployment.vercel_production
+      - deployment.environment_sync
+      - deployment.cron_validation
+    routeTo: vercel-deployment-workflow-agent
+    reason: Vercel preview and production deployment, env sync, and cron validation.
+
+fallbackRoute:
+  primary: domain-agent
+  legalEscalation: law-awareness-agent
+  orchestration: master-orchestrator-agent

@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: biozephyra-outbox-postgres-auth
+type: Opaque
+stringData:
+  POSTGRES_USER: Biozephyra
+  POSTGRES_PASSWORD: biozephyra-local-password
+  POSTGRES_DB: biozephyra_outbox
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: biozephyra-outbox-postgres
+spec:
+  selector:
+    app: biozephyra-outbox-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: biozephyra-outbox-postgres
+spec:
+  serviceName: biozephyra-outbox-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: biozephyra-outbox-postgres
+  template:
+    metadata:
+      labels:
+        app: biozephyra-outbox-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: biozephyra-outbox-postgres-auth
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi

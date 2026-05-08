@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "outbox-dispatch.fullname" . }}
+spec:
+  schedule: {{ .Values.cron.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cron.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.cron.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cron.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.cron.backoffLimit }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: outbox-dispatch
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - sh
+                - -c
+                - >-
+                  pnpm outbox:dispatch -- --batch-size ${OUTBOX_BATCH_SIZE:-100}
+                  --max-attempts ${OUTBOX_MAX_ATTEMPTS:-5}
+                  --retry-delay-ms ${OUTBOX_RETRY_DELAY_MS:-30000}
+                  ${OUTBOX_TENANT_ID:+--tenant ${OUTBOX_TENANT_ID}}
+              envFrom:
+                - configMapRef:
+                    name: {{ include "outbox-dispatch.configMapName" . }}
+                - secretRef:
+                    name: {{ include "outbox-dispatch.secretName" . }}
+{{- if .Values.googleApplicationCredentials.enabled }}
+              env:
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: {{ printf "%s/%s" .Values.googleApplicationCredentials.mountPath .Values.googleApplicationCredentials.fileName | quote }}
+{{- end }}
+{{- if .Values.googleApplicationCredentials.enabled }}
+              volumeMounts:
+                - name: google-application-credentials
+                  mountPath: {{ .Values.googleApplicationCredentials.mountPath | quote }}
+                  readOnly: true
+{{- end }}
+{{- if .Values.googleApplicationCredentials.enabled }}
+          volumes:
+            - name: google-application-credentials
+              secret:
+                secretName: {{ .Values.googleApplicationCredentials.existingSecret | quote }}
+                optional: true
+{{- end }}

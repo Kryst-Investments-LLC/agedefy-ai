@@ -1,0 +1,7 @@
+Biozephyra orchestration jobs deployed.
+
+- Continuous worker deployment: {{ include "orchestration-jobs.fullname" . }}
+- Retention cronjob: {{ include "orchestration-jobs.fullname" . }}-retention
+- Migration hook job: {{ include "orchestration-jobs.fullname" . }}-db-init
+- ConfigMap: {{ include "orchestration-jobs.configMapName" . }}
+- Secret: {{ include "orchestration-jobs.secretName" . }}

@@ -1,0 +1,65 @@
+name: outbox-dispatch
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      broker:
+        description: Broker to use for outbox dispatch
+        required: false
+        default: kafka
+        type: choice
+        options:
+          - kafka
+          - pubsub
+      batch-size:
+        description: Maximum number of outbox rows to publish in one run
+        required: false
+        default: '100'
+        type: string
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: file:./prisma/dev.db
+      OUTBOX_BROKER: ${{ inputs.broker || vars.OUTBOX_BROKER || 'kafka' }}
+      OUTBOX_BATCH_SIZE: ${{ inputs.batch-size || vars.OUTBOX_BATCH_SIZE || '100' }}
+      OUTBOX_MAX_ATTEMPTS: ${{ vars.OUTBOX_MAX_ATTEMPTS || '5' }}
+      OUTBOX_RETRY_DELAY_MS: ${{ vars.OUTBOX_RETRY_DELAY_MS || '30000' }}
+      KAFKA_BROKERS: ${{ secrets.KAFKA_BROKERS }}
+      KAFKA_CLIENT_ID: ${{ vars.KAFKA_CLIENT_ID || 'biozephyra-outbox-dispatch-action' }}
+      KAFKA_SSL: ${{ vars.KAFKA_SSL || 'true' }}
+      KAFKA_SASL_MECHANISM: ${{ vars.KAFKA_SASL_MECHANISM || 'plain' }}
+      KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
+      KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
+      PUBSUB_PROJECT_ID: ${{ secrets.PUBSUB_PROJECT_ID }}
+      PUBSUB_API_ENDPOINT: ${{ vars.PUBSUB_API_ENDPOINT || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Apply Prisma migrations
+        run: pnpm db:deploy
+
+      - name: Dispatch outbox batch
+        run: pnpm outbox:dispatch -- --batch-size $OUTBOX_BATCH_SIZE --max-attempts $OUTBOX_MAX_ATTEMPTS --retry-delay-ms $OUTBOX_RETRY_DELAY_MS

@@ -1,0 +1,27 @@
+# Repo-local agent index
+
+agents:
+  - name: entry-agent
+    type: intake
+    path: agents/entry-agent.yml
+    domain: initial routing, intent extraction
+  - name: domain-agent
+    type: domain
+    path: agents/domain-agent.yml
+    domain: longevity, biomarker, and health-science domain interpretation
+  - name: business-agent
+    type: business
+    path: agents/business-agent.yml
+    domain: workflow and business-process mapping
+  - name: vercel-deployment-workflow-agent
+    type: workflow
+    path: agents/vercel-deployment-workflow-agent.yml
+    domain: Vercel deployment, env sync, database migration gating
+  - name: law-awareness-agent
+    type: legal
+    path: agents/law-awareness-agent.yml
+    domain: jurisdiction-aware legal escalation
+  - name: master-orchestrator-agent
+    type: orchestrator
+    path: agents/master-orchestrator-agent.yml
+    domain: cross-agent routing and escalation

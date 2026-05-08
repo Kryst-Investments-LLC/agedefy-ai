@@ -1,8 +1,17 @@
 BeforeDiscovery {
     $script:root = Resolve-Path "$PSScriptRoot/.."
+    # Tools owned by sibling platforms (kafka, outbox, staging-validation, etc.)
+    # were imported from other repos and do not follow this layer's conventions.
+    $script:upstreamTools = @(
+        'inspect-kafka-topic.ps1',
+        'new-outbox-sealed-secret.ps1',
+        'register-outbox-dispatch-task.ps1',
+        'run-outbox-dispatch.ps1',
+        'set-staging-validation-secrets.ps1'
+    )
     $script:tools = @()
     $script:tools += Get-ChildItem (Join-Path $script:root 'tools') -Filter '*.ps1' -File |
-                     Where-Object { $_.Name -ne '_common.ps1' -and $_.Name -ne 'platform-dev.ps1' }
+                     Where-Object { $_.Name -ne '_common.ps1' -and $_.Name -ne 'platform-dev.ps1' -and $script:upstreamTools -notcontains $_.Name }
     $script:tools += Get-ChildItem (Join-Path $script:root 'tools-v3') -Filter '*.ps1' -File
 }
 

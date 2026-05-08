@@ -1,0 +1,6 @@
+apiVersion: v2
+name: outbox-dispatch
+description: CronJob deployment for the Biozephyra outbox dispatcher
+type: application
+version: 0.1.0
+appVersion: "main"

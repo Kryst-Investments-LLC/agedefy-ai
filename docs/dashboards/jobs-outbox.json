@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Job Execution Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(biozephyra_jobs_execution_count[5m])) by (queue, status)", "legendFormat": "{{ queue }} ({{ status }})" }
+      ]
+    },
+    {
+      "title": "Outbox Dispatch Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(biozephyra_outbox_dispatch_count[5m])) by (status)", "legendFormat": "{{ status }}" }
+      ]
+    },
+    {
+      "title": "Dead-Lettered Jobs (1h)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(increase(biozephyra_jobs_execution_count{status=\"dead_lettered\"}[1h]))", "legendFormat": "Dead letters" }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] } }
+      }
+    },
+    {
+      "title": "Queue Depth",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 8 },
+      "targets": [
+        { "expr": "sum(biozephyra_jobs_execution_count{status=\"pending\"}) by (queue)", "legendFormat": "{{ queue }}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["biozephyra", "jobs"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "biozephyra — Jobs & Outbox",
+  "uid": "biozephyra-jobs-outbox"
+}
