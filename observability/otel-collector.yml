@@ -1,0 +1,141 @@
+# AgeDefy AI — OpenTelemetry Collector configuration.
+#
+# Receives:
+#   - JSONL traces (one record per line, schemas/trace.schema.json) via
+#     the `filelog` receiver tailing ./traces/orchestrator.jsonl
+#   - OTLP/HTTP from in-process exporters (e.g. lib/observability/otel.ts
+#     or tools-v3/v3-trace-otlp-exporter.ps1)
+#
+# Exports:
+#   - Tempo / Jaeger / Honeycomb (OTLP/gRPC)
+#   - Prometheus remote-write for SLA gauges + agent_latency histograms
+#   - Loki for compliance-tagged log records
+#
+# All real endpoints are sourced from environment variables so this file
+# is safe to commit. See ./observability/README.md for the env contract.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  filelog/agedefy-traces:
+    include:
+      - /var/log/agedefy/traces/*.jsonl
+    start_at: end
+    operators:
+      - type: json_parser
+        parse_from: body
+        timestamp:
+          parse_from: attributes.ts
+          layout_type: strict
+          layout: '%Y-%m-%dT%H:%M:%S.%fZ'
+      - type: move
+        from: attributes.runId
+        to: resource["service.instance.id"]
+      - type: move
+        from: attributes.agent
+        to: attributes["agedefy.agent"]
+      - type: move
+        from: attributes.intent
+        to: attributes["agedefy.intent"]
+      - type: move
+        from: attributes.decision
+        to: attributes["agedefy.decision"]
+      - type: move
+        from: attributes.jurisdiction
+        to: attributes["agedefy.jurisdiction"]
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: agedefy-textfile
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['localhost:9100']
+              labels:
+                platform: agedefy-ai
+
+processors:
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+  resource:
+    attributes:
+      - key: service.name
+        value: agedefy-ai
+        action: upsert
+      - key: deployment.environment
+        from_attribute: AGEDEFY_ENV
+        action: upsert
+  attributes/redact-pii:
+    actions:
+      - key: user.email
+        action: hash
+      - key: user.id
+        action: hash
+      - key: payload.user_email
+        action: delete
+      - key: payload.user_phone
+        action: delete
+  filter/drop-debug:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'severity_text == "DEBUG"'
+
+exporters:
+  otlp/tempo:
+    endpoint: ${env:TEMPO_OTLP_ENDPOINT}
+    tls:
+      insecure: false
+    headers:
+      authorization: ${env:TEMPO_AUTH_HEADER}
+
+  otlphttp/honeycomb:
+    endpoint: https://api.honeycomb.io
+    headers:
+      x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
+      x-honeycomb-dataset: agedefy-ai
+
+  prometheusremotewrite:
+    endpoint: ${env:PROM_REMOTE_WRITE_URL}
+    headers:
+      authorization: ${env:PROM_AUTH_HEADER}
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  loki:
+    endpoint: ${env:LOKI_ENDPOINT}
+    headers:
+      x-scope-orgid: ${env:LOKI_TENANT}
+
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+service:
+  extensions: [health_check, pprof]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, attributes/redact-pii, batch]
+      exporters: [otlp/tempo, otlphttp/honeycomb]
+
+    logs/jsonl:
+      receivers: [filelog/agedefy-traces]
+      processors: [resource, attributes/redact-pii, filter/drop-debug, batch]
+      exporters: [loki, otlphttp/honeycomb]
+
+    metrics:
+      receivers: [prometheus, otlp]
+      processors: [resource, batch]
+      exporters: [prometheusremotewrite, debug]
