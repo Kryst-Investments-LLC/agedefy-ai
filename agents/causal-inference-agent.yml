@@ -1,0 +1,75 @@
+name: causal-inference-agent
+version: 0.1.0
+role: Performs Mendelian randomization, DAG construction, and confound detection to separate causation from correlation
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Builds directed acyclic graphs from observed exposures, mediators, and
+  outcomes, runs Mendelian randomization with GWAS instruments, applies
+  back-door / front-door criteria, and reports pleiotropy / weak-instrument /
+  collider-bias risks. Emits a calibrated causal effect estimate or refuses
+  with a documented identification failure.
+
+capabilities:
+  - dag_construction
+  - mendelian_randomization
+  - instrumental_variable_selection
+  - confound_detection
+  - collider_bias_check
+  - sensitivity_analysis
+  - effect_estimate_with_ci
+  - identification_failure_reporting
+
+inputs:
+  - name: exposure
+    description: Exposure variable (gene, biomarker, intervention).
+    required: true
+    type: string
+  - name: outcome
+    description: Outcome phenotype (lifespan proxy, disease incidence, biomarker).
+    required: true
+    type: string
+  - name: covariates
+    description: Optional set of measured covariates.
+    required: false
+    type: array
+  - name: dataset
+    description: GWAS / cohort dataset identifier.
+    required: false
+    type: string
+
+outputs:
+  - name: causal_estimate
+    description: Point estimate, 95 percent CI, and p-value for the causal effect.
+    type: object
+  - name: dag
+    description: Serialized DAG with adjustment sets.
+    type: object
+  - name: sensitivity_report
+    description: Pleiotropy, weak-instrument, and collider-bias diagnostics.
+    type: object
+
+error_handling:
+  on_weak_instruments: "refuse_and_emit_identification_failure"
+  on_pleiotropy_detected: "warn_and_run_robust_estimator"
+  on_missing_dataset: "reject_with_validation_error"
+  retry_policy:
+    max_attempts: 2
+    backoff_ms: 1000
+
+sla:
+  p50_latency_ms: 3000
+  p99_latency_ms: 12000
+  availability: "99%"
+
+feeds_into:
+  - falsification-agent
+  - trial-design-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, exposure, outcome, estimate, ci_low, ci_high, pleiotropy, latencyMs]
+  sink: "./traces/causal-inference-agent.jsonl"

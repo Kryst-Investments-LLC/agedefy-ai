@@ -1,0 +1,83 @@
+name: trial-design-agent
+version: 0.1.0
+role: Drafts N-of-1 and adaptive trial protocols with statistical power, blinding, and stopping rules pre-specified
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Generates pre-registered protocol scaffolds for N-of-1 crossover trials,
+  Bayesian adaptive designs, and platform / basket trials. Computes statistical
+  power for the supplied effect size, drafts blinding and randomization
+  procedures, encodes early-stopping rules, and outputs a SPIRIT-compliant
+  protocol stub plus a CONSORT-aligned analysis plan ready for clinician review.
+
+capabilities:
+  - n_of_1_protocol_drafting
+  - adaptive_trial_design
+  - bayesian_stopping_rules
+  - power_calculation
+  - randomization_scheme_generation
+  - blinding_procedure_drafting
+  - spirit_compliant_output
+  - consort_aligned_analysis_plan
+  - preregistration_payload_emission
+
+inputs:
+  - name: hypothesis
+    description: Causal hypothesis (exposure -> outcome) under test.
+    required: true
+    type: string
+  - name: effect_size
+    description: Expected effect size (Cohen's d, odds ratio, or hazard ratio).
+    required: true
+    type: number
+  - name: alpha
+    description: Type I error rate.
+    required: false
+    type: number
+  - name: power
+    description: Target statistical power.
+    required: false
+    type: number
+  - name: design_family
+    description: Requested design family (n_of_1, adaptive, platform, basket).
+    required: false
+    type: string
+
+outputs:
+  - name: protocol
+    description: SPIRIT-compliant protocol stub.
+    type: object
+  - name: analysis_plan
+    description: CONSORT-aligned pre-specified analysis plan.
+    type: object
+  - name: sample_size
+    description: Computed sample size or per-arm allocation.
+    type: integer
+  - name: preregistration_payload
+    description: OSF / ClinicalTrials.gov-ready preregistration payload.
+    type: object
+
+error_handling:
+  on_underpowered_design: "warn_and_emit_minimum_detectable_effect"
+  on_unsupported_family: "reject_with_validation_error"
+  on_missing_effect_size: "reject_with_validation_error"
+  retry_policy:
+    max_attempts: 2
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 2500
+  p99_latency_ms: 9000
+  availability: "99%"
+
+feeds_into:
+  - cohort-discovery-agent
+  - clinician-review-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, design_family, sample_size, power, alpha, latencyMs, errorCode]
+  sink: "./traces/trial-design-agent.jsonl"

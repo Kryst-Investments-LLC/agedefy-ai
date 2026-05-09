@@ -1,0 +1,70 @@
+name: compound-interaction-agent
+version: 0.1.0
+role: Predicts drug-drug, drug-supplement, and drug-peptide interactions before any protocol is recommended
+owners: ["@kryst-investments-llc/safety"]
+platform_domain: biotech-research
+description: |
+  Resolves compound identifiers (RxNorm, ChEMBL, UNII), looks up CYP450 and
+  transporter substrates / inhibitors / inducers, queries DrugBank and
+  pharmacogenomic tables, and runs structure-based similarity via RDKit /
+  DeepChem to flag predicted interactions for novel pairs. Emits severity-tiered
+  warnings and references for every recommended stack before the
+  business-agent is allowed to compose a protocol.
+
+capabilities:
+  - compound_resolution
+  - cyp450_lookup
+  - transporter_interaction_lookup
+  - drugbank_query
+  - pharmacogenomic_lookup
+  - rdkit_structural_similarity
+  - deepchem_interaction_prediction
+  - severity_classification
+  - contraindication_emission
+
+inputs:
+  - name: compounds
+    description: List of compound identifiers (RxNorm, ChEMBL, UNII, or free-text resolvable name).
+    required: true
+    type: array
+  - name: patient_context
+    description: Optional patient covariates (age, kidney/liver function, pregnancy, pharmacogenomic variants).
+    required: false
+    type: object
+
+outputs:
+  - name: interactions
+    description: Severity-tiered list of predicted interactions with mechanisms and references.
+    type: array
+  - name: contraindications
+    description: Hard contraindications that must block protocol composition.
+    type: array
+  - name: confidence
+    description: Per-interaction confidence score (curated lookup vs structural prediction).
+    type: number
+
+error_handling:
+  on_resolution_failure: "reject_with_validation_error"
+  on_drugbank_failure: "fallback_to_cached_snapshot"
+  on_low_confidence: "flag_for_clinician_review"
+  retry_policy:
+    max_attempts: 3
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 5000
+  availability: "99.5%"
+
+feeds_into:
+  - safety-agent
+  - clinician-review-agent
+  - business-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, compounds, severity_max, contraindications_count, latencyMs, errorCode]
+  sink: "./traces/compound-interaction-agent.jsonl"

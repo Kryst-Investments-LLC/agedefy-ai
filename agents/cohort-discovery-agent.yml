@@ -1,0 +1,78 @@
+name: cohort-discovery-agent
+version: 0.1.0
+role: Finds matching patient sub-populations across the AgeDefy user base for trial recruitment and observational analyses
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Translates trial inclusion and exclusion criteria into a cohort-discovery DSL
+  query, applies it against pseudonymized patient records, and returns matched
+  cohort sizes with covariate distributions. Enforces minimum k-anonymity, never
+  exposes direct identifiers, and emits a recruitment feasibility score plus
+  estimated time-to-enrollment for the trial-design-agent.
+
+capabilities:
+  - inclusion_exclusion_to_dsl
+  - cohort_dsl_execution
+  - k_anonymity_enforcement
+  - covariate_distribution_emission
+  - feasibility_scoring
+  - time_to_enrollment_estimation
+  - propensity_score_matching
+  - jurisdictional_consent_filtering
+
+inputs:
+  - name: inclusion_criteria
+    description: Structured inclusion criteria.
+    required: true
+    type: array
+  - name: exclusion_criteria
+    description: Structured exclusion criteria.
+    required: false
+    type: array
+  - name: target_size
+    description: Desired cohort size.
+    required: false
+    type: integer
+  - name: jurisdiction
+    description: Jurisdiction code used to filter consent and legal eligibility.
+    required: false
+    type: string
+
+outputs:
+  - name: cohort_size
+    description: Matched cohort count, never below the k-anonymity floor.
+    type: integer
+  - name: covariate_distribution
+    description: Aggregate covariate histograms (no direct identifiers).
+    type: object
+  - name: feasibility_score
+    description: Recruitment feasibility score (0-1).
+    type: number
+  - name: estimated_time_to_enrollment_days
+    description: Estimated days to reach target_size.
+    type: integer
+
+error_handling:
+  on_below_k_anonymity: "redact_and_return_floor"
+  on_missing_consent_scope: "exclude_from_cohort"
+  on_dsl_parse_error: "reject_with_validation_error"
+  retry_policy:
+    max_attempts: 2
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 1200
+  p99_latency_ms: 4500
+  availability: "99.5%"
+
+feeds_into:
+  - trial-design-agent
+  - audit-governance-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, cohort_size, feasibility, jurisdiction, k_anonymity_floor, latencyMs]
+  sink: "./traces/cohort-discovery-agent.jsonl"

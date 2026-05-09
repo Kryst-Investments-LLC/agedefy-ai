@@ -66,6 +66,13 @@ sub_agents:
   - name: observability-agent
   - name: audit-governance-agent
   - name: i18n-agent
+  - name: literature-synthesis-agent
+  - name: target-identification-agent
+  - name: causal-inference-agent
+  - name: compound-interaction-agent
+  - name: trial-design-agent
+  - name: cohort-discovery-agent
+  - name: falsification-agent
 
 routing_rules:
   - if: "request involves UI, UX, screens, flows, or user journeys"
@@ -100,6 +107,20 @@ routing_rules:
     route_to: "audit-governance-agent"
   - if: "request involves AI personalization, recommendations, or coaching"
     route_to: "ai-personalization-agent"
+  - if: "request involves literature ingestion, mechanism extraction, or hypothesis ranking from PubMed / bioRxiv"
+    route_to: "literature-synthesis-agent"
+  - if: "request involves drug-target identification, hallmark crossref, or OpenTargets / DepMap queries"
+    route_to: "target-identification-agent"
+  - if: "request involves Mendelian randomization, DAGs, confound detection, or causal effect estimation"
+    route_to: "causal-inference-agent"
+  - if: "request involves drug-drug, drug-supplement, or peptide interaction prediction"
+    route_to: "compound-interaction-agent"
+  - if: "request involves N-of-1 protocol drafting, adaptive trial design, or power calculation"
+    route_to: "trial-design-agent"
+  - if: "request involves cohort discovery, recruitment feasibility, or inclusion / exclusion DSL"
+    route_to: "cohort-discovery-agent"
+  - if: "request involves claim falsification, red-team review, or pre-publication adversarial check"
+    route_to: "falsification-agent"
 
 error_handling:
   on_unknown_intent: "route_to:domain-agent with fallback flag"

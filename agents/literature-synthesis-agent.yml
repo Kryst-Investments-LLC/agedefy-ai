@@ -1,0 +1,72 @@
+name: literature-synthesis-agent
+version: 0.1.0
+role: Reads PubMed and bioRxiv at scale, extracts mechanisms of action, and ranks longevity hypotheses by evidence weight
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Continuously ingests PubMed E-utilities, bioRxiv preprints, and ClinicalTrials.gov
+  feeds. Extracts mechanism-of-action statements, intervention-outcome pairs, and
+  effect sizes. Deduplicates against the existing knowledge graph and ranks
+  candidate hypotheses by replication count, study quality, and recency. Surfaces
+  Top-N novel mechanisms to the master-orchestrator each polling cycle.
+
+capabilities:
+  - pubmed_eutilities_ingest
+  - biorxiv_streaming_ingest
+  - mechanism_of_action_extraction
+  - effect_size_normalization
+  - hypothesis_ranking
+  - novelty_scoring
+  - duplicate_detection
+  - evidence_weight_calculation
+
+inputs:
+  - name: query
+    description: Boolean PubMed query or MeSH term set scoped to aging hallmarks.
+    required: true
+    type: string
+  - name: window_days
+    description: Lookback window for new literature.
+    required: false
+    type: integer
+  - name: min_evidence_weight
+    description: Minimum aggregate evidence weight threshold for surfacing a hypothesis.
+    required: false
+    type: number
+
+outputs:
+  - name: hypotheses
+    description: Ranked list of mechanism hypotheses with PMIDs, effect sizes, and confidence intervals.
+    type: array
+  - name: novelty_score
+    description: Per-hypothesis novelty score relative to the existing knowledge graph (0-1).
+    type: number
+  - name: trace
+    description: JSONL trace of ingestion, extraction, and ranking decisions.
+    type: array
+
+error_handling:
+  on_external_api_failure: "retry_with_exponential_backoff"
+  on_rate_limit: "queue_and_resume_after_window"
+  on_paywall: "store_metadata_only"
+  on_extraction_low_confidence: "flag_for_human_review"
+  retry_policy:
+    max_attempts: 3
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 2000
+  p99_latency_ms: 8000
+  availability: "99%"
+
+feeds_into:
+  - target-identification-agent
+  - causal-inference-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, query, papers_ingested, hypotheses_emitted, latencyMs, errorCode]
+  sink: "./traces/literature-synthesis-agent.jsonl"

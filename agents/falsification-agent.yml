@@ -1,0 +1,76 @@
+name: falsification-agent
+version: 0.1.0
+role: Adversarial red-team agent that actively tries to disprove every claim before it is published or recommended
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Acts as the platform's internal Popperian critic. For every hypothesis,
+  causal estimate, target ranking, or protocol draft, it generates the strongest
+  null-hypothesis counter-arguments, searches for contradicting evidence in the
+  knowledge graph, runs pre-specified falsification tests (negative controls,
+  placebo arms, sham comparisons), and reports any successful refutations to
+  the master-orchestrator with a hard block on downstream publication.
+
+capabilities:
+  - counter_argument_generation
+  - contradicting_evidence_search
+  - negative_control_testing
+  - placebo_sham_comparison
+  - p_hacking_detection
+  - garden_of_forking_paths_audit
+  - prespecification_diff
+  - refutation_emission
+  - publication_block_signal
+
+inputs:
+  - name: claim
+    description: Structured claim object (hypothesis, causal estimate, ranking, or protocol).
+    required: true
+    type: object
+  - name: claim_type
+    description: hypothesis | causal_estimate | target_ranking | protocol_draft
+    required: true
+    type: string
+  - name: provenance
+    description: Upstream agent provenance trail used to audit pre-specification.
+    required: false
+    type: array
+
+outputs:
+  - name: refutation_status
+    description: refuted | unrefuted | inconclusive
+    type: string
+  - name: counter_evidence
+    description: List of contradicting evidence with sources and effect sizes.
+    type: array
+  - name: prespecification_violations
+    description: Detected p-hacking, forking-paths, or prespecification violations.
+    type: array
+  - name: block_signal
+    description: True when downstream publication or recommendation must be blocked.
+    type: boolean
+
+error_handling:
+  on_refutation_found: "emit_block_signal_and_open_review"
+  on_inconclusive: "warn_and_route_to_clinician_review"
+  on_missing_provenance: "warn_and_assume_post_hoc"
+  retry_policy:
+    max_attempts: 2
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 2200
+  p99_latency_ms: 8000
+  availability: "99.5%"
+
+feeds_into:
+  - clinician-review-agent
+  - audit-governance-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, claim_type, refutation_status, block_signal, violations_count, latencyMs]
+  sink: "./traces/falsification-agent.jsonl"

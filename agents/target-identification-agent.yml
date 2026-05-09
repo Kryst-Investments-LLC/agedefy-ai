@@ -1,0 +1,72 @@
+name: target-identification-agent
+version: 0.1.0
+role: Cross-references the López-Otín twelve hallmarks of aging against disease pathways to surface high-leverage drug targets
+owners: ["@kryst-investments-llc/research"]
+platform_domain: biotech-research
+description: |
+  Maps candidate genes, proteins, and pathways onto the twelve hallmarks of aging
+  (genomic instability, telomere attrition, epigenetic alterations, loss of
+  proteostasis, disabled macroautophagy, deregulated nutrient sensing,
+  mitochondrial dysfunction, cellular senescence, stem cell exhaustion, altered
+  intercellular communication, chronic inflammation, dysbiosis). Queries
+  OpenTargets and DepMap to score druggability, essentiality, and tractability.
+
+capabilities:
+  - hallmark_pathway_crossref
+  - opentargets_graphql_query
+  - depmap_essentiality_lookup
+  - druggability_scoring
+  - tractability_assessment
+  - target_prioritization
+  - off_target_risk_estimation
+
+inputs:
+  - name: hallmark
+    description: One of the twelve López-Otín hallmarks, or "all".
+    required: true
+    type: string
+  - name: disease
+    description: Disease or phenotype identifier (MONDO/EFO/ICD-10).
+    required: false
+    type: string
+  - name: tractability_floor
+    description: Minimum OpenTargets tractability tier to include.
+    required: false
+    type: string
+
+outputs:
+  - name: targets
+    description: Ranked list of gene/protein targets with druggability and essentiality scores.
+    type: array
+  - name: pathway_map
+    description: Hallmark to pathway crossref graph used for scoring.
+    type: object
+  - name: trace
+    description: JSONL trace of target enumeration and scoring decisions.
+    type: array
+
+error_handling:
+  on_opentargets_failure: "fallback_to_cached_snapshot"
+  on_depmap_failure: "warn_and_continue_without_essentiality"
+  on_unknown_hallmark: "reject_with_validation_error"
+  retry_policy:
+    max_attempts: 3
+    backoff_ms: 500
+
+sla:
+  p50_latency_ms: 1800
+  p99_latency_ms: 6000
+  availability: "99%"
+
+feeds_into:
+  - compound-interaction-agent
+  - causal-inference-agent
+  - falsification-agent
+  - eval-feedback-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  format: "jsonl"
+  fields: [runId, ts, hallmark, disease, targets_returned, latencyMs, errorCode]
+  sink: "./traces/target-identification-agent.jsonl"
