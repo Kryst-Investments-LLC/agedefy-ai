@@ -1,0 +1,17 @@
+name: "AgeDefy CodeQL Config"
+# This file is consumed by GitHub Code Security default-setup when present.
+# Switches the query suite from `default` to `security-extended`, restoring
+# the coverage we had with the legacy advanced workflow that conflicted
+# with default-setup (default-setup + advanced workflow are mutually
+# exclusive — see the migration notes in `.github/workflows/codeql-analysis.yml`
+# in the git history pre-535101d).
+queries:
+  - uses: security-extended
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/coverage/**"
+  - "tests/golden/**"

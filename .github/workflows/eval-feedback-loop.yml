@@ -1,0 +1,49 @@
+name: Eval Feedback Loop
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily 06:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'agents/**'
+      - 'tests/eval/**'
+      - 'tests/redteam/**'
+      - 'tools-v3/v3-eval-feedback.ps1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  eval-feedback:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install powershell-yaml + Pester
+        shell: pwsh
+        run: |
+          Install-Module powershell-yaml -Scope CurrentUser -Force
+          Install-Module Pester -RequiredVersion 5.5.0 -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run eval feedback loop
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./tools-v3/v3-eval-feedback.ps1
+
+      - name: Upload eval artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-feedback-results
+          path: |
+            traces/eval/
+            traces/eval-baseline.json
+            traces/eval-pass-rate.prom
+          retention-days: 30

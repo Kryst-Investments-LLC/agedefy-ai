@@ -1,0 +1,58 @@
+name: Observability Export
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 min, push metrics + flush JSONL queue
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'observability/**'
+      - 'tools-v3/v3-emit-metrics.ps1'
+      - 'tools-v3/v3-trace-otlp-exporter.ps1'
+
+jobs:
+  emit-and-export:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install powershell-yaml
+        shell: pwsh
+        run: Install-Module powershell-yaml -Scope CurrentUser -Force
+
+      - name: Emit Prometheus textfile metrics
+        shell: pwsh
+        run: ./tools-v3/v3-emit-metrics.ps1
+
+      - name: Push metrics to Prometheus pushgateway
+        if: env.PROM_PUSHGATEWAY_URL != ''
+        shell: pwsh
+        env:
+          PROM_PUSHGATEWAY_URL: ${{ secrets.PROM_PUSHGATEWAY_URL }}
+        run: |
+          $metrics = Get-Content traces/metrics.prom -Raw
+          $url = "$($env:PROM_PUSHGATEWAY_URL.TrimEnd('/'))/metrics/job/agedefy-ai/instance/ci"
+          Invoke-RestMethod -Uri $url -Method Post -Body $metrics -ContentType 'text/plain'
+
+      - name: Export JSONL traces to OTLP collector
+        if: env.OTEL_EXPORTER_OTLP_ENDPOINT != ''
+        shell: pwsh
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          OTEL_EXPORTER_OTLP_HEADERS:  ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+          AGEDEFY_ENV: ${{ vars.AGEDEFY_ENV || 'production' }}
+        run: |
+          if (Test-Path traces/orchestrator.jsonl) {
+            ./tools-v3/v3-trace-otlp-exporter.ps1
+          } else {
+            Write-Host 'No traces to export.'
+          }
+
+      - name: Validate OTel collector config
+        shell: pwsh
+        run: |
+          # syntactic YAML check (no live collector binary required in CI)
+          Import-Module powershell-yaml
+          $null = Get-Content observability/otel-collector.yml -Raw | ConvertFrom-Yaml
+          Write-Host '? otel-collector.yml is valid YAML'

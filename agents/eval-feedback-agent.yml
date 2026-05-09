@@ -1,0 +1,71 @@
+name: eval-feedback-agent
+version: 1.0.0
+role: Continuous evaluation feedback loop that closes the agent quality cycle.
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Reads the latest eval (tests/eval) and red-team (tests/redteam)
+  results, computes per-agent pass-rate deltas vs. the previous
+  baseline, and:
+
+    1. Bumps the patch version of any agent whose pass-rate improved.
+    2. Bumps the minor version when a new capability passes a new case.
+    3. Opens an auto-rollback PR (revert to last green) when an agent's
+       pass-rate drops below the SLA threshold.
+    4. Emits Prometheus metrics (agedefy_eval_pass_rate{agent=...}) and
+       OTLP logs so the SLA dashboard reflects regression in real time.
+
+  This is the L5 "Optimizing" loop: production telemetry feeds back into
+  versioned agent specs without human intervention for the common cases.
+
+capabilities:
+  - parse_pester_nunit
+  - score_per_agent
+  - bump_semver
+  - open_pr
+  - emit_metric
+  - auto_rollback_on_regression
+
+inputs:
+  - name: eval_results_path
+    type: string
+    required: true
+    description: Path to the Pester NUnit XML produced by eval.tests.ps1.
+  - name: redteam_results_path
+    type: string
+    required: true
+    description: Path to the Pester NUnit XML produced by redteam.tests.ps1.
+  - name: baseline_path
+    type: string
+    required: false
+    description: Previous eval-feedback baseline JSON (defaults to ./traces/eval-baseline.json).
+
+outputs:
+  - name: pr_url
+    type: string
+    required: false
+    description: URL of the auto-opened PR (bump or rollback).
+  - name: regression_detected
+    type: boolean
+    required: true
+    description: True if any agent dropped below the configured SLA.
+  - name: metrics
+    type: object
+    required: true
+    description: Per-agent pass-rate snapshot pushed to Prometheus.
+
+error_handling:
+  on_parse_failure: "fail_loud_no_partial_pr"
+  on_pr_conflict: "rebase_once_then_skip"
+  on_no_baseline: "treat_current_as_baseline"
+
+sla:
+  p50_latency_ms: 2000
+  p99_latency_ms: 8000
+  availability: "99%"
+
+config:
+  regression_threshold: 0.05      # 5pp drop triggers rollback
+  sla_min_pass_rate: 0.90         # below this == ticket
+  auto_rollback: true
+  auto_bump_patch: true
+  auto_bump_minor_on_new_case: true
