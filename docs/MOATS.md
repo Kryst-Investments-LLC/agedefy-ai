@@ -24,7 +24,7 @@
 
 ### 2. Outcome-Linked Protocol Forks
 - **What**: Every protocol (sleep, supplement stack, peptide cycle) is
-  versioned like code; users *fork* it. Forks carry forward outcome
+  versioned like code; users _fork_ it. Forks carry forward outcome
   measurements automatically (via `business-agent`).
 - **Why moat**: Creates a **GitHub-for-protocols** social graph.
   Top-forked protocols become canonical; their authors become reputational
@@ -76,7 +76,7 @@
   Production red-team and eval results auto-bump or auto-rollback agent
   versions. No human in the loop for the common cases.
 - **Why moat**: The platform self-improves on every run. Combined with
-  the protocol-fork dataset, the *quality gap* between us and a fresh
+  the protocol-fork dataset, the _quality gap_ between us and a fresh
   competitor widens daily.
 
 ## Tier 3 — Distribution & Trust Moats
