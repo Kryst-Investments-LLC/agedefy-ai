@@ -38,3 +38,40 @@ sla:
   p50_latency_ms: 350
   p99_latency_ms: 1200
   availability: "99.9%"
+
+# ---- Tier 2.5 Sponsor marketplace v2 (two-sided N-of-1 trials) ----
+sponsor_marketplace_v2:
+  enabled: true
+  description: |
+    Two-sided marketplace: pharma / supplement sponsors post N-of-1
+    trial briefs (intervention, target inclusion criteria, primary
+    outcome biomarker, sample size, payout). AgeDefy users opt-in,
+    the trial runs via `n_of_1_trial_workflow`, and credentialed
+    quality data unlocks user payout + sponsor delivery.
+  capabilities_added:
+    - publish_sponsor_brief
+    - match_eligible_users
+    - escrow_sponsor_funds
+    - issue_user_payout
+    - deliver_aggregated_evidence_pack
+    - protect_sponsor_blinding
+  rake_pct: 25
+  user_payout_currency: [usd, free_product]
+  sponsor_brief_schema_ref: schemas/sponsor-brief.v1.json
+  data_quality_gates:
+    - adherence_pct_min: 70
+    - wearable_uptime_pct_min: 80
+    - falsification_passed: true
+    - vc_signed: true
+  consent_scope:
+    - "Allow eligibility matching against sponsor briefs"
+    - "Receive payout (in USD or free product) on successful trial completion"
+    - "Contribute aggregated, de-identified results to the sponsor"
+  legal_guardrails:
+    - "Not a clinical trial sponsorship; structured as compensated wellness study"
+    - "Subject to per-jurisdiction self-experimentation rules (see law-awareness-agent)"
+    - "Sponsor cannot directly identify individual users"
+  flywheel_revenue:
+    primary: rake_on_payout
+    secondary: data_licensing_to_sponsor
+    tertiary: lead_gen_for_compliance_cloud_b2b

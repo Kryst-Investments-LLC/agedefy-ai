@@ -1,0 +1,87 @@
+contract: causal-sidecar
+version: 0.1.0
+description: |
+  HTTP contract between the Node-side `causal-inference-agent` orchestration
+  and a Python sidecar that hosts DoWhy / EconML / statsmodels. The sidecar
+  is stateless; cohort data is mounted (read-only) at `/data` per cohort_source.
+
+transport:
+  kind: http
+  base_url_env: CAUSAL_SIDECAR_URL
+  health_endpoint: /healthz
+  timeout_ms: 12000
+
+endpoints:
+  - path: /v1/estimate
+    method: POST
+    request:
+      content_type: application/json
+      schema:
+        type: object
+        required: [exposure, outcome, cohort_source]
+        properties:
+          exposure: { type: string, example: rapamycin_6mg_weekly }
+          outcome: { type: string, example: hs_crp }
+          covariates: { type: array, items: { type: string } }
+          cohort_source: { type: string, enum: [uk_biobank, all_of_us, agedefy_federated_v1] }
+          estimator:
+            type: string
+            enum: [backdoor.linear_regression, iv.instrumental_variable, dml.causal_forest]
+            default: backdoor.linear_regression
+          n_bootstrap: { type: integer, default: 200 }
+          user_profile_hash:
+            type: string
+            description: SHA-256 of biomarker vector for cohort matching (no PII)
+    response:
+      content_type: application/json
+      schema:
+        type: object
+        required: [expected_delta, ci95, n_similar_profiles, identification_strategy, model_version]
+        properties:
+          expected_delta: { type: number }
+          ci95: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+          n_similar_profiles: { type: integer }
+          identification_strategy: { type: string }
+          sensitivity_report:
+            type: object
+            properties:
+              pleiotropy_pvalue: { type: number }
+              weak_instrument_f_stat: { type: number }
+              collider_bias_flag: { type: boolean }
+          model_version: { type: string }
+          dag_serialization: { type: string }
+
+  - path: /v1/refute
+    method: POST
+    description: |
+      Run sensitivity / refutation tests on an existing estimate
+      (placebo treatment, random common cause, data subset).
+    request:
+      schema:
+        type: object
+        required: [estimate_id, refuter]
+        properties:
+          estimate_id: { type: string }
+          refuter:
+            type: string
+            enum: [placebo_treatment, random_common_cause, data_subset_refuter]
+
+deployment:
+  kind: container
+  image: ghcr.io/kryst-investments-llc/causal-sidecar:0.1.0
+  cpu: 2
+  memory_gb: 4
+  scale_to_zero: true
+  cold_start_target_ms: 5000
+
+observability:
+  metrics:
+    - causal_estimate_latency_ms{estimator}
+    - causal_estimate_failure_total{reason}
+    - causal_estimate_pleiotropy_flagged_total
+  trace_propagation: w3c
+
+security:
+  auth: mTLS
+  data_egress: forbidden
+  data_residency: per_cohort_source

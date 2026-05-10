@@ -1,0 +1,27 @@
+provider_id: garmin_connect
+display_name: "Garmin Connect"
+kind: wearable
+modality: wearable
+homepage: "https://developer.garmin.com/gc-developer-program/"
+auth:
+  type: oauth1
+  notes: "Garmin Health API uses OAuth 1.0a + per-user permission grants"
+webhook:
+  enabled: true
+  events: ["dailies", "stress", "sleeps", "epochs"]
+  signature_method: "HMAC-SHA256"
+polling: { enabled: false }
+biomarkers_supplied: [hrv_rmssd, resting_hr, sleep_efficiency]
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    hrv_rmssd:
+      code: { system: "http://loinc.org", code: "80404-7" }
+    resting_hr:
+      code: { system: "http://loinc.org", code: "40443-4" }
+    sleep_efficiency:
+      code: { system: "http://agedefy.ai/fhir/CodeSystem/longevity", code: "sleep-efficiency-pct" }
+privacy_class: medium
+streaming: { enabled: true }
+consent_scope: ["Read activity, sleep, and HRV from Garmin"]
+legal_jurisdictions_blocked: []

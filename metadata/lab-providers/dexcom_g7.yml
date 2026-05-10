@@ -1,0 +1,44 @@
+provider_id: dexcom_g7
+display_name: "Dexcom G7 (CGM)"
+kind: wearable
+modality: wearable
+homepage: "https://developer.dexcom.com"
+auth:
+  type: oauth2
+  authorization_url: "https://api.dexcom.com/v3/oauth2/login"
+  token_url: "https://api.dexcom.com/v3/oauth2/token"
+  scopes: ["offline_access"]
+  notes: "Sandbox + production environments separated"
+webhook:
+  enabled: false
+  notes: "Dexcom does not push; we poll the EGV (Estimated Glucose Value) endpoint"
+polling:
+  enabled: true
+  schedule: "*/15 * * * *"
+  endpoints:
+    - "/v3/users/self/egvs?startDate=...&endDate=..."
+biomarkers_supplied: [cgm_glucose_mean, cgm_glucose_std]
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    cgm_glucose_mean:
+      code: { system: "http://loinc.org", code: "97507-8", display: "Mean glucose [Mass/volume]" }
+      valueQuantity: { unit: "mg/dL", system: "http://unitsofmeasure.org", code: "mg/dL" }
+    cgm_glucose_std:
+      code: { system: "http://loinc.org", code: "97506-0", display: "Glucose std deviation" }
+      valueQuantity: { unit: "mg/dL", system: "http://unitsofmeasure.org", code: "mg/dL" }
+privacy_class: high
+streaming:
+  enabled: true
+  delta_trigger:
+    biomarker: cgm_glucose_mean
+    rolling_window_days: 14
+    threshold_pct: 10
+    on_breach: "publish('biomarker.delta', { biomarker, value, baseline })"
+clinical_validation:
+  ce_marked: true
+  fda_status: "510k_cleared"
+consent_scope:
+  - "Read continuous glucose readings every 15 minutes"
+  - "Trigger personalised re-evaluation when 14-day mean drifts >10%"
+legal_jurisdictions_blocked: []

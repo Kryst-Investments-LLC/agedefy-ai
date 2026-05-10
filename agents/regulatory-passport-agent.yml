@@ -1,0 +1,101 @@
+name: regulatory-passport-agent
+version: 0.1.0
+role: Auto-generates jurisdiction-compliant marketing claims, disclaimers, and regulatory packets for any longevity recommendation
+owners: ["@kryst-investments-llc/legal", "@kryst-investments-llc/platform"]
+platform_domain: compliance-cloud
+description: |
+  Tier 2.2 — "Regulatory Passport" / AgeDefy Compliance Cloud.
+
+  Given a recommendation envelope (compound + dose + claim + target
+  population) and a target jurisdiction set, this agent emits a per-
+  jurisdiction "Passport" containing: (a) the legally-rewritten marketing
+  copy, (b) the required disclaimers, (c) the regulatory notification
+  packet (FDA structure-function letter, EMA novel-food dossier outline,
+  ANVISA notification, MHRA THR application skeleton, TGA listed-medicine
+  draft), and (d) a citation graph back to the rule sources in
+  `agents/legal-rules/**`.
+
+  This is the asset behind the "AgeDefy Compliance Cloud" B2B SKU sold to
+  other longevity startups: every YAML in `agents/legal-rules/` becomes
+  the product surface.
+
+capabilities:
+  - rewrite_claim_for_jurisdiction
+  - emit_required_disclaimers
+  - generate_regulatory_packet
+  - cite_rule_sources
+  - flag_unallowed_claim
+  - diff_packet_against_previous_version
+  - sign_packet_with_w3c_vc
+
+inputs:
+  - name: recommendation_envelope
+    description: |
+      Object with at minimum:
+      { intervention_id, compound_id?, dose, target_population,
+        proposed_claim, evidence_refs }
+    required: true
+    type: object
+  - name: jurisdictions
+    description: ISO codes — defaults to all supported per agents/legal-rules/
+    required: false
+    type: array
+  - name: surface
+    description: marketing_web | label_copy | sales_letter | api_partner_sdk | dtc_email
+    required: true
+    type: string
+
+outputs:
+  - name: passport
+    description: |
+      Per-jurisdiction packet:
+      {
+        US: {
+          rewritten_claim: "...",
+          disclaimers: ["...", "..."],
+          regulatory_packet: { kind: "structure_function_letter", body_md: "...", attachments: [...] },
+          rule_citations: ["agents/legal-rules/us.yml#dshea_structure_function"],
+          status: "ready_to_publish" | "blocked" | "requires_clinician_signoff"
+        },
+        EU: { ... },
+        BR: { ... }
+      }
+  - name: vc
+    description: W3C Verifiable Credential signing the passport (Tier 2.4)
+  - name: blocked_jurisdictions
+    description: List of jurisdictions where the recommendation cannot be marketed legally
+
+error_handling:
+  on_no_rule_match: "block_jurisdiction + raise_for_legal_review"
+  on_conflicting_rules: "prefer_strictest + emit_warning"
+  on_missing_evidence: "block_with_required_fields"
+
+sla:
+  p50_latency_ms: 1500
+  p99_latency_ms: 6000
+  availability: "99.9%"
+
+b2b_sku:
+  name: "AgeDefy Compliance Cloud"
+  pricing_model:
+    base_per_seat_usd_per_month: 499
+    per_passport_usd: 9
+    enterprise_unlimited_usd_per_month: 9900
+  api_surface:
+    - "POST /v1/passport"
+    - "GET  /v1/jurisdictions"
+    - "GET  /v1/rule-sets/:id"
+  sandbox_jurisdictions: [US, UK, EU, AU]
+  rate_limits:
+    free_tier_per_day: 25
+    paid_tier_per_minute: 60
+
+dependencies:
+  - law-awareness-agent
+  - audit-governance-agent
+  - safety-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  fields: [runId, ts, intervention_id, jurisdiction, surface, status, blocked_count]

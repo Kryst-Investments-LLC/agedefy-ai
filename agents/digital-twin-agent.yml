@@ -1,0 +1,99 @@
+name: digital-twin-agent
+version: 0.1.0
+role: Mechanistic + statistical 5-year longevity trajectory simulation per user
+owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/platform"]
+platform_domain: biotech-research
+description: |
+  Tier 2.3 — combines the platform's existing mechanistic-models-api
+  (mTOR/AMPK pathway, lipid/glucose dynamics, cardiovascular Framingham
+  extension) with statistical priors from `causal-inference-agent` and
+  cohort priors from `cohort-discovery-agent` to simulate a user's
+  expected biomarker trajectory under any stack of interventions over a
+  configurable horizon (default 5 years, max 25).
+
+  Delivers the "see your future before you buy it" experience — answer to
+  "what does my hsCRP/epi-age/ApoB look like at month 60 if I add NMN +
+  rapamycin + statin?" with calibrated uncertainty bands.
+
+partners:
+  - SimVascular (cardiovascular hemodynamic models)
+  - Open Systems Pharmacology / PK-Sim (PBPK / drug exposure)
+  - Physiome.org (organ-system mechanistic libraries)
+
+capabilities:
+  - simulate_trajectory
+  - what_if_intervention_stack
+  - compare_two_stacks
+  - sensitivity_to_adherence
+  - sensitivity_to_baseline_uncertainty
+  - emit_uncertainty_bands
+  - export_trajectory_for_clinician
+
+inputs:
+  - name: user_baseline
+    description: Latest omni_longevity_v1 panel + wearable 30d window
+    required: true
+    type: object
+  - name: intervention_stack
+    description: |
+      Array of { intervention_id, dose, schedule, start_week, stop_week? }
+    required: true
+    type: array
+  - name: horizon_weeks
+    required: false
+    type: integer
+    default: 260
+  - name: outcome_biomarkers
+    description: Subset of metadata/biomarkers.yml ids to simulate
+    required: true
+    type: array
+
+outputs:
+  - name: trajectory
+    description: |
+      For each outcome biomarker:
+      { weekly_means: [...], ci95_low: [...], ci95_high: [...],
+        contributors: { intervention_id: weight_pct },
+        identification_provenance: causal-sidecar@... | mechanistic@... | hybrid }
+    type: object
+  - name: summary_card
+    description: Human-readable card for the product UI
+    type: object
+  - name: vc
+    description: W3C Verifiable Credential signing the simulation (Tier 2.4)
+
+backends:
+  - kind: mechanistic
+    sidecar_ref: agents/sidecars/mechanistic-sidecar.contract.yml
+    libraries: [pk-sim, libsbml, scipy.integrate]
+  - kind: statistical
+    delegates_to: causal-inference-agent
+  - kind: hybrid
+    strategy: "weight_by_inverse_variance"
+
+error_handling:
+  on_missing_baseline_field: "impute_from_population_median + emit_low_confidence_flag"
+  on_intervention_unknown: "reject_with_validation_error"
+  on_horizon_exceeds_max: "clamp_to_max + warn"
+  on_mechanistic_solver_divergence: "fall_back_to_statistical"
+
+sla:
+  p50_latency_ms: 4000
+  p99_latency_ms: 15000
+  availability: "99%"
+
+privacy:
+  trajectory_storage: encrypted_per_user
+  no_cohort_egress: true
+  vc_required_for_export: true
+
+dependencies:
+  - causal-inference-agent
+  - cohort-discovery-agent
+  - safety-agent
+  - audit-governance-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  fields: [runId, ts, horizon_weeks, intervention_count, outcome_count, backend_used, latencyMs]

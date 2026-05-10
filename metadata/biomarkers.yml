@@ -68,3 +68,168 @@ biomarkers:
     name: "Epigenetic Age (DNAmAge)"
     unit: "years"
     pathway: sirtuin_activation
+
+  # ---- Tier 1.1 Multi-omics expansion ----
+  # Epigenetics (TruDiagnostic / Elysium / Horvath panels)
+  - id: dunedin_pace
+    name: "DunedinPACE (Pace of Aging)"
+    unit: "ratio"
+    range: { low: 0.6, high: 1.0 }
+    pathway: epigenetic_aging
+    modality: epigenetics
+  - id: phenoage_acceleration
+    name: "PhenoAge Acceleration"
+    unit: "years"
+    range: { low: -10, high: 0 }
+    pathway: epigenetic_aging
+    modality: epigenetics
+  - id: grimage_acceleration
+    name: "GrimAge Acceleration"
+    unit: "years"
+    range: { low: -10, high: 0 }
+    pathway: epigenetic_aging
+    modality: epigenetics
+  - id: telomere_length
+    name: "Mean Telomere Length"
+    unit: "kb"
+    range: { low: 6.0, high: 12.0 }
+    pathway: telomere_maintenance
+    modality: epigenetics
+
+  # Genomics (23andMe / AncestryDNA / Nebula VCF imports)
+  - id: apoe_genotype
+    name: "APOE Genotype"
+    unit: "categorical"
+    domain: ["e2/e2", "e2/e3", "e2/e4", "e3/e3", "e3/e4", "e4/e4"]
+    pathway: cardiovascular
+    modality: genomics
+    privacy_class: high
+  - id: mthfr_c677t
+    name: "MTHFR C677T Variant"
+    unit: "categorical"
+    domain: ["CC", "CT", "TT"]
+    pathway: methylation
+    modality: genomics
+    privacy_class: high
+  - id: foxo3_rs2802292
+    name: "FOXO3 rs2802292 Longevity Allele"
+    unit: "categorical"
+    domain: ["TT", "TG", "GG"]
+    pathway: longevity_signaling
+    modality: genomics
+    privacy_class: high
+  - id: prs_cad
+    name: "Polygenic Risk Score — Coronary Artery Disease"
+    unit: "z-score"
+    range: { low: -3, high: 3 }
+    pathway: cardiovascular
+    modality: genomics
+
+  # Proteomics (SomaLogic SomaScan / Olink Explore HT)
+  - id: gdf15
+    name: "GDF15 (Growth Differentiation Factor 15)"
+    unit: "pg/mL"
+    range: { low: 200, high: 1200 }
+    pathway: mitochondrial_stress
+    modality: proteomics
+  - id: il6_hs
+    name: "IL-6 (high-sensitivity)"
+    unit: "pg/mL"
+    range: { low: 0, high: 2.0 }
+    pathway: inflammation
+    modality: proteomics
+  - id: cystatin_c
+    name: "Cystatin C"
+    unit: "mg/L"
+    range: { low: 0.5, high: 1.0 }
+    pathway: renal_function
+    modality: proteomics
+  - id: nt_probnp
+    name: "NT-proBNP"
+    unit: "pg/mL"
+    range: { low: 0, high: 125 }
+    pathway: cardiovascular
+    modality: proteomics
+
+  # Metabolomics (Metabolon / Nightingale NMR)
+  - id: branched_chain_aa
+    name: "Branched-Chain Amino Acids (Leu+Ile+Val)"
+    unit: "umol/L"
+    range: { low: 350, high: 600 }
+    pathway: mtor_signaling
+    modality: metabolomics
+  - id: tmao
+    name: "Trimethylamine N-Oxide (TMAO)"
+    unit: "umol/L"
+    range: { low: 0, high: 6.2 }
+    pathway: cardiovascular
+    modality: metabolomics
+  - id: nad_plus
+    name: "Whole-blood NAD+"
+    unit: "umol/L"
+    range: { low: 28, high: 55 }
+    pathway: sirtuin_activation
+    modality: metabolomics
+  - id: ketone_bhb
+    name: "Beta-Hydroxybutyrate"
+    unit: "mmol/L"
+    range: { low: 0.0, high: 3.0 }
+    pathway: ketogenesis
+    modality: metabolomics
+
+  # Microbiome (Viome / Zoe / uBiome)
+  - id: microbiome_diversity_shannon
+    name: "Microbiome Diversity (Shannon Index)"
+    unit: "index"
+    range: { low: 3.0, high: 5.0 }
+    pathway: gut_immune_axis
+    modality: microbiome
+  - id: akkermansia_relative_abundance
+    name: "Akkermansia muciniphila Relative Abundance"
+    unit: "%"
+    range: { low: 1.0, high: 5.0 }
+    pathway: gut_immune_axis
+    modality: microbiome
+  - id: firmicutes_bacteroidetes_ratio
+    name: "Firmicutes/Bacteroidetes Ratio"
+    unit: "ratio"
+    range: { low: 0.5, high: 2.0 }
+    pathway: gut_immune_axis
+    modality: microbiome
+
+  # Wearable continuous biomarkers (Tier 1.2 stream input)
+  - id: hrv_rmssd
+    name: "Heart Rate Variability (RMSSD)"
+    unit: "ms"
+    range: { low: 30, high: 120 }
+    pathway: autonomic_nervous_system
+    modality: wearable
+    sampling: continuous
+  - id: resting_hr
+    name: "Resting Heart Rate"
+    unit: "bpm"
+    range: { low: 45, high: 70 }
+    pathway: cardiovascular
+    modality: wearable
+    sampling: daily
+  - id: sleep_efficiency
+    name: "Sleep Efficiency"
+    unit: "%"
+    range: { low: 85, high: 100 }
+    pathway: sleep_recovery
+    modality: wearable
+    sampling: nightly
+  - id: cgm_glucose_mean
+    name: "CGM 24h Mean Glucose"
+    unit: "mg/dL"
+    range: { low: 70, high: 110 }
+    pathway: glucose_metabolism
+    modality: wearable
+    sampling: continuous
+  - id: cgm_glucose_std
+    name: "CGM Glucose Variability (SD)"
+    unit: "mg/dL"
+    range: { low: 0, high: 18 }
+    pathway: glucose_metabolism
+    modality: wearable
+    sampling: continuous

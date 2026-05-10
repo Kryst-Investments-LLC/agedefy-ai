@@ -1,0 +1,69 @@
+name: longevity-foundation-model-charter
+version: 0.1.0
+horizon: "5_year"
+role: Train AgeDefy's own ~7B-parameter multi-modal foundation model on aggregated FHIR + omics + wearable + intervention + outcome data
+owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/platform"]
+status: "charter"   # not yet code; this is the pre-implementation plan
+description: |
+  Tier 4.1 — the "OpenAI moment" for longevity. AgeDefy is uniquely
+  positioned because it is the only platform that simultaneously holds:
+    1. Multi-omic snapshots per user (Tier 1.1)
+    2. Continuous wearable + CGM streams (Tier 1.2)
+    3. N-of-1 trial outcome ground truth (Tier 1.4)
+    4. Federated cohort with DP-protected longitudinal trajectories (Tier 2.1)
+    5. Verifiable provenance per recommendation (Tier 2.4)
+
+architecture_target:
+  parameter_count: 7_000_000_000
+  modalities:
+    - tabular_omics_embedding
+    - timeseries_wearable_embedding
+    - timeseries_cgm_embedding
+    - graph_compound_pathway_embedding
+    - text_clinician_note_embedding
+    - text_user_journal_embedding (on-device only — Tier 3.2)
+  fusion: cross_modal_attention
+  context_window_tokens: 131072
+  inference: vLLM + speculative decoding
+  training: H100 cluster (start with 64x, scale to 1024x for v2)
+
+training_phases:
+  - phase: pretrain
+    duration_months: 6
+    data:
+      - mimic-iv (public)
+      - uk-biobank (credentialed)
+      - all-of-us (credentialed)
+      - agedefy_federated_v1 (consented, DP-noised at training time)
+    loss: next-token + masked-modality
+  - phase: instruction_tune
+    duration_months: 2
+    data: agedefy-internal-clinician-curated-tasks-v1
+  - phase: rlhf_with_clinician_signoff
+    duration_months: 3
+    data: clinician-review-agent decisions as preference pairs
+
+safety_gates:
+  - "No model release without falsification-agent pass on holdout cohort"
+  - "No training data without consent_scope='research_contribution + foundation_model_training'"
+  - "All outputs in production are still gated by law-awareness-agent + audit-governance-agent VC signing"
+  - "Per-jurisdiction red-team before deployment"
+
+deliverables:
+  v1:
+    name: "AgeDefy-LFM-7B"
+    license: "AgeDefy Research License (non-commercial), commercial via API"
+  v2:
+    name: "AgeDefy-LFM-30B-MoE"
+    horizon_months: 24
+
+competitive_moat:
+  data_dimension: "no competitor has both multi-omic + continuous wearable + N-of-1 outcomes per user"
+  legal_dimension: "consent + jurisdictional ingest pipeline already enforced"
+  liability_dimension: "VC-signed outputs court-admissible"
+
+dependencies:
+  - on-device-inference-agent (for journal text)
+  - cohort-discovery-agent (DP)
+  - causal-inference-agent (alignment signal)
+  - audit-governance-agent (consent enforcement)

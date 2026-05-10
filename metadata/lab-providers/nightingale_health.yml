@@ -1,0 +1,54 @@
+provider_id: nightingale_health
+display_name: "Nightingale Health (NMR Metabolomics)"
+kind: lab
+modality: metabolomics
+homepage: "https://nightingalehealth.com"
+auth:
+  type: oauth2
+  authorization_url: "https://api.nightingalehealth.com/oauth/authorize"
+  token_url: "https://api.nightingalehealth.com/oauth/token"
+  scopes: ["read:results"]
+webhook:
+  enabled: true
+  event: "panel.released"
+  signature_header: "X-NH-Signature"
+polling:
+  enabled: true
+  schedule: "0 4 * * *"
+biomarkers_supplied:
+  - branched_chain_aa
+  - tmao
+  - nad_plus
+  - ketone_bhb
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    branched_chain_aa:
+      code:
+        system: "http://loinc.org"
+        code: "32232-3"
+        display: "BCAA [Moles/volume]"
+      valueQuantity: { unit: "umol/L", system: "http://unitsofmeasure.org", code: "umol/L" }
+    tmao:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "tmao"
+      valueQuantity: { unit: "umol/L", system: "http://unitsofmeasure.org", code: "umol/L" }
+    nad_plus:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "nad-plus-whole-blood"
+      valueQuantity: { unit: "umol/L", system: "http://unitsofmeasure.org", code: "umol/L" }
+    ketone_bhb:
+      code:
+        system: "http://loinc.org"
+        code: "53060-9"
+        display: "Beta-hydroxybutyrate [Moles/volume]"
+      valueQuantity: { unit: "mmol/L", system: "http://unitsofmeasure.org", code: "mmol/L" }
+privacy_class: medium
+consent_scope:
+  - "Read Nightingale NMR panel results"
+legal_jurisdictions_blocked: []
+clinical_validation:
+  ce_marked: true
+  fda_status: "research_use_only"

@@ -1,0 +1,82 @@
+name: wearable-ingestion-agent
+version: 1.0.0
+role: Continuous wearable + CGM stream ingestion and rolling-delta detection
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Subscribes to wearable provider webhooks (Apple HealthKit, Whoop, Oura,
+  Garmin, Dexcom G7) and pull schedules, normalises payloads to FHIR R5
+  Observation resources via per-provider adapters under
+  `metadata/lab-providers/`, persists to the user's biomarker store, and
+  publishes `biomarker.delta` events when a configured rolling-window
+  threshold is breached. Delta events are consumed by
+  `causal-inference-agent` to trigger personalised re-evaluation.
+
+capabilities:
+  - subscribe_provider_webhook
+  - poll_provider_endpoint
+  - normalize_to_fhir_r5
+  - detect_rolling_delta
+  - publish_outbox_event
+
+inputs:
+  - name: provider_id
+    description: One of metadata/lab-providers/*.yml provider_id
+    required: true
+  - name: user_id
+    description: AgeDefy user identifier
+    required: true
+  - name: payload
+    description: Provider-native event or polled record
+    required: true
+
+outputs:
+  - name: fhir_bundle
+    description: FHIR R5 Bundle of normalized Observation resources
+  - name: delta_events
+    description: 0..N biomarker.delta envelopes for downstream agents
+
+events_published:
+  - name: biomarker.ingested
+    schema_ref: schemas/biomarker-ingested.v1.json
+  - name: biomarker.delta
+    schema_ref: schemas/biomarker-delta.v1.json
+    triggers:
+      - downstream: causal-inference-agent
+        action: re_evaluate_active_recommendations
+      - downstream: cohort-discovery-agent
+        action: refresh_cohort_membership
+
+error_handling:
+  on_provider_4xx: "log_and_drop"
+  on_provider_5xx: "retry_with_backoff_max_5"
+  on_signature_mismatch: "alert_security + drop"
+  on_dedupe_collision: "ignore_already_seen"
+
+privacy:
+  on_device_only_providers: [twentythree_and_me]
+  encryption_at_rest: "per-user-AES-256-GCM"
+  retention_days: 3650
+  consent_required: true
+  consent_source: "metadata/lab-providers/<provider_id>.yml#consent_scope"
+
+sla:
+  ingest_p50_latency_ms: 800
+  ingest_p99_latency_ms: 4000
+  delta_detection_p50_latency_ms: 1500
+  availability: "99.9%"
+
+observability:
+  metrics:
+    - wearable_events_ingested_total{provider}
+    - wearable_delta_events_emitted_total{biomarker}
+    - wearable_normalize_failures_total{provider, reason}
+  trace_attributes:
+    - provider_id
+    - biomarker_id
+    - user_id_hash
+
+dependencies:
+  - master-orchestrator-agent
+  - causal-inference-agent
+  - cohort-discovery-agent
+  - law-awareness-agent

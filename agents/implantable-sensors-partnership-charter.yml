@@ -1,0 +1,50 @@
+name: implantable-sensors-partnership-charter
+version: 0.1.0
+horizon: "5_year"
+role: Be the OS layer for implantable continuous-biomarker sensors as they reach market
+owners: ["@kryst-investments-llc/business", "@kryst-investments-llc/clinical"]
+status: "charter"
+description: |
+  Tier 4.2 — implantable continuous biomarker sensors are coming. AgeDefy
+  positions as the **software-defined longevity OS**: each new implantable
+  is just another `metadata/lab-providers/*.yml` adapter feeding the same
+  causal + digital-twin + N-of-1 + VC-signed pipeline.
+
+partner_targets:
+  - id: profusa
+    sensor: "Lumee O2 (continuous tissue oxygenation)"
+    status: "FDA pre-submission"
+  - id: senseonics
+    sensor: "Eversense (180-day implantable CGM)"
+    status: "FDA approved"
+  - id: nutromics
+    sensor: "DBS-electrode multi-analyte"
+    status: "TGA pre-submission"
+  - id: profrewd
+    sensor: "Continuous lactate + cortisol"
+    status: "research"
+  - id: iota_biosciences
+    sensor: "Neural dust (continuous tissue chemistry)"
+    status: "research"
+
+osm_layer_capabilities:
+  - device_provisioning_and_pairing
+  - continuous_calibration_against_gold_standard_lab
+  - drift_detection_and_recalibration_recommendation
+  - multi_sensor_fusion_into_omni_longevity_v1
+  - explanted_device_data_archival_for_lifetime_record
+
+planned_adapters:
+  - file: metadata/lab-providers/senseonics_eversense.yml (TBD)
+  - file: metadata/lab-providers/profusa_lumee.yml (TBD)
+  - file: metadata/lab-providers/nutromics_multi.yml (TBD)
+
+regulatory_pre_work_per_jurisdiction:
+  US: "FDA 21 CFR 820 SaMD pathway; pre-submission Q3"
+  EU: "MDR Class IIb; notified body engagement"
+  BR: "ANVISA RDC 657; local regulatory agent partnership"
+
+dependencies:
+  - multi-omics-ingestion-agent
+  - law-awareness-agent
+  - audit-governance-agent

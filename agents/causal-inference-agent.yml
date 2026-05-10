@@ -73,3 +73,38 @@ tracing:
   format: "jsonl"
   fields: [runId, ts, exposure, outcome, estimate, ci_low, ci_high, pleiotropy, latencyMs]
   sink: "./traces/causal-inference-agent.jsonl"
+
+# ---- Tier 1.3 Causal sidecar runtime ----
+runtime_backend:
+  kind: python_sidecar
+  contract_ref: agents/sidecars/causal-sidecar.contract.yml
+  libraries: [dowhy, econml, statsmodels]
+  default_estimator: backdoor.linear_regression
+  fallback_estimator: iv.instrumental_variable
+  cohort_sources:
+    - id: uk_biobank
+      access: credentialed_researcher
+      url: "https://www.ukbiobank.ac.uk/enable-your-research/about-our-data"
+      fields: [genotype, biomarker_panel_v1, mortality_followup]
+    - id: all_of_us
+      access: credentialed_researcher
+      url: "https://www.researchallofus.org"
+      fields: [ehr, wearable_v2, biomarker_v1]
+    - id: agedefy_federated_v1
+      access: differential_privacy_epsilon_1
+      url: "internal://federated/agedefy_v1"
+      depends_on_tier: T2.1
+  output_format_v2:
+    schema_ref: schemas/causal-effect.v2.json
+    example: |
+      {
+        "intervention": "rapamycin_6mg_weekly",
+        "outcome": "hs_crp",
+        "expected_delta": -0.42,
+        "ci95": [-0.60, -0.24],
+        "n_similar_profiles": 1247,
+        "cohort_source": "agedefy_federated_v1",
+        "identification_strategy": "backdoor",
+        "model_version": "causal-sidecar@0.1.0",
+        "vc_signature_required": true
+      }

@@ -1,0 +1,69 @@
+provider_id: twentythree_and_me
+display_name: "23andMe"
+kind: genomics
+modality: genomics
+homepage: "https://www.23andme.com"
+auth:
+  type: file_upload
+  accepted_formats: ["vcf", "vcf.gz", "23andme_raw_txt"]
+  max_size_mb: 250
+  client_side_parsing: true
+  notes: |
+    Per Tier 3.2 (on-device inference), genomic VCF parsing happens
+    in the user's browser/native app via WASM. The server only ever
+    receives the derived per-variant call summary, not the raw VCF.
+webhook:
+  enabled: false
+polling:
+  enabled: false
+biomarkers_supplied:
+  - apoe_genotype
+  - mthfr_c677t
+  - foxo3_rs2802292
+  - prs_cad
+fhir_r5_mapping:
+  resource: MolecularSequence
+  per_biomarker:
+    apoe_genotype:
+      code:
+        system: "http://www.genenames.org"
+        code: "HGNC:613"
+        display: "APOE"
+      observation_code:
+        system: "http://loinc.org"
+        code: "55217-1"
+        display: "APOE gene allele [Genotype]"
+    mthfr_c677t:
+      code:
+        system: "http://www.genenames.org"
+        code: "HGNC:7436"
+        display: "MTHFR"
+      observation_code:
+        system: "http://loinc.org"
+        code: "55229-6"
+        display: "MTHFR gene c.665C>T [Genotype]"
+    foxo3_rs2802292:
+      code:
+        system: "http://www.ncbi.nlm.nih.gov/snp"
+        code: "rs2802292"
+      observation_code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "foxo3-rs2802292-genotype"
+    prs_cad:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "prs-cad-zscore"
+privacy_class: critical
+on_device_only: true
+consent_scope:
+  - "Compute longevity-relevant variant calls locally on your device"
+  - "Upload only derived summary calls (no raw genome) to AgeDefy"
+  - "Encrypt at rest with your device-bound key"
+legal_jurisdictions_blocked: []
+notes_per_jurisdiction:
+  US: "GINA-protected; no employer/insurer sharing"
+  EU: "Special category data under GDPR Art. 9; explicit consent required"
+  BR: "LGPD Art. 11 sensitive data; explicit consent + DPO record"
+clinical_validation:
+  ce_marked: false
+  fda_status: "510k_cleared_for_specific_variants"

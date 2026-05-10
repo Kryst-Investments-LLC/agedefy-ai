@@ -1,0 +1,78 @@
+name: multi-omics-ingestion-agent
+version: 1.0.0
+role: Multi-omics lab result ingestion (epigenetics, genomics, proteomics, metabolomics, microbiome)
+owners: ["@kryst-investments-llc/platform"]
+description: |
+  Subscribes to lab provider webhooks (TruDiagnostic, SomaLogic SomaScan,
+  Olink, Nightingale Health, Viome) and accepts user-uploaded raw files
+  (23andMe / AncestryDNA / Nebula VCF). Normalises to FHIR R5 Observation
+  / MolecularSequence per-provider mappings declared in
+  `metadata/lab-providers/`. Genomic VCF parsing happens client-side
+  (Tier 3.2 on-device inference); only derived variant calls are uploaded.
+
+capabilities:
+  - subscribe_lab_webhook
+  - accept_vcf_upload_summary
+  - normalize_to_fhir_r5
+  - publish_outbox_event
+  - emit_consent_record
+
+inputs:
+  - name: provider_id
+    required: true
+  - name: user_id
+    required: true
+  - name: payload_or_summary
+    description: Provider webhook body OR client-derived VCF call summary
+    required: true
+
+outputs:
+  - name: fhir_bundle
+    description: FHIR R5 Bundle of normalized Observation/MolecularSequence resources
+  - name: ingestion_receipt
+    description: Signed receipt (W3C VC) of what was ingested, when, and under which consent
+
+events_published:
+  - name: biomarker.ingested
+    schema_ref: schemas/biomarker-ingested.v1.json
+  - name: omics.panel.complete
+    schema_ref: schemas/omics-panel-complete.v1.json
+    triggers:
+      - downstream: causal-inference-agent
+        action: re_evaluate_active_recommendations
+      - downstream: digital-twin-agent
+        action: refresh_trajectory_simulation
+
+privacy:
+  raw_genome_storage: forbidden
+  on_device_parsing_required_for: [twentythree_and_me, ancestry_dna, nebula_genomics]
+  encryption_at_rest: "per-user-AES-256-GCM"
+  privacy_class_inherited_from_provider: true
+  consent_required: true
+  per_jurisdiction_overrides:
+    EU: "GDPR Art. 9 special category — explicit consent + DPIA"
+    BR: "LGPD Art. 11 sensitive data — explicit consent + DPO record"
+    US: "GINA-compliant; no employer/insurer disclosure"
+
+error_handling:
+  on_provider_4xx: "log_and_drop"
+  on_provider_5xx: "retry_with_backoff_max_5"
+  on_signature_mismatch: "alert_security + drop"
+  on_unsupported_panel: "store_raw_with_flag + clinician_review_required"
+
+sla:
+  ingest_p50_latency_ms: 1200
+  ingest_p99_latency_ms: 6000
+  availability: "99.9%"
+
+observability:
+  metrics:
+    - omics_events_ingested_total{provider, modality}
+    - omics_normalize_failures_total{provider, reason}
+    - omics_consent_blocked_total{jurisdiction, modality}
+
+dependencies:
+  - master-orchestrator-agent
+  - law-awareness-agent
+  - audit-governance-agent
+  - causal-inference-agent

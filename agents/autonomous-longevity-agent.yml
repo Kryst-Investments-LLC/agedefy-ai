@@ -1,0 +1,64 @@
+name: autonomous-longevity-agent
+version: 0.1.0
+horizon: "3_year"
+role: Goal-directed agent that takes action on behalf of the user (book labs, refill Rx, schedule clinician, negotiate insurance)
+owners: ["@kryst-investments-llc/platform", "@kryst-investments-llc/clinical", "@kryst-investments-llc/legal"]
+status: "charter"
+description: |
+  Tier 4.3 — given a long-horizon goal ("extend healthspan to 95 with
+  confidence ≥ 0.7") this agent produces a quarterly plan, takes
+  reversible actions autonomously (book labs, refill non-Rx supplements,
+  schedule clinician check-ins), and routes irreversible actions
+  (Rx changes, insurance appeals) through `clinician-review-agent` for
+  human signoff.
+
+  All actions are gated by `law-awareness-agent`, signed with a VC, and
+  fully reversible within 24 hours via the user's "undo last quarter"
+  panel.
+
+goal_dsl_example:
+  goal: "extend_healthspan_to_age_95"
+  confidence_target: 0.7
+  budget:
+    monthly_usd: 800
+    monthly_clinician_minutes: 30
+  preferences:
+    - prefer_lifestyle_over_pharmaceutical
+    - avoid_animal_derived
+  hard_constraints:
+    - no_off_label_chemotherapy
+    - jurisdiction_legal_only
+
+allowed_autonomous_actions:
+  - book_lab_panel:
+      partner: any_in_user_jurisdiction
+      max_per_quarter: 4
+  - refill_supplement_pack:
+      partner: cabinet_health
+      max_dose_change_pct: 10
+  - schedule_clinician_followup:
+      partner: clinician-review-agent.network_partners
+      max_per_quarter: 2
+  - apply_in_app_protocol_tweak:
+      reversible: true
+      vc_signed: true
+
+requires_human_signoff:
+  - any_prescription_change
+  - any_insurance_appeal_submission
+  - any_supplement_dose_change_above_10_pct
+  - any_new_implantable_pairing
+  - any_data_egress_to_third_party_not_already_consented
+
+dependencies:
+  - master-orchestrator-agent
+  - clinician-review-agent
+  - dispensing-partner-agent
+  - regulatory-passport-agent
+  - audit-governance-agent
+  - law-awareness-agent
+  - safety-agent
+  - digital-twin-agent
+
+undo_window_hours: 24
+audit_required: true
