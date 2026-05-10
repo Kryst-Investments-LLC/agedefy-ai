@@ -1,0 +1,31 @@
+provider_id: oura
+display_name: "Oura Ring"
+kind: wearable
+modality: wearable
+homepage: "https://cloud.ouraring.com/v2/docs"
+auth:
+  type: oauth2
+  authorization_url: "https://cloud.ouraring.com/oauth/authorize"
+  token_url: "https://api.ouraring.com/oauth/token"
+  scopes: ["personal", "daily", "heartrate", "session", "spo2Daily"]
+webhook:
+  enabled: true
+  events: ["update", "create"]
+  signature_header: "X-Oura-Signature"
+polling:
+  enabled: true
+  schedule: "*/30 * * * *"
+biomarkers_supplied: [hrv_rmssd, resting_hr, sleep_efficiency]
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    hrv_rmssd:
+      code: { system: "http://loinc.org", code: "80404-7" }
+    resting_hr:
+      code: { system: "http://loinc.org", code: "40443-4" }
+    sleep_efficiency:
+      code: { system: "http://agedefy.ai/fhir/CodeSystem/longevity", code: "sleep-efficiency-pct" }
+privacy_class: medium
+streaming: { enabled: true }
+consent_scope: ["Read sleep, HRV and readiness data from Oura"]
+legal_jurisdictions_blocked: []

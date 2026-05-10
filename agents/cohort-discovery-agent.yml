@@ -76,3 +76,58 @@ tracing:
   format: "jsonl"
   fields: [runId, ts, cohort_size, feasibility, jurisdiction, k_anonymity_floor, latencyMs]
   sink: "./traces/cohort-discovery-agent.jsonl"
+
+# ---- Tier 2.1 Federated longevity dataset + cohort matching ----
+federated_dataset:
+  enabled: true
+  dataset_id: agedefy_federated_v1
+  opt_in_required: true
+  consent_scope:
+    - "Contribute de-identified biomarker trajectories to AgeDefy cohort matching"
+    - "Receive 'people like me' insights derived from contributors"
+    - "Revoke contribution at any time (purges within 30 days)"
+  contribution_pipeline:
+    - step: pseudonymize
+      method: per_user_HMAC_SHA256_with_rotating_salt
+    - step: shift_calendar_dates
+      method: random_offset_per_user_days_-30_to_30
+    - step: bucketize_low_cardinality
+      fields: [age_bracket_5y, jurisdiction]
+    - step: emit_to_federated_store
+      sink: "internal://federated/agedefy_v1"
+
+differential_privacy:
+  enabled: true
+  epsilon: 1.0
+  delta: 1.0e-7
+  mechanism: gaussian
+  per_query_budget_tracking: true
+  budget_per_user_per_year: 10.0
+  exhausted_budget_behavior: "refuse_with_informative_error"
+  noise_added_to:
+    - cohort_size
+    - covariate_distribution_bins
+    - feasibility_score
+
+cohort_matching:
+  capability: find_similar_users
+  input:
+    user_profile_hash: required
+    k_neighbors: { default: 100, max: 500 }
+    similarity_metric: euclidean_in_zscore_space
+    feature_set: omni_longevity_v1
+  output:
+    neighbor_summary:
+      type: object
+      properties:
+        n_returned: integer
+        intervention_frequency_table: object
+        outcome_delta_distribution: object
+    privacy_guarantees:
+      type: object
+      properties:
+        epsilon_spent: number
+        k_anonymity_floor_enforced: integer
+  example_query: |
+    "Find me the 100 most similar users who lowered their bio age >2yr — what did they do?"
+  feeds_back_into: causal-inference-agent

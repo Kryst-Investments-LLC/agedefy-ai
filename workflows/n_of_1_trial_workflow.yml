@@ -1,0 +1,151 @@
+name: n_of_1_trial_workflow
+version: 1.0.0
+owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/platform"]
+intent: longevity.personal_trial_design_and_run
+description: |
+  Personalised N-of-1 trial designer + runner. The user picks an
+  intervention (compound, supplement, behavioural protocol). The workflow
+  randomises treatment / washout / treatment blocks, captures continuous
+  wearable + CGM + sleep + HRV signals, runs Bayesian update of the
+  personal effect size, and emits a signed result certificate (W3C VC).
+
+  Patentability angle: the *combination* of (a) randomised block schedule
+  generated from the user's adherence + biomarker noise profile, (b)
+  Bayesian posterior update gated by minimum-detectable-effect, and
+  (c) jurisdictional safety stop-rules from `law-awareness-agent` is
+  novel as a single workflow.
+
+feature_module: n-of-1-trials
+plan_gating: [pro, enterprise]
+preconditions:
+  - "user.authenticated"
+  - "user.consent.research == true"
+  - "user.has_active_wearable_provider == true"
+  - "law_awareness.intervention_legal_in_jurisdiction == true"
+legal_checks:
+  - "intervention_self_experimentation"
+  - "iRB_exemption_self_research"
+  - "marketing_claim_disclaimer"
+audit_events:
+  - "n_of_1.trial.designed"
+  - "n_of_1.trial.started"
+  - "n_of_1.block.transition"
+  - "n_of_1.bayesian.update"
+  - "n_of_1.trial.stopped_for_safety"
+  - "n_of_1.trial.completed"
+
+steps:
+  - id: validate_intervention
+    agent: compound-interaction-agent
+    action: check_safety_and_interactions
+    timeout_ms: 800
+    fail_on_critical: true
+
+  - id: legal_pre_check
+    agent: law-awareness-agent
+    action: validate_self_experimentation
+    inputs:
+      action: "n_of_1_self_trial"
+      intervention_class: "${input.intervention_class}"
+    timeout_ms: 200
+
+  - id: design_blocks
+    agent: trial-design-agent
+    action: design_n_of_1_blocks
+    inputs:
+      intervention: "${input.intervention}"
+      duration_weeks: "${input.duration_weeks}"
+      block_count: "${input.block_count}"
+      randomisation_seed: "${user.id_hash}"
+      adherence_prior_from_history: true
+      biomarker_noise_prior_from_wearable_baseline: true
+    outputs:
+      - block_schedule
+      - minimum_detectable_effect
+    timeout_ms: 1500
+
+  - id: causal_pretest
+    agent: causal-inference-agent
+    action: estimate_population_prior
+    inputs:
+      exposure: "${input.intervention}"
+      outcome: "${input.primary_outcome_biomarker}"
+      cohort_source: "agedefy_federated_v1"
+    outputs:
+      - population_prior
+    timeout_ms: 4000
+
+  - id: enroll
+    agent: business-agent
+    action: persist_n_of_1_enrollment
+    timeout_ms: 300
+
+  - id: run_loop
+    agent: trial-design-agent
+    action: orchestrate_block_transitions
+    streaming: true
+    triggers:
+      - source: wearable-ingestion-agent
+        event: biomarker.delta
+        when: "delta.biomarker == input.primary_outcome_biomarker"
+        do: bayesian_update_posterior
+      - source: safety-agent
+        event: safety.threshold_breach
+        do: stop_trial_immediately
+    sla:
+      bayesian_update_p50_latency_ms: 1500
+    duration_aware: true
+
+  - id: falsify
+    agent: falsification-agent
+    action: run_pre_registered_refutation_tests
+    inputs:
+      estimate_id: "${run_loop.posterior_id}"
+    timeout_ms: 6000
+
+  - id: clinician_review_if_high_risk
+    agent: clinician-review-agent
+    action: route_if_threshold_breached
+    when: "validate_intervention.risk_class >= 'medium'"
+    timeout_ms: 600000
+
+  - id: certify
+    agent: audit-governance-agent
+    action: issue_verifiable_credential
+    inputs:
+      vc_type: "AgeDefyN1TrialResult"
+      contents:
+        intervention: "${input.intervention}"
+        primary_outcome: "${input.primary_outcome_biomarker}"
+        posterior_mean: "${run_loop.posterior.mean}"
+        posterior_ci95: "${run_loop.posterior.ci95}"
+        block_schedule_hash: "${design_blocks.block_schedule_hash}"
+        adherence_observed_pct: "${run_loop.adherence_pct}"
+        falsification_passed: "${falsify.passed}"
+        jurisdiction: "${user.jurisdiction}"
+        legal_rule_version: "${legal_pre_check.rule_set_version}"
+    timeout_ms: 1500
+
+  - id: emit
+    agent: observability-agent
+    action: emit_trace
+
+fallbacks:
+  - on: safety.threshold_breach
+    do: "stop_trial + clinician_handoff"
+  - on: adherence_below_50_pct
+    do: "pause_trial + nudge"
+  - on: timeout
+    do: "checkpoint_state + resume_on_next_signal"
+
+sla:
+  design_phase_p50_latency_ms: 6000
+  bayesian_update_p99_latency_ms: 4000
+  trial_runtime: "${input.duration_weeks} weeks"
+
+telemetry:
+  metrics:
+    - n_of_1_trials_designed_total
+    - n_of_1_trials_completed_total
+    - n_of_1_trials_stopped_safety_total
+    - n_of_1_posterior_meaningful_effect_total

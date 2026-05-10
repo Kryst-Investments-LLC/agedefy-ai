@@ -1,0 +1,35 @@
+provider_id: whoop
+display_name: "Whoop"
+kind: wearable
+modality: wearable
+homepage: "https://developer.whoop.com"
+auth:
+  type: oauth2
+  authorization_url: "https://api.prod.whoop.com/oauth/oauth2/auth"
+  token_url: "https://api.prod.whoop.com/oauth/oauth2/token"
+  scopes: ["read:recovery", "read:sleep", "read:cycles", "read:workout"]
+webhook:
+  enabled: true
+  events: ["recovery.updated", "sleep.updated", "workout.updated"]
+  signature_header: "X-Whoop-Signature"
+polling:
+  enabled: true
+  schedule: "*/30 * * * *"
+biomarkers_supplied: [hrv_rmssd, resting_hr, sleep_efficiency]
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    hrv_rmssd:
+      code: { system: "http://loinc.org", code: "80404-7" }
+      valueQuantity: { unit: "ms", system: "http://unitsofmeasure.org", code: "ms" }
+    resting_hr:
+      code: { system: "http://loinc.org", code: "40443-4" }
+      valueQuantity: { unit: "bpm", system: "http://unitsofmeasure.org", code: "/min" }
+    sleep_efficiency:
+      code: { system: "http://agedefy.ai/fhir/CodeSystem/longevity", code: "sleep-efficiency-pct" }
+      valueQuantity: { unit: "%", system: "http://unitsofmeasure.org", code: "%" }
+privacy_class: medium
+streaming:
+  enabled: true
+consent_scope: ["Read recovery, sleep, and workout data from Whoop"]
+legal_jurisdictions_blocked: []

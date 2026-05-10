@@ -1,0 +1,93 @@
+name: drug-repurposing-agent
+version: 0.1.0
+role: Mines aggregated AgeDefy biomarker + intervention dataset for off-label longevity signals saleable as IP to pharma
+owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/business"]
+platform_domain: biotech-research
+description: |
+  Tier 3.5 — runs on the federated dataset (Tier 2.1) under
+  differential privacy and cohort-discovery filtering to surface
+  candidate (compound, indication) pairs where AgeDefy users showed
+  a longevity-relevant biomarker shift that the medical literature
+  has not yet characterised.
+
+  Output is a **pre-clinical evidence pack** licensed to pharma
+  partners (Recursion, Insitro, BioAge) — competitors can synthesise
+  similar compounds in-silico but lack our real-world, multi-omic,
+  jurisdictionally-cleared longitudinal dataset.
+
+capabilities:
+  - mine_compound_biomarker_associations
+  - filter_by_known_literature
+  - rank_by_effect_size_x_novelty
+  - emit_evidence_pack
+  - track_ip_assignments
+
+inputs:
+  - name: candidate_compounds
+    description: Optional restriction; defaults to entire metadata/compounds.yml
+    type: array
+    required: false
+  - name: outcome_classes
+    description: Subset of {epigenetic_aging, cardiovascular, mitochondrial, sirtuin_activation, ...}
+    type: array
+    required: false
+  - name: minimum_effect_size_z
+    description: Minimum z-score effect size threshold for a candidate signal to be reported.
+    type: number
+    default: 0.6
+  - name: minimum_n
+    description: Minimum cohort size (post differential-privacy filtering) required to surface a signal.
+    type: integer
+    default: 200
+
+outputs:
+  - name: ranked_signals
+    description: |
+      Array of:
+      {
+        compound_id, indication, biomarker, effect_size_z, ci95,
+        n_contributors, novelty_score_vs_pubmed,
+        replication_in_external_cohort: bool,
+        evidence_pack_id, ip_status: "internal" | "licensed" | "filed"
+      }
+  - name: evidence_pack_url
+    description: S3 link to the licensed PDF + CSV bundle (paid product)
+
+privacy:
+  uses_federated_dataset: true
+  differential_privacy_epsilon: 1.0
+  contributor_cannot_be_re_identified: true
+  consent_scope_required: "research_contribution"
+
+revenue_model:
+  licensing_fee_per_pack_usd: 50000
+  royalty_on_downstream_drug: "1-3% structured per deal"
+  exclusivity_options:
+    - non_exclusive_per_pack
+    - exclusive_per_compound_per_indication_per_year
+
+partners_target:
+  - Recursion Pharmaceuticals
+  - Insitro
+  - BioAge Labs
+  - Loyal (veterinary repurposing)
+  - Calico Labs
+  - Altos Labs
+
+error_handling:
+  on_insufficient_n: "refuse_with_explanation"
+  on_consent_scope_missing: "exclude_contributor_set"
+  on_dp_budget_exhausted: "refuse_until_budget_refresh"
+  on_external_replication_failure: "flag_low_confidence + continue"
+
+sla:
+  p50_latency_ms: 8000
+  p99_latency_ms: 30000
+  availability: "99%"
+
+dependencies:
+  - cohort-discovery-agent
+  - causal-inference-agent
+  - falsification-agent
+  - audit-governance-agent
+  - law-awareness-agent

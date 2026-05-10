@@ -1,0 +1,62 @@
+provider_id: trudiagnostic
+display_name: "TruDiagnostic"
+kind: lab
+modality: epigenetics
+homepage: "https://www.trudiagnostic.com"
+auth:
+  type: oauth2
+  authorization_url: "https://api.trudiagnostic.com/oauth/authorize"
+  token_url: "https://api.trudiagnostic.com/oauth/token"
+  scopes: ["read:results", "read:profile"]
+webhook:
+  enabled: true
+  event: "result.ready"
+  signature_header: "X-TruDiagnostic-Signature"
+polling:
+  enabled: true
+  schedule: "0 */6 * * *"
+biomarkers_supplied:
+  - epi_age
+  - dunedin_pace
+  - phenoage_acceleration
+  - grimage_acceleration
+  - telomere_length
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    epi_age:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "epi-age-dnam"
+        display: "Epigenetic Age (DNAmAge)"
+      valueQuantity: { unit: "a", system: "http://unitsofmeasure.org", code: "a" }
+    dunedin_pace:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "dunedin-pace"
+        display: "DunedinPACE"
+      valueQuantity: { unit: "1", system: "http://unitsofmeasure.org", code: "1" }
+    phenoage_acceleration:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "phenoage-accel"
+      valueQuantity: { unit: "a", system: "http://unitsofmeasure.org", code: "a" }
+    grimage_acceleration:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "grimage-accel"
+      valueQuantity: { unit: "a", system: "http://unitsofmeasure.org", code: "a" }
+    telomere_length:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "telomere-mean-kb"
+      valueQuantity: { unit: "kb", system: "http://unitsofmeasure.org", code: "kbp" }
+privacy_class: high
+consent_scope:
+  - "Read epigenetic age results from TruDiagnostic"
+  - "Store results encrypted in your AgeDefy vault"
+  - "Allow anonymized contribution to cohort matching (revocable)"
+legal_jurisdictions_blocked: []
+clinical_validation:
+  ce_marked: false
+  fda_status: "wellness_device"

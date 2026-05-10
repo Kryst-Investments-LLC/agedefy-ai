@@ -1,0 +1,97 @@
+name: on-device-inference-agent
+version: 0.1.0
+role: Local-only inference for high-sensitivity biomarkers (genomics, raw CGM, mental-health text)
+owners: ["@kryst-investments-llc/platform", "@kryst-investments-llc/legal"]
+description: |
+  Tier 3.2 — runs inference on the user's own device (iOS / Android /
+  desktop browser via WebGPU/WASM). Sensitive payloads (raw VCF, raw
+  glucose timeseries, free-text journals) never leave the device.
+  Only the derived, jurisdictionally-cleared outputs are POSTed back.
+
+  Architecture turns HIPAA + GDPR + LGPD into a structural advantage:
+  the data is never in the AgeDefy server perimeter, so the regulatory
+  burden collapses to "we do not collect this data".
+
+models:
+  - id: phi4_mini_longevity
+    family: phi-4-mini
+    quantization: q4_k_m
+    target_size_mb: 2400
+    runtimes: [coreml_ios, ane, onnxruntime_android, webgpu]
+    fine_tuned_on: ["agedefy-internal-longevity-instructions-v1"]
+  - id: llama3_8b_genomics
+    family: llama-3.1-8b-instruct
+    quantization: q4_k_m
+    target_size_mb: 4800
+    runtimes: [coreml_ios, vulkan_android, webgpu]
+    fine_tuned_on: ["clinvar-2026q1", "gnomad-3.1.2-summary"]
+  - id: phi4_safety_classifier
+    family: phi-4-mini
+    target_size_mb: 1600
+    runtimes: [coreml_ios, onnxruntime_android, webgpu]
+    purpose: "self-harm / mental-health journal redaction before any server upload"
+
+capabilities:
+  - parse_vcf_locally
+  - call_variants_locally
+  - classify_journal_safety_locally
+  - summarize_cgm_window_locally
+  - sign_local_inference_with_attestation
+
+inputs:
+  - name: payload
+    description: |
+      Sensitive raw payload that must NEVER leave the device.
+      The agent never receives this server-side; only the device runtime does.
+    required: true
+    privacy_class: critical_local_only
+
+outputs:
+  - name: derived_summary
+    description: De-identified, aggregated, jurisdictionally-cleared summary safe to upload
+  - name: device_attestation
+    description: Hardware attestation (DeviceCheck / Play Integrity / WebAuthn)
+
+device_attestation:
+  ios: DeviceCheck + AppAttest
+  android: Play_Integrity_API
+  web: WebAuthn_with_secure_enclave
+
+jurisdictional_advantage:
+  US: "GINA + HIPAA — server never collects PHI for these flows"
+  EU: "GDPR Art. 9 special-category data not processed by controller"
+  BR: "LGPD Art. 11 sensitive data not collected"
+  CA: "PIPEDA + provincial PHIPA — minimised by design"
+
+server_side_contract:
+  endpoint: "POST /v1/local-inference/receipts"
+  accepts:
+    - derived_summary
+    - device_attestation
+    - model_version_used
+    - on_device_consent_record
+  rejects:
+    - raw_vcf
+    - raw_glucose_timeseries
+    - raw_journal_text
+  rejection_behavior: "400 + alert_security + drop_payload_unread"
+
+error_handling:
+  on_attestation_failure: "refuse_and_alert_security"
+  on_model_version_mismatch: "refuse_and_request_app_update"
+  on_raw_payload_detected: "drop_unread + alert_security"
+  on_consent_revoked: "purge_local_state"
+
+sla:
+  p50_latency_ms: 100
+  p99_latency_ms: 500
+  availability: "99.9%"
+
+dependencies:
+  - audit-governance-agent
+  - law-awareness-agent
+  - master-orchestrator-agent
+
+tracing:
+  enabled: true
+  on_device_telemetry_only: true

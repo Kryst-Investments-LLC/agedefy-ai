@@ -17,3 +17,79 @@ panels:
   - id: longevity_premium
     name: "Longevity Premium"
     biomarkers: [hba1c, apob, lp_a, hs_crp, vitamin_d, epi_age]
+
+  # ---- Tier 1.1 Multi-omics panels ----
+  - id: epigenetic_clocks
+    name: "Epigenetic Clocks (Methylation)"
+    modality: epigenetics
+    biomarkers: [epi_age, dunedin_pace, phenoage_acceleration, grimage_acceleration, telomere_length]
+    typical_providers: [trudiagnostic, elysium_index, horvath_lab]
+    requires_clinician_review: false
+    privacy_class: high
+
+  - id: longevity_genomics
+    name: "Longevity Genomics (Variant + PRS)"
+    modality: genomics
+    biomarkers: [apoe_genotype, mthfr_c677t, foxo3_rs2802292, prs_cad]
+    typical_providers: [twentythree_and_me, ancestry_dna, nebula_genomics]
+    requires_clinician_review: true
+    privacy_class: critical
+
+  - id: aging_proteomics
+    name: "Aging Proteomics Panel"
+    modality: proteomics
+    biomarkers: [gdf15, il6_hs, cystatin_c, nt_probnp]
+    typical_providers: [somalogic_somascan, olink_explore_ht]
+    requires_clinician_review: false
+    privacy_class: medium
+
+  - id: metabolomics_aging
+    name: "Aging Metabolomics Panel"
+    modality: metabolomics
+    biomarkers: [branched_chain_aa, tmao, nad_plus, ketone_bhb]
+    typical_providers: [metabolon, nightingale_health]
+    requires_clinician_review: false
+    privacy_class: medium
+
+  - id: gut_microbiome
+    name: "Gut Microbiome Panel"
+    modality: microbiome
+    biomarkers:
+      [
+        microbiome_diversity_shannon,
+        akkermansia_relative_abundance,
+        firmicutes_bacteroidetes_ratio,
+      ]
+    typical_providers: [viome, zoe, ubiome_legacy]
+    requires_clinician_review: false
+    privacy_class: medium
+
+  - id: continuous_wearable
+    name: "Continuous Wearable Stream"
+    modality: wearable
+    biomarkers:
+      [hrv_rmssd, resting_hr, sleep_efficiency, cgm_glucose_mean, cgm_glucose_std]
+    typical_providers:
+      [apple_healthkit, whoop, oura, garmin_connect, dexcom_g7]
+    requires_clinician_review: false
+    privacy_class: medium
+
+  - id: omni_longevity_v1
+    name: "Omni-Longevity v1 (multi-omics composite)"
+    description: |
+      Composite panel that aggregates one full draw across blood chemistry,
+      epigenetics, proteomics, metabolomics, microbiome, plus 30 days of
+      paired wearable stream data. Powers cohort-discovery and causal-inference
+      agent inputs.
+    modality: composite
+    composed_of:
+      [
+        longevity_premium,
+        epigenetic_clocks,
+        aging_proteomics,
+        metabolomics_aging,
+        gut_microbiome,
+        continuous_wearable,
+      ]
+    requires_clinician_review: true
+    privacy_class: critical

@@ -1,0 +1,94 @@
+name: prediction-market-agent
+version: 0.1.0
+role: Wisdom-of-crowds prior generator structured as a research grant pool (NOT a security)
+owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/legal"]
+description: |
+  Tier 3.3 — internal staking system where users + credentialed
+  researchers commit to predictions on intervention efficacy
+  ("Will rapamycin 6mg weekly reduce hsCRP >0.3 mg/L over 12w in
+  N>=200 contributors?"). Market-clearing prices become a
+  Bayesian prior fed back into `causal-inference-agent`.
+
+  CRITICAL legal posture: this is a **research grant pool**, not a
+  securities offering. Stakers cannot profit on price movement; payouts
+  are in research credits redeemable for AgeDefy services or donated to
+  named longevity charities. Routed through `law-awareness-agent` for
+  every jurisdiction before any feature flag flip.
+
+capabilities:
+  - publish_market_question
+  - accept_stake
+  - resolve_market
+  - distribute_research_credits
+  - emit_aggregate_prior
+  - jurisdictional_eligibility_check
+
+market_question_schema:
+  required: [intervention_id, primary_outcome_biomarker, threshold, n_min, horizon_weeks, resolution_oracle]
+  properties:
+    intervention_id: string
+    primary_outcome_biomarker: string
+    threshold: number
+    n_min: integer
+    horizon_weeks: integer
+    resolution_oracle:
+      enum: [federated_n_of_1_aggregate, peer_reviewed_publication, registered_clinical_trial]
+
+stake_mechanics:
+  unit: "research_credit"
+  not_a_security: true
+  not_transferable_to_fiat: true
+  redeemable_for:
+    - agedefy_subscription_months
+    - donation_to_methuselah_foundation
+    - donation_to_buck_institute
+    - donation_to_academy_for_health_and_lifespan_research
+  max_stake_per_user_per_market: 100
+  min_market_liquidity_to_open: 25
+
+aggregate_prior_emission:
+  format: "beta_distribution(alpha, beta) per market"
+  consumer: causal-inference-agent
+  refresh_schedule: "0 */1 * * *"
+
+regulatory:
+  US: "CFTC no-action — predictive markets in research credits ≤ academic incentive"
+  EU: "Not within MiFID II — non-fungible, non-transferable research credit"
+  UK: "Not gambling — outcome resolution is scientific, not chance-based"
+  BR: "CVM exempt — não é valor mobiliário"
+  per_jurisdiction_legal_check_required: true
+
+inputs:
+  - name: action
+    description: One of publish_market | stake | resolve | redeem.
+    required: true
+    type: string
+  - name: payload
+    description: Action-specific payload conforming to market_question_schema or stake schema.
+    required: true
+    type: object
+
+outputs:
+  - name: result
+    description: Action result (market id, stake id, resolution outcome, or redemption receipt).
+    type: object
+  - name: aggregate_prior
+    description: Updated beta_distribution prior emitted to causal-inference-agent.
+    type: object
+
+error_handling:
+  on_jurisdiction_block: "refuse_and_explain"
+  on_below_min_liquidity: "hold_market_closed"
+  on_resolution_oracle_unavailable: "defer_resolution + retry"
+  on_user_stake_cap_exceeded: "refuse_with_remaining_budget"
+
+sla:
+  p50_latency_ms: 400
+  p99_latency_ms: 1500
+  availability: "99.5%"
+
+dependencies:
+  - law-awareness-agent
+  - audit-governance-agent
+  - cohort-discovery-agent
+  - causal-inference-agent

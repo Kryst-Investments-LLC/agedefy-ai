@@ -1,0 +1,51 @@
+provider_id: apple_healthkit
+display_name: "Apple HealthKit"
+kind: wearable
+modality: wearable
+homepage: "https://developer.apple.com/health-fitness/"
+auth:
+  type: native_oauth_pkce
+  scopes:
+    - "HKQuantityTypeIdentifierHeartRate"
+    - "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    - "HKQuantityTypeIdentifierRestingHeartRate"
+    - "HKCategoryTypeIdentifierSleepAnalysis"
+    - "HKQuantityTypeIdentifierVO2Max"
+    - "HKQuantityTypeIdentifierBloodGlucose"
+  notes: "iOS-only; data stays on-device until user explicitly syncs"
+webhook:
+  enabled: true
+  channel: "background_delivery"
+  notes: "Apple BackgroundDelivery API pushes deltas to the app, then app POSTs"
+polling:
+  enabled: false
+biomarkers_supplied:
+  - hrv_rmssd
+  - resting_hr
+  - sleep_efficiency
+  - cgm_glucose_mean
+  - cgm_glucose_std
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    hrv_rmssd:
+      code: { system: "http://loinc.org", code: "80404-7", display: "HRV SDNN" }
+      valueQuantity: { unit: "ms", system: "http://unitsofmeasure.org", code: "ms" }
+    resting_hr:
+      code: { system: "http://loinc.org", code: "40443-4", display: "Resting Heart Rate" }
+      valueQuantity: { unit: "bpm", system: "http://unitsofmeasure.org", code: "/min" }
+    sleep_efficiency:
+      code: { system: "http://agedefy.ai/fhir/CodeSystem/longevity", code: "sleep-efficiency-pct" }
+      valueQuantity: { unit: "%", system: "http://unitsofmeasure.org", code: "%" }
+privacy_class: medium
+streaming:
+  enabled: true
+  delta_trigger:
+    biomarker: hrv_rmssd
+    rolling_window_days: 7
+    threshold_pct: 15
+    on_breach: "publish('biomarker.delta', { biomarker, value, baseline })"
+consent_scope:
+  - "Read heart rate, HRV, sleep, VO2 max, and CGM data from Apple Health"
+  - "Stream changes to AgeDefy in near-real-time"
+legal_jurisdictions_blocked: []

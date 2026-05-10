@@ -1,0 +1,54 @@
+provider_id: somalogic_somascan
+display_name: "SomaLogic SomaScan"
+kind: lab
+modality: proteomics
+homepage: "https://somalogic.com"
+auth:
+  type: api_key
+  header: "X-SomaLogic-Key"
+webhook:
+  enabled: true
+  event: "assay.complete"
+  signature_header: "X-SomaLogic-Signature"
+polling:
+  enabled: false
+biomarkers_supplied:
+  - gdf15
+  - il6_hs
+  - cystatin_c
+  - nt_probnp
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    gdf15:
+      code:
+        system: "http://loinc.org"
+        code: "85299-4"
+        display: "GDF15 [Mass/volume]"
+      valueQuantity: { unit: "pg/mL", system: "http://unitsofmeasure.org", code: "pg/mL" }
+    il6_hs:
+      code:
+        system: "http://loinc.org"
+        code: "26881-3"
+        display: "Interleukin 6 [Mass/volume]"
+      valueQuantity: { unit: "pg/mL", system: "http://unitsofmeasure.org", code: "pg/mL" }
+    cystatin_c:
+      code:
+        system: "http://loinc.org"
+        code: "33863-2"
+        display: "Cystatin C [Mass/volume]"
+      valueQuantity: { unit: "mg/L", system: "http://unitsofmeasure.org", code: "mg/L" }
+    nt_probnp:
+      code:
+        system: "http://loinc.org"
+        code: "33762-6"
+        display: "NT-proBNP [Mass/volume]"
+      valueQuantity: { unit: "pg/mL", system: "http://unitsofmeasure.org", code: "pg/mL" }
+privacy_class: high
+consent_scope:
+  - "Read SomaScan assay results"
+  - "Store encrypted in your AgeDefy vault"
+legal_jurisdictions_blocked: []
+clinical_validation:
+  ce_marked: true
+  fda_status: "research_use_only"

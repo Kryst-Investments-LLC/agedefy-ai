@@ -43,3 +43,43 @@ sla:
 retention:
   audit_log_days: 2555   # 7 years
   trace_log_days: 90
+
+# ---- Tier 2.4 Verifiable AI provenance ----
+verifiable_credentials:
+  enabled: true
+  spec: "W3C Verifiable Credentials Data Model 2.0"
+  proof_format: "Data Integrity 1.0 / EdDSA-Jcs-2022"
+  signing_key:
+    algorithm: Ed25519
+    storage: KMS_HSM_backed
+    rotation_days: 90
+  issuer_did: "did:web:agedefy.ai"
+  issued_credential_types:
+    - AgeDefyRecommendation
+    - AgeDefyN1TrialResult
+    - AgeDefyDigitalTwinSimulation
+    - AgeDefyRegulatoryPassport
+    - AgeDefyOmicsIngestionReceipt
+  required_subject_fields:
+    - model_version
+    - inputs_hash
+    - citations
+    - jurisdiction_rule_version
+    - confidence_class
+    - clinician_signoff
+  every_recommendation_signed: true
+  publication:
+    user_facing_endpoint: "/api/vc/:id"
+    public_status_list_2021_endpoint: "/api/vc/status-list"
+  liability_story: |
+    Solves the "AI gave me bad advice" problem competitors have no
+    answer for: every recommendation is cryptographically signed and
+    independently verifiable, with the exact rule version, inputs hash,
+    and model versions that produced it. Recommendations can be revoked
+    by adding to the StatusList2021. Court-admissible chain of custody.
+
+capabilities_added_for_vc:
+  - issue_verifiable_credential
+  - revoke_verifiable_credential
+  - publish_status_list_2021
+  - verify_external_vc

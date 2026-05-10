@@ -46,3 +46,66 @@ routing:
 examples:
   - input: { item: { type: "protocol", contains: ["rapamycin"] }, risk_score: 0.78 }
     output: { review_id: "rev_01H...", status: "queued" }
+
+# ---- Tier 3.1 Embedded clinician network with structured JSON handoff ----
+network_partners:
+  - id: steadymd
+    coverage: [US]
+    specialties: [internal_medicine, endocrinology, longevity]
+    api: "https://partner.steadymd.com/api/v2"
+  - id: openloop
+    coverage: [US]
+    specialties: [primary_care, hormone_replacement]
+    api: "https://api.openloophealth.com/v1"
+  - id: wheel
+    coverage: [US]
+    specialties: [primary_care, mental_health]
+    api: "https://api.wheel.com/v1"
+
+structured_handoff:
+  enabled: true
+  format: "JSON case packet (NOT chat transcript)"
+  schema_ref: schemas/clinician-handoff.v1.json
+  packet_contents:
+    - patient_summary:
+        biomarkers_latest_panel: object
+        wearable_30d_window: object
+        active_interventions: array
+        adherence_pct: number
+    - ai_assessment:
+        recommendation: object
+        confidence: number
+        cited_evidence: array
+        causal_estimate_id: string
+        digital_twin_simulation_id: string
+        falsification_passed: boolean
+    - risk_signals:
+        risk_class: string  # low | medium | high | critical
+        triggered_safety_rules: array
+        compound_interactions: array
+    - jurisdiction_context:
+        user_jurisdiction: string
+        applicable_legal_rule_set_version: string
+        required_disclosures: array
+    - vc_chain:
+        recommendation_vc: string
+        omics_ingestion_receipt_vc: string
+        n_of_1_trial_result_vc: string
+  triggers_handoff_when:
+    - "ai_confidence < 0.65"
+    - "risk_class IN ('high', 'critical')"
+    - "user.requested_clinician_signoff == true"
+    - "intervention.requires_prescription == true"
+  return_payload:
+    schema_ref: schemas/clinician-decision.v1.json
+    fields:
+      - decision: enum [approve, modify, reject]
+      - clinician_did: string
+      - clinician_signature_vc: string
+      - modifications: object
+      - free_text_to_user: string
+  sla_minutes_by_priority:
+    routine: 240
+    expedited: 60
+    urgent: 15
+  audit_required: true

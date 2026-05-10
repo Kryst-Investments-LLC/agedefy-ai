@@ -1,0 +1,46 @@
+provider_id: viome
+display_name: "Viome (Gut Microbiome)"
+kind: lab
+modality: microbiome
+homepage: "https://www.viome.com"
+auth:
+  type: oauth2
+  authorization_url: "https://api.viome.com/oauth/authorize"
+  token_url: "https://api.viome.com/oauth/token"
+  scopes: ["read:microbiome", "read:recommendations"]
+webhook:
+  enabled: true
+  event: "report.published"
+  signature_header: "X-Viome-Signature"
+polling:
+  enabled: true
+  schedule: "0 5 * * *"
+biomarkers_supplied:
+  - microbiome_diversity_shannon
+  - akkermansia_relative_abundance
+  - firmicutes_bacteroidetes_ratio
+fhir_r5_mapping:
+  resource: Observation
+  per_biomarker:
+    microbiome_diversity_shannon:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "microbiome-shannon-index"
+      valueQuantity: { unit: "1", system: "http://unitsofmeasure.org", code: "1" }
+    akkermansia_relative_abundance:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "akkermansia-rel-abund"
+      valueQuantity: { unit: "%", system: "http://unitsofmeasure.org", code: "%" }
+    firmicutes_bacteroidetes_ratio:
+      code:
+        system: "http://agedefy.ai/fhir/CodeSystem/longevity"
+        code: "firmicutes-bacteroidetes-ratio"
+      valueQuantity: { unit: "1", system: "http://unitsofmeasure.org", code: "1" }
+privacy_class: medium
+consent_scope:
+  - "Read Viome microbiome reports"
+legal_jurisdictions_blocked: []
+clinical_validation:
+  ce_marked: false
+  fda_status: "wellness_device"

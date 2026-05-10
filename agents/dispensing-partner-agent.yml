@@ -1,0 +1,83 @@
+name: dispensing-partner-agent
+version: 0.1.0
+role: Auto-adjust supplement / Rx dispensing schedules with robotic-pharmacy partners
+owners: ["@kryst-investments-llc/commerce", "@kryst-investments-llc/clinical"]
+description: |
+  Tier 3.4 — turns AgeDefy recommendations into automatically-dispensed,
+  weekly-personalised supplement / Rx packs via robotic pharmacy
+  partners. When `digital-twin-agent` or `causal-inference-agent`
+  triggers an intervention dose change, this agent pushes the
+  prescription/supplement update to the partner's API. The user
+  receives a reblister'd weekly pack at the new dose without manual
+  intervention.
+
+partners:
+  - id: pillpack
+    coverage: [US]
+    capability: rx_packs
+    api: "https://api.pillpack.com/v3"
+    requires_clinician_signoff: true
+  - id: cabinet_health
+    coverage: [US]
+    capability: otc_supplement_personalised_packs
+    api: "https://api.cabinethealth.com/v1"
+    requires_clinician_signoff: false
+  - id: amazon_pharmacy
+    coverage: [US]
+    capability: rx_fulfillment
+    api: "https://pharmacy-api.amazon.com/v1"
+    requires_clinician_signoff: true
+
+capabilities:
+  - sync_user_stack_to_partner
+  - apply_dose_change
+  - rotate_lot_for_freshness
+  - emit_dispense_receipt_vc
+  - reconcile_inventory_weekly
+
+inputs:
+  - name: user_id
+    description: Pseudonymous user identifier whose stack is being dispensed.
+    required: true
+  - name: stack_change
+    description: Diff vs previous week's stack
+    required: true
+  - name: signoff
+    description: Clinician VC for prescription items (Tier 3.1)
+    required: false
+
+outputs:
+  - name: dispense_order_id
+    description: Partner-side order id used for tracking and reconciliation.
+  - name: estimated_arrival_iso
+    description: ISO-8601 estimated arrival timestamp returned by the dispensing partner.
+  - name: receipt_vc
+    description: W3C Verifiable Credential receipt signing the dispense event for audit-governance-agent.
+
+guardrails:
+  on_partner_4xx: "alert + freeze_stack_change + clinician_review"
+  on_dose_change_above_safe_step: "block + escalate_to_clinician_review_agent"
+  on_interaction_added: "delegate compound-interaction-agent"
+  weekly_reconciliation_required: true
+
+error_handling:
+  on_partner_4xx: "alert + freeze_stack_change + clinician_review"
+  on_partner_5xx: "retry_with_backoff_max_3"
+  on_dose_change_above_safe_step: "block_and_escalate"
+  on_inventory_mismatch: "halt_dispense + alert_oncall"
+
+sla:
+  p50_latency_ms: 800
+  p99_latency_ms: 3000
+  availability: "99.5%"
+
+economic_moat:
+  subscription_lock_in: high
+  rake_share_with_partner: "negotiated_per_partner"
+  user_savings_vs_pharmacy_pickup_pct: 30
+
+dependencies:
+  - clinician-review-agent
+  - compound-interaction-agent
+  - audit-governance-agent
+  - law-awareness-agent
