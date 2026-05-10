@@ -60,10 +60,8 @@ steps:
       adherence_prior_from_history: true
       biomarker_noise_prior_from_wearable_baseline: true
     outputs:
-      - name: block_schedule
-        type: object
-      - name: minimum_detectable_effect
-        type: number
+      - block_schedule
+      - minimum_detectable_effect
     timeout_ms: 1500
 
   - id: causal_pretest
@@ -74,8 +72,7 @@ steps:
       outcome: "${input.primary_outcome_biomarker}"
       cohort_source: "agedefy_federated_v1"
     outputs:
-      - name: population_prior
-        type: object
+      - population_prior
     timeout_ms: 4000
 
   - id: enroll
