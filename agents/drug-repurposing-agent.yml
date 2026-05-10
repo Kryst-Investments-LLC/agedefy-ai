@@ -32,9 +32,11 @@ inputs:
     type: array
     required: false
   - name: minimum_effect_size_z
+    description: Minimum z-score effect size threshold for a candidate signal to be reported.
     type: number
     default: 0.6
   - name: minimum_n
+    description: Minimum cohort size (post differential-privacy filtering) required to surface a signal.
     type: integer
     default: 200
 

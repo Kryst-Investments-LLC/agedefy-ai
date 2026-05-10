@@ -40,6 +40,7 @@ inputs:
     required: true
     type: array
   - name: horizon_weeks
+    description: Simulation horizon in weeks (default 260 = 5 years; max 1300 = 25 years)
     required: false
     type: integer
     default: 260

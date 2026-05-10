@@ -19,8 +19,10 @@ capabilities:
 
 inputs:
   - name: provider_id
+    description: Identifier of the omics data provider (e.g. trudiagnostic, somalogic_somascan, viome).
     required: true
   - name: user_id
+    description: Pseudonymous user identifier used to attach the ingested panel to the user record.
     required: true
   - name: payload_or_summary
     description: Provider webhook body OR client-derived VCF call summary

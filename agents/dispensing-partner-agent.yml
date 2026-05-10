@@ -37,6 +37,7 @@ capabilities:
 
 inputs:
   - name: user_id
+    description: Pseudonymous user identifier whose stack is being dispensed.
     required: true
   - name: stack_change
     description: Diff vs previous week's stack
@@ -47,8 +48,11 @@ inputs:
 
 outputs:
   - name: dispense_order_id
+    description: Partner-side order id used for tracking and reconciliation.
   - name: estimated_arrival_iso
+    description: ISO-8601 estimated arrival timestamp returned by the dispensing partner.
   - name: receipt_vc
+    description: W3C Verifiable Credential receipt signing the dispense event for audit-governance-agent.
 
 guardrails:
   on_partner_4xx: "alert + freeze_stack_change + clinician_review"
