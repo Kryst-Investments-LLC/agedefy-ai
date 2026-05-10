@@ -60,8 +60,8 @@ privacy:
   consent_source: "metadata/lab-providers/<provider_id>.yml#consent_scope"
 
 sla:
-  ingest_p50_latency_ms: 800
-  ingest_p99_latency_ms: 4000
+  p50_latency_ms: 800
+  p99_latency_ms: 4000
   delta_detection_p50_latency_ms: 1500
   availability: "99.9%"
 
