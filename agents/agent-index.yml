@@ -25,3 +25,31 @@ agents:
     type: orchestrator
     path: agents/master-orchestrator-agent.yml
     domain: cross-agent routing and escalation
+  - name: literature-synthesis-agent
+    type: research
+    path: agents/literature-synthesis-agent.yml
+    domain: PubMed / bioRxiv ingestion, mechanism extraction, hypothesis ranking
+  - name: target-identification-agent
+    type: research
+    path: agents/target-identification-agent.yml
+    domain: López-Otín hallmark crossref, OpenTargets / DepMap target scoring
+  - name: causal-inference-agent
+    type: research
+    path: agents/causal-inference-agent.yml
+    domain: Mendelian randomization, DAG construction, confound detection
+  - name: compound-interaction-agent
+    type: safety
+    path: agents/compound-interaction-agent.yml
+    domain: drug-drug, drug-supplement, drug-peptide interaction prediction
+  - name: trial-design-agent
+    type: research
+    path: agents/trial-design-agent.yml
+    domain: N-of-1 and adaptive trial protocol drafting with power calculation
+  - name: cohort-discovery-agent
+    type: research
+    path: agents/cohort-discovery-agent.yml
+    domain: cohort discovery DSL, recruitment feasibility, k-anonymity enforcement
+  - name: falsification-agent
+    type: research
+    path: agents/falsification-agent.yml
+    domain: adversarial red-team falsification of every claim before publication
