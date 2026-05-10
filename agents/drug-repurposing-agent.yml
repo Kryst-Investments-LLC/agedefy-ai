@@ -72,6 +72,17 @@ partners_target:
   - Calico Labs
   - Altos Labs
 
+error_handling:
+  on_insufficient_n: "refuse_with_explanation"
+  on_consent_scope_missing: "exclude_contributor_set"
+  on_dp_budget_exhausted: "refuse_until_budget_refresh"
+  on_external_replication_failure: "flag_low_confidence + continue"
+
+sla:
+  p50_latency_ms: 8000
+  p99_latency_ms: 30000
+  availability: "99%"
+
 dependencies:
   - cohort-discovery-agent
   - causal-inference-agent

@@ -76,6 +76,17 @@ server_side_contract:
     - raw_journal_text
   rejection_behavior: "400 + alert_security + drop_payload_unread"
 
+error_handling:
+  on_attestation_failure: "refuse_and_alert_security"
+  on_model_version_mismatch: "refuse_and_request_app_update"
+  on_raw_payload_detected: "drop_unread + alert_security"
+  on_consent_revoked: "purge_local_state"
+
+sla:
+  p50_latency_ms: 100
+  p99_latency_ms: 500
+  availability: "99.9%"
+
 dependencies:
   - audit-governance-agent
   - law-awareness-agent

@@ -4,6 +4,44 @@ horizon: "3_year"
 role: Goal-directed agent that takes action on behalf of the user (book labs, refill Rx, schedule clinician, negotiate insurance)
 owners: ["@kryst-investments-llc/platform", "@kryst-investments-llc/clinical", "@kryst-investments-llc/legal"]
 status: "charter"
+
+capabilities:
+  - parse_user_goal_dsl
+  - plan_quarterly_actions
+  - execute_reversible_action
+  - request_human_signoff_for_irreversible
+  - undo_within_window
+  - emit_action_vc
+
+inputs:
+  - name: user_goal
+    description: Goal DSL document (see goal_dsl_example) declaring target healthspan / confidence / budget / preferences / constraints.
+    required: true
+    type: object
+  - name: user_context
+    description: User profile snapshot including jurisdiction, active interventions, current biomarker panel.
+    required: true
+    type: object
+
+outputs:
+  - name: quarterly_plan
+    description: Ordered list of planned actions with reversibility flags and required signoffs.
+    type: object
+  - name: executed_actions
+    description: Audit trail of actions actually executed (with VC ids).
+    type: array
+
+error_handling:
+  on_irreversible_without_signoff: "refuse_and_emit_signoff_request"
+  on_undo_window_expired: "refuse_and_emit_explanation"
+  on_partner_unavailable: "queue_and_retry_with_backoff"
+  on_jurisdiction_block: "refuse_and_route_to_law_awareness_agent"
+
+sla:
+  p50_latency_ms: 2000
+  p99_latency_ms: 8000
+  availability: "99.5%"
+
 description: |
   Tier 4.3 — given a long-horizon goal ("extend healthspan to 95 with
   confidence ≥ 0.7") this agent produces a quarterly plan, takes

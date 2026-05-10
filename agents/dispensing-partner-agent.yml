@@ -56,6 +56,17 @@ guardrails:
   on_interaction_added: "delegate compound-interaction-agent"
   weekly_reconciliation_required: true
 
+error_handling:
+  on_partner_4xx: "alert + freeze_stack_change + clinician_review"
+  on_partner_5xx: "retry_with_backoff_max_3"
+  on_dose_change_above_safe_step: "block_and_escalate"
+  on_inventory_mismatch: "halt_dispense + alert_oncall"
+
+sla:
+  p50_latency_ms: 800
+  p99_latency_ms: 3000
+  availability: "99.5%"
+
 economic_moat:
   subscription_lock_in: high
   rake_share_with_partner: "negotiated_per_partner"
