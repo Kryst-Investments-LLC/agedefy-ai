@@ -6,21 +6,28 @@
 //   const graph = await getAgentGraph();
 //   const result = await graph.dispatch({ intent: "<natural language intent>" });
 
-import path from "node:path";
-import { loadAgentGraph, type AgentGraph } from "@kryst-investments-llc/master-orchestrator/agent-graph";
+import path from 'node:path';
+// @ts-expect-error -- shared package ships JS only; types arrive in v0.2.0
+import { loadAgentGraph } from '@kryst-investments-llc/master-orchestrator';
+
+type AgentGraph = {
+  register: (name: string, handler: (ctx: { intent: string; payload?: unknown }) => Promise<unknown>) => void;
+  dispatch: (input: { intent: string; payload?: unknown }) => Promise<unknown>;
+  list: () => string[];
+};
 
 let cached: Promise<AgentGraph> | null = null;
 
 export function agentsDir(): string {
-  return path.resolve(process.cwd(), "agents");
+  return path.resolve(process.cwd(), 'agents');
 }
 
 export function getAgentGraph(): Promise<AgentGraph> {
   if (!cached) {
     cached = loadAgentGraph(agentsDir(), {
-      orchestratorName: "master-orchestrator-agent",
-      traceSink: path.resolve(process.cwd(), "traces", "orchestrator.jsonl"),
-    });
+      orchestratorName: 'master-orchestrator-agent',
+      traceSink: path.resolve(process.cwd(), 'traces', 'orchestrator.jsonl'),
+    }) as Promise<AgentGraph>;
   }
   return cached;
 }
