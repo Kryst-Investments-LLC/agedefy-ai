@@ -1,7 +1,7 @@
 name: n_of_1_trial_workflow
 version: 1.0.0
 owners: ["@kryst-investments-llc/research", "@kryst-investments-llc/platform"]
-intent: longevity.personal_trial.design_and_run
+intent: longevity.personal_trial_design_and_run
 description: |
   Personalised N-of-1 trial designer + runner. The user picks an
   intervention (compound, supplement, behavioural protocol). The workflow
