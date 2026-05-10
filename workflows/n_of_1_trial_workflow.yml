@@ -107,7 +107,7 @@ steps:
     agent: clinician-review-agent
     action: route_if_threshold_breached
     when: "validate_intervention.risk_class >= 'medium'"
-    timeout_ms: 0
+    timeout_ms: 600000
 
   - id: certify
     agent: audit-governance-agent
