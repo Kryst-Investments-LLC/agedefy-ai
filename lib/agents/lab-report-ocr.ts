@@ -8,8 +8,10 @@
  * Current providers:
  *  - "openai-vision" (default when OPENAI_API_KEY is set): sends the image
  *    bytes inline to gpt-4o-mini's vision endpoint with a strict transcription
- *    prompt. Works for PNG/JPEG/WEBP/GIF. PDFs are not natively supported —
- *    callers should rasterise first or upload page-by-page.
+ *    prompt. Works for PNG/JPEG/WEBP/GIF. PDFs are forwarded natively via the
+ *    chat-completions `type: "file"` content block (supported by gpt-4o-mini
+ *    and gpt-4o), so single- and multi-page PDFs can be transcribed without a
+ *    separate rasterisation step.
  *  - "noop": disabled stub that throws a clear error. Used in tests and when
  *    no provider is configured.
  *
@@ -76,15 +78,31 @@ async function extractWithOpenAiVision(input: OcrExtractInput): Promise<OcrExtra
   if (!apiKey) {
     throw new OcrError('OPENAI_API_KEY is not configured', 503)
   }
-  if (!IMAGE_MIME_TYPES.has(input.mimeType.toLowerCase())) {
-    throw new OcrError(
-      `openai-vision provider does not support ${input.mimeType}. Convert PDFs to PNG/JPEG before upload.`,
-      415,
-    )
+
+  const mimeType = input.mimeType.toLowerCase()
+  const isPdf = mimeType === 'application/pdf'
+  if (!IMAGE_MIME_TYPES.has(mimeType) && !isPdf) {
+    throw new OcrError(`openai-vision provider does not support ${input.mimeType}`, 415)
   }
 
   const model = process.env.LAB_OCR_OPENAI_MODEL ?? 'gpt-4o-mini'
-  const dataUrl = `data:${input.mimeType};base64,${Buffer.from(input.bytes).toString('base64')}`
+  const base64 = Buffer.from(input.bytes).toString('base64')
+
+  // PDFs use the chat-completions `type: "file"` content block, which gpt-4o
+  // and gpt-4o-mini transcribe natively (all pages in a single request).
+  // Images keep the established `image_url` data-URL path.
+  const contentPart = isPdf
+    ? {
+        type: 'file' as const,
+        file: {
+          filename: 'lab-report.pdf',
+          file_data: `data:application/pdf;base64,${base64}`,
+        },
+      }
+    : {
+        type: 'image_url' as const,
+        image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' as const },
+      }
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -99,10 +117,7 @@ async function extractWithOpenAiVision(input: OcrExtractInput): Promise<OcrExtra
       messages: [
         {
           role: 'user',
-          content: [
-            { type: 'text', text: OPENAI_VISION_PROMPT },
-            { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
-          ],
+          content: [{ type: 'text', text: OPENAI_VISION_PROMPT }, contentPart],
         },
       ],
     }),
