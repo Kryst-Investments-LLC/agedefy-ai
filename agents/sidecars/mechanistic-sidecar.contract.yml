@@ -1,0 +1,145 @@
+contract: mechanistic-sidecar
+version: 0.1.0
+description: |
+  HTTP contract between the Node-side `digital-twin-agent` orchestration
+  and a Python sidecar that hosts the mechanistic simulation libraries
+  (libsbml / scipy.integrate / PK-Sim adapters). The sidecar is stateless;
+  population priors and SBML model files are mounted (read-only) at /models.
+
+  Until the sidecar ships, the Node-side adapter
+  (`lib/agents/digital-twin-agent.ts`) falls back to a deterministic
+  exponential-relaxation simulator that produces shape-correct trajectories
+  for UI development without ever pretending to be physiologically
+  calibrated. The contract is wire-compatible so the same client can talk to
+  either path.
+
+transport:
+  kind: http
+  base_url_env: MECHANISTIC_SIDECAR_URL
+  health_endpoint: /healthz
+  timeout_ms: 20000
+
+endpoints:
+  - path: /v1/simulate
+    method: POST
+    description: |
+      Run a mechanistic simulation for one user over a horizon, under a
+      given intervention stack, returning weekly trajectories with 95% CIs
+      for each requested outcome biomarker.
+    request:
+      content_type: application/json
+      schema:
+        type: object
+        required: [baseline, interventions, horizon_weeks, outcomes]
+        properties:
+          baseline:
+            type: object
+            description: |
+              Subset of metadata/biomarkers.yml ids → current numeric values.
+              Missing values are imputed from population priors with a
+              low_confidence flag in the response.
+            additionalProperties: { type: number }
+          interventions:
+            type: array
+            items:
+              type: object
+              required: [intervention_id, dose, schedule, start_week]
+              properties:
+                intervention_id: { type: string }
+                dose: { type: number }
+                dose_unit: { type: string }
+                schedule:
+                  type: string
+                  enum: [daily, weekly, biweekly, monthly, prn]
+                start_week: { type: integer, minimum: 0 }
+                stop_week: { type: integer }
+                adherence: { type: number, minimum: 0, maximum: 1, default: 0.85 }
+          horizon_weeks:
+            type: integer
+            minimum: 4
+            maximum: 1300
+            default: 260
+          outcomes:
+            type: array
+            items: { type: string }
+          backend:
+            type: string
+            enum: [mechanistic, statistical, hybrid]
+            default: hybrid
+          random_seed:
+            type: integer
+            description: For reproducible CI bands during testing.
+    response:
+      content_type: application/json
+      schema:
+        type: object
+        required: [simulation_id, horizon_weeks, trajectories, backend_used, model_version]
+        properties:
+          simulation_id: { type: string }
+          horizon_weeks: { type: integer }
+          backend_used: { type: string, enum: [mechanistic, statistical, hybrid, fallback-exponential] }
+          model_version: { type: string }
+          trajectories:
+            type: object
+            additionalProperties:
+              type: object
+              required: [weekly_means, ci95_low, ci95_high]
+              properties:
+                weekly_means: { type: array, items: { type: number } }
+                ci95_low: { type: array, items: { type: number } }
+                ci95_high: { type: array, items: { type: number } }
+                contributors:
+                  type: object
+                  description: intervention_id → percentage of expected delta attributable
+                  additionalProperties: { type: number }
+                low_confidence_flag: { type: boolean }
+          warnings:
+            type: array
+            items: { type: string }
+
+  - path: /v1/compare-stacks
+    method: POST
+    description: |
+      Convenience endpoint — runs /v1/simulate twice with two different
+      intervention stacks and returns the per-outcome delta-of-deltas.
+    request:
+      schema:
+        type: object
+        required: [baseline, stack_a, stack_b, horizon_weeks, outcomes]
+        properties:
+          baseline: { type: object, additionalProperties: { type: number } }
+          stack_a: { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
+          stack_b: { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
+          horizon_weeks: { type: integer, default: 260 }
+          outcomes: { type: array, items: { type: string } }
+    response:
+      schema:
+        type: object
+        required: [delta_of_deltas, simulation_id_a, simulation_id_b]
+        properties:
+          simulation_id_a: { type: string }
+          simulation_id_b: { type: string }
+          delta_of_deltas:
+            type: object
+            additionalProperties:
+              type: object
+              required: [stack_a_final, stack_b_final, difference, ci95]
+              properties:
+                stack_a_final: { type: number }
+                stack_b_final: { type: number }
+                difference: { type: number }
+                ci95: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+
+errors:
+  - http_status: 422
+    body: { error: { type: string }, code: { enum: [missing_baseline, unknown_intervention, horizon_out_of_range, unknown_outcome] } }
+  - http_status: 503
+    body: { error: { type: string }, code: { const: solver_unavailable } }
+    fallback: |
+      The Node-side adapter MUST fall back to the deterministic
+      exponential-relaxation simulator and tag backend_used="fallback-exponential".
+
+privacy:
+  pii: false
+  cohort_egress: false
+  inputs_stored: false
