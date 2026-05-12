@@ -207,6 +207,14 @@ export const vcSigner = {
       body: JSON.stringify({ id }),
       traceparent,
     }),
+  status: (id: string, traceparent?: string) =>
+    request<{ id: string; revoked: boolean }>(
+      vcSigner.url(),
+      `/v1/status/${encodeURIComponent(id)}`,
+      { traceparent },
+    ),
+  revocations: (traceparent?: string) =>
+    request<{ revoked: string[] }>(vcSigner.url(), "/v1/revocations", { traceparent }),
 }
 
 export { SidecarError, envOrThrow }
