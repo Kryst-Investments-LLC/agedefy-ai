@@ -130,4 +130,23 @@ describe("renderDigitalTwinForecastPDF", () => {
     const b = renderDigitalTwinForecastPDF(args)
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true)
   })
+
+  it("derives the policy from the VC payload when none is supplied", async () => {
+    const { policyFromVc } = await import("@/lib/wallet/digital-twin-pdf")
+    const vc = buildVc({
+      credentialSubject: {
+        id: "user-123",
+        payload: {
+          backend_used: "fallback-exponential",
+          low_confidence_outcomes: [],
+        },
+      },
+    })
+    const policy = policyFromVc(vc)
+    expect(policy.tier).toBe("illustrative")
+
+    const bytes = renderDigitalTwinForecastPDF({ vc, generatedAt: "2025-01-01T00:00:00Z" })
+    const txt = new TextDecoder().decode(bytes)
+    expect(txt).toContain("ILLUSTRATIVE - NOT CLINICAL GUIDANCE")
+  })
 })
