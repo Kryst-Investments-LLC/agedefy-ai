@@ -84,6 +84,13 @@ describe("runAndSignDigitalTwinAgent", () => {
     const issueCall = fetchMock.mock.calls.find((c) => String(c[0]).includes("/v1/issue"))!
     const issueBody = JSON.parse(issueCall[1]?.body as string)
     expect(issueBody.type).toEqual(["AgeDefyRecommendationReceipt", "DigitalTwinForecastReceipt"])
+
+    // Display-tier fields are baked into the receipt so verifiers don't need
+    // to re-run the policy heuristic.
+    expect(payload.display_tier).toBe("illustrative")
+    expect(payload.is_illustrative).toBe(true)
+    expect(payload.requires_clinician_banner).toBe(true)
+    expect(Array.isArray(payload.low_confidence_outcomes)).toBe(true)
   })
 
   it("propagates sidecar errors (non-5xx) without calling the signer", async () => {

@@ -20,6 +20,7 @@ import {
   type DigitalTwinAgentInput,
   type DigitalTwinAgentOutput,
 } from "./digital-twin-agent"
+import { getTwinDisplayPolicy } from "./twin-display-policy"
 import { signRecommendation } from "@/lib/recommendations/sign"
 import type { VerifiableCredential } from "@/lib/sidecars"
 
@@ -77,12 +78,17 @@ export async function runAndSignDigitalTwinAgent(
   const forecast = await runDigitalTwinAgent(agentInput)
 
   const summaries = summariseTrajectories(forecast, agentInput.baseline)
+  const policy = getTwinDisplayPolicy(forecast)
   const recommendation = {
     simulation_id: forecast.simulation_id,
     backend_used: forecast.backend_used,
     model_version: forecast.model_version,
     horizon_weeks: forecast.horizon_weeks,
     fallback_used: forecast.fallbackUsed,
+    display_tier: policy.tier,
+    is_illustrative: policy.isIllustrative,
+    requires_clinician_banner: policy.requiresClinicianBanner,
+    low_confidence_outcomes: policy.lowConfidenceOutcomes,
     interventions: agentInput.interventions.map((i) => ({
       intervention_id: i.intervention_id,
       dose: i.dose,
