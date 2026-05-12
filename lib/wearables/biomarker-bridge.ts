@@ -86,6 +86,13 @@ const PROMOTABLE_METRICS: Record<string, BiomarkerMapping> = {
     unit: 'bpm',
     dedupeWindowSeconds: 3600,
   },
+  glucose: {
+    biomarkerName: 'Continuous Glucose (CGM)',
+    unit: 'mg/dL',
+    // CGM streams every ~5 minutes; we only need a few promotions per hour
+    // to surface drift, so dedupe at 15 minutes.
+    dedupeWindowSeconds: 900,
+  },
 }
 
 // ─── Core Bridge ────────────────────────────────────────────
