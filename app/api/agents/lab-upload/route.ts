@@ -2,6 +2,12 @@ import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { parseLabReportText } from '@/lib/agents/lab-report-parser'
+import {
+  extractLabReportText,
+  isOcrSupportedMimeType,
+  OcrError,
+  type OcrExtractResult,
+} from '@/lib/agents/lab-report-ocr'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
@@ -59,14 +65,44 @@ export async function POST(request: NextRequest) {
       }
 
       const fileType = file.type || 'application/octet-stream'
-      if (!ALLOWED_CONTENT_TYPES.has(fileType) && !file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
+      const isTextFile =
+        ALLOWED_CONTENT_TYPES.has(fileType) ||
+        file.name.endsWith('.txt') ||
+        file.name.endsWith('.csv')
+
+      if (isTextFile) {
+        reportText = await file.text()
+      } else if (isOcrSupportedMimeType(fileType)) {
+        // PDF / image — route through OCR before parsing
+        const buf = new Uint8Array(await file.arrayBuffer())
+        try {
+          const ocr: OcrExtractResult = await extractLabReportText({
+            bytes: buf,
+            mimeType: fileType,
+          })
+          reportText = ocr.text
+          logger.info('Lab report OCR succeeded', {
+            userId: session.user.id,
+            provider: ocr.provider,
+            model: ocr.modelVersion,
+            sizeBytes: buf.byteLength,
+            mimeType: fileType,
+          })
+        } catch (err) {
+          if (err instanceof OcrError) {
+            return NextResponse.json({ error: err.message }, { status: err.status })
+          }
+          throw err
+        }
+      } else {
         return NextResponse.json(
-          { error: 'Unsupported file type. Upload a text or CSV file with lab results.' },
-          { status: 400 },
+          {
+            error:
+              'Unsupported file type. Upload a text/CSV file, or a PNG/JPEG/WEBP image of the lab report.',
+          },
+          { status: 415 },
         )
       }
-
-      reportText = await file.text()
     } else {
       return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 })
     }
