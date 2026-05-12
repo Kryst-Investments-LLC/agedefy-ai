@@ -28,7 +28,7 @@
 
 import { createHash } from "node:crypto"
 
-import { vcSigner, type VerifiableCredential } from "./sidecars"
+import { vcSigner, type VerifiableCredential } from "@/lib/sidecars"
 
 export interface SignRecommendationInput {
   userId: string
