@@ -1,17 +1,27 @@
 contract: mechanistic-sidecar
-version: 0.1.0
+version: 0.2.0
 description: |
   HTTP contract between the Node-side `digital-twin-agent` orchestration
   and a Python sidecar that hosts the mechanistic simulation libraries
-  (libsbml / scipy.integrate / PK-Sim adapters). The sidecar is stateless;
-  population priors and SBML model files are mounted (read-only) at /models.
+  (scipy.integrate.solve_ivp; libsbml / PK-Sim adapters planned). The
+  sidecar is stateless; population priors and any future SBML model files
+  are mounted (read-only) at /models.
 
-  Until the sidecar ships, the Node-side adapter
-  (`lib/agents/digital-twin-agent.ts`) falls back to a deterministic
-  exponential-relaxation simulator that produces shape-correct trajectories
-  for UI development without ever pretending to be physiologically
-  calibrated. The contract is wire-compatible so the same client can talk to
-  either path.
+  As of v0.2.0 the sidecar implements all three contract backends:
+
+    - `mechanistic` — first-order PK/PD ODE per outcome, RK45
+      (scipy.integrate.solve_ivp). On solver failure the sidecar surfaces
+      HTTP 503 / solver_unavailable per the contract.
+    - `hybrid` — mechanistic first; transparent degradation to
+      `statistical` (with a warning recorded in the response) when the
+      solver cannot service the request.
+    - `statistical` — Monte-Carlo first-order relaxation with literature
+      effect priors. Always available.
+
+  The Node-side adapter (`lib/agents/digital-twin-agent.ts`) still keeps a
+  deterministic exponential-relaxation fallback for the case where the
+  sidecar itself is unreachable; it tags those runs as
+  `backend_used: "fallback-exponential"`.
 
 transport:
   kind: http
@@ -136,8 +146,13 @@ errors:
   - http_status: 503
     body: { error: { type: string }, code: { const: solver_unavailable } }
     fallback: |
-      The Node-side adapter MUST fall back to the deterministic
-      exponential-relaxation simulator and tag backend_used="fallback-exponential".
+      Surfaced when `backend=mechanistic` is requested and the ODE solver
+      cannot service the request. The Node-side adapter MUST then fall back
+      to the in-process deterministic exponential-relaxation simulator and
+      tag backend_used="fallback-exponential". For `backend=hybrid`,
+      degradation happens inside the sidecar (returns 200 with
+      backend_used="statistical" and a warning) and the Node side does
+      nothing extra.
 
 privacy:
   pii: false
