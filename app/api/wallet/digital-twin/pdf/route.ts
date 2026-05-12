@@ -9,10 +9,15 @@ import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
 import type { SimulateResponse, VerifiableCredential } from '@/lib/sidecars'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
-import { renderDigitalTwinForecastPDF } from '@/lib/wallet/digital-twin-pdf'
+import { policyFromVc, renderDigitalTwinForecastPDF } from '@/lib/wallet/digital-twin-pdf'
 
 interface PdfRequestBody {
   vc?: VerifiableCredential
+  /**
+   * Optional. When omitted, the route derives the display policy from the
+   * VC's embedded `display_tier` / `backend_used` fields (PR #24). This lets
+   * wallet apps re-render archived receipts without retaining trajectories.
+   */
   forecast?: Pick<SimulateResponse, 'backend_used' | 'trajectories'>
   recipient?: string
   generatedAt?: string
@@ -51,19 +56,14 @@ export async function POST(request: NextRequest) {
   if (!body.vc || typeof body.vc !== 'object' || !body.vc.id) {
     return NextResponse.json({ error: 'vc is required and must include an id' }, { status: 400 })
   }
-  if (!body.forecast || typeof body.forecast !== 'object') {
-    return NextResponse.json({ error: 'forecast is required' }, { status: 400 })
-  }
 
-  const policy = getTwinDisplayPolicy(body.forecast)
+  const policy = body.forecast ? getTwinDisplayPolicy(body.forecast) : policyFromVc(body.vc)
   const pdfBytes = renderDigitalTwinForecastPDF({
     vc: body.vc,
     policy,
     recipient: body.recipient,
     generatedAt: body.generatedAt,
-  })
-
-  await logAudit({
+  })  await logAudit({
     actorUserId: session.user.id,
     actorEmail: session.user.email ?? undefined,
     tenantId: tenantContext.tenantId,

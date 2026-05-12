@@ -15,12 +15,20 @@
  *   - `calibrated`          → no banner
  */
 
-import type { VerifiableCredential } from "@/lib/sidecars"
-import type { TwinDisplayPolicy } from "@/lib/agents/twin-display-policy"
+import type { VerifiableCredential, MechanisticBackendUsed } from "@/lib/sidecars"
+import {
+  synthesiseDisplayPolicy,
+  type TwinDisplayPolicy,
+} from "@/lib/agents/twin-display-policy"
 
 export interface DigitalTwinPdfInput {
   vc: VerifiableCredential
-  policy: TwinDisplayPolicy
+  /**
+   * Display-tier policy. Optional — when omitted, derived from the VC
+   * payload's embedded `display_tier` / `low_confidence_outcomes` /
+   * `backend_used` fields (added in PR #24).
+   */
+  policy?: TwinDisplayPolicy
   /** Optional clinician/patient name to print as the recipient line. */
   recipient?: string
   /** Optional ISO date string overriding `new Date().toISOString()`. */
@@ -51,6 +59,10 @@ interface ReceiptPayload {
   model_version?: string
   horizon_weeks?: number
   fallback_used?: boolean
+  display_tier?: TwinDisplayPolicy["tier"]
+  is_illustrative?: boolean
+  requires_clinician_banner?: boolean
+  low_confidence_outcomes?: string[]
   interventions?: InterventionRow[]
   outcome_summaries?: OutcomeSummary[]
   warnings?: string[]
@@ -92,6 +104,21 @@ function extractPayload(vc: VerifiableCredential): ReceiptPayload {
   return payload as ReceiptPayload
 }
 
+/**
+ * Derive a TwinDisplayPolicy from a DigitalTwinForecastReceipt VC's embedded
+ * tier fields (PR #24). Falls back to `synthesiseDisplayPolicy(backend_used)`
+ * when those fields are absent so older VCs still render correctly.
+ */
+export function policyFromVc(vc: VerifiableCredential): TwinDisplayPolicy {
+  const payload = extractPayload(vc)
+  const backendUsed: MechanisticBackendUsed =
+    (payload.backend_used as MechanisticBackendUsed | undefined) ?? "fallback-exponential"
+  const lowConfidence = Array.isArray(payload.low_confidence_outcomes)
+    ? payload.low_confidence_outcomes
+    : []
+  return synthesiseDisplayPolicy(backendUsed, lowConfidence)
+}
+
 interface TextOp {
   text: string
   font: "F1" | "F2"
@@ -114,7 +141,8 @@ const MARGIN_X = 54
 const TOP_Y = PAGE_HEIGHT - 60
 
 function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[] } {
-  const { vc, policy } = input
+  const { vc } = input
+  const policy = input.policy ?? policyFromVc(vc)
   const payload = extractPayload(vc)
   const generatedAt = input.generatedAt ?? new Date().toISOString()
   const text: TextOp[] = []

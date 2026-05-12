@@ -90,8 +90,11 @@ describe("POST /api/wallet/digital-twin/pdf", () => {
   it("rejects bodies missing the forecast field with 400", async () => {
     getServerSessionMock.mockResolvedValue({ user: { id: "user-1", email: "u@example.com" } })
     const { POST } = await import("@/app/api/wallet/digital-twin/pdf/route")
+    // VC has no embedded display_tier fields (PR #24): we can still derive a
+    // policy from `backend_used` so a forecast is no longer strictly required.
     const res = await POST(buildRequest({ vc: VC }))
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
+    expect(res.headers.get("x-display-tier")).toBe("calibrated")
   })
 
   it("returns a PDF with the display-tier header and an audit entry", async () => {
@@ -120,5 +123,22 @@ describe("POST /api/wallet/digital-twin/pdf", () => {
       }),
     )
     expect(res.headers.get("x-display-tier")).toBe("illustrative")
+  })
+
+  it("derives the policy from VC.payload.low_confidence_outcomes when forecast is omitted", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "user-1", email: "u@example.com" } })
+    const { POST } = await import("@/app/api/wallet/digital-twin/pdf/route")
+    const vcWithLowConfidence = {
+      ...VC,
+      credentialSubject: {
+        ...VC.credentialSubject,
+        payload: {
+          ...(VC.credentialSubject as { payload: Record<string, unknown> }).payload,
+          low_confidence_outcomes: ["hs_crp"],
+        },
+      },
+    }
+    const res = await POST(buildRequest({ vc: vcWithLowConfidence }))
+    expect(res.headers.get("x-display-tier")).toBe("calibrated-partial")
   })
 })
