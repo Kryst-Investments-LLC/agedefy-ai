@@ -41,6 +41,18 @@ export interface TwinDisplayPolicy {
 
 const FALLBACK_BACKEND: MechanisticBackendUsed = "fallback-exponential"
 
+/** Human-friendly label for each backend; used in badges, PDFs, and tooltips. */
+const BACKEND_LABEL: Record<MechanisticBackendUsed, string> = {
+  mechanistic: "mechanistic ODE",
+  statistical: "statistical priors",
+  hybrid: "hybrid (mechanistic + statistical)",
+  "fallback-exponential": "in-process fallback",
+}
+
+function backendDescriptor(backendUsed: MechanisticBackendUsed): string {
+  return BACKEND_LABEL[backendUsed] ?? String(backendUsed)
+}
+
 function lowConfidenceOutcomesOf(
   trajectories: Record<string, OutcomeTrajectory>,
 ): string[] {
@@ -84,7 +96,7 @@ export function getTwinDisplayPolicy(
       isIllustrative: false,
       requiresClinicianBanner: true,
       lowConfidenceOutcomes,
-      badgeLabel: `Calibrated — ${lowConfidenceOutcomes.length} outcome${
+      badgeLabel: `Calibrated (${backendDescriptor(backendUsed)}) — ${lowConfidenceOutcomes.length} outcome${
         lowConfidenceOutcomes.length === 1 ? "" : "s"
       } low-confidence`,
       badgeTooltip: `Backend: ${backendUsed}. Some outcomes were flagged low-confidence (missing baseline or unknown intervention-outcome pair): ${lowConfidenceOutcomes.join(", ")}.`,
@@ -97,8 +109,55 @@ export function getTwinDisplayPolicy(
     isIllustrative: false,
     requiresClinicianBanner: false,
     lowConfidenceOutcomes: [],
-    badgeLabel: "Calibrated",
+    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})`,
     badgeTooltip: `Backend: ${backendUsed}. All requested outcomes have full-confidence trajectories.`,
+  }
+}
+
+/**
+ * Synthesise a TwinDisplayPolicy from a bare `backend_used` tag plus an
+ * optional list of outcome ids flagged low-confidence — for code paths
+ * (compare-stacks, PDF export route) that don't have a full SimulateResponse
+ * in hand but still need the same labels.
+ */
+export function synthesiseDisplayPolicy(
+  backendUsed: MechanisticBackendUsed,
+  lowConfidenceOutcomes: string[] = [],
+): TwinDisplayPolicy {
+  const sorted = [...lowConfidenceOutcomes].sort()
+  if (backendUsed === FALLBACK_BACKEND) {
+    return {
+      tier: "illustrative",
+      backendUsed,
+      isIllustrative: true,
+      requiresClinicianBanner: true,
+      lowConfidenceOutcomes: sorted,
+      badgeLabel: "Illustrative — not clinical",
+      badgeTooltip:
+        "Trajectories were produced by the in-process fallback simulator because the mechanistic sidecar was unavailable. Do not present as a clinical forecast.",
+    }
+  }
+  if (sorted.length > 0) {
+    return {
+      tier: "calibrated-partial",
+      backendUsed,
+      isIllustrative: false,
+      requiresClinicianBanner: true,
+      lowConfidenceOutcomes: sorted,
+      badgeLabel: `Calibrated (${backendDescriptor(backendUsed)}) — ${sorted.length} outcome${
+        sorted.length === 1 ? "" : "s"
+      } low-confidence`,
+      badgeTooltip: `Backend: ${backendUsed}. Some outcomes were flagged low-confidence: ${sorted.join(", ")}.`,
+    }
+  }
+  return {
+    tier: "calibrated",
+    backendUsed,
+    isIllustrative: false,
+    requiresClinicianBanner: false,
+    lowConfidenceOutcomes: [],
+    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})`,
+    badgeTooltip: `Backend: ${backendUsed}. Full-confidence trajectories.`,
   }
 }
 

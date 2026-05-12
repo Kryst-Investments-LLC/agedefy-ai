@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 import type { TwinDisplayPolicy } from '@/lib/agents/twin-display-policy'
+import { synthesiseDisplayPolicy } from '@/lib/agents/twin-display-policy'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
@@ -29,41 +30,7 @@ function synthesisePolicy(
   backendUsed: MechanisticBackendUsed,
   lowConfidenceOutcomes: string[],
 ): TwinDisplayPolicy {
-  // Mirror getTwinDisplayPolicy without requiring trajectory data.
-  if (backendUsed === 'fallback-exponential') {
-    return {
-      tier: 'illustrative',
-      backendUsed,
-      isIllustrative: true,
-      requiresClinicianBanner: true,
-      lowConfidenceOutcomes,
-      badgeLabel: 'Illustrative - not clinical',
-      badgeTooltip:
-        'Comparison produced by the in-process fallback simulator. Do not present as clinical.',
-    }
-  }
-  if (lowConfidenceOutcomes.length > 0) {
-    return {
-      tier: 'calibrated-partial',
-      backendUsed,
-      isIllustrative: false,
-      requiresClinicianBanner: true,
-      lowConfidenceOutcomes,
-      badgeLabel: `Calibrated - ${lowConfidenceOutcomes.length} outcome${
-        lowConfidenceOutcomes.length === 1 ? '' : 's'
-      } low-confidence`,
-      badgeTooltip: `Backend: ${backendUsed}. Some outcomes were flagged low-confidence: ${lowConfidenceOutcomes.join(', ')}.`,
-    }
-  }
-  return {
-    tier: 'calibrated',
-    backendUsed,
-    isIllustrative: false,
-    requiresClinicianBanner: false,
-    lowConfidenceOutcomes: [],
-    badgeLabel: 'Calibrated',
-    badgeTooltip: `Backend: ${backendUsed}. Full-confidence comparison.`,
-  }
+  return synthesiseDisplayPolicy(backendUsed, lowConfidenceOutcomes)
 }
 
 export async function POST(request: NextRequest) {

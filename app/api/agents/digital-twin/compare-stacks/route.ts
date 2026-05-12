@@ -7,7 +7,7 @@ import {
   type DigitalTwinAgentInput,
   type DigitalTwinAgentOutput,
 } from '@/lib/agents/digital-twin-agent'
-import { getTwinDisplayPolicy } from '@/lib/agents/twin-display-policy'
+import { getTwinDisplayPolicy, synthesiseDisplayPolicy } from '@/lib/agents/twin-display-policy'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
@@ -140,7 +140,9 @@ export async function POST(request: NextRequest) {
         })
         return NextResponse.json({
           ...resp,
-          policy: { tier: 'calibrated', backendUsed: 'mechanistic', isIllustrative: false },
+          policy: synthesiseDisplayPolicy(
+            (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic',
+          ),
         })
       } catch (err) {
         // 5xx falls through to the Node-side fallback; 4xx propagates.
