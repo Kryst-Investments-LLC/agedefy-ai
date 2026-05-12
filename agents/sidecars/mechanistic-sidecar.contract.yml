@@ -52,8 +52,8 @@ endpoints:
                   type: string
                   enum: [daily, weekly, biweekly, monthly, prn]
                 start_week: { type: integer, minimum: 0 }
-                stop_week:  { type: integer }
-                adherence:  { type: number, minimum: 0, maximum: 1, default: 0.85 }
+                stop_week: { type: integer }
+                adherence: { type: number, minimum: 0, maximum: 1, default: 0.85 }
           horizon_weeks:
             type: integer
             minimum: 4
@@ -77,7 +77,7 @@ endpoints:
         properties:
           simulation_id: { type: string }
           horizon_weeks: { type: integer }
-          backend_used:  { type: string, enum: [mechanistic, statistical, hybrid, fallback-exponential] }
+          backend_used: { type: string, enum: [mechanistic, statistical, hybrid, fallback-exponential] }
           model_version: { type: string }
           trajectories:
             type: object
@@ -86,8 +86,8 @@ endpoints:
               required: [weekly_means, ci95_low, ci95_high]
               properties:
                 weekly_means: { type: array, items: { type: number } }
-                ci95_low:     { type: array, items: { type: number } }
-                ci95_high:    { type: array, items: { type: number } }
+                ci95_low: { type: array, items: { type: number } }
+                ci95_high: { type: array, items: { type: number } }
                 contributors:
                   type: object
                   description: intervention_id → percentage of expected delta attributable
@@ -108,8 +108,8 @@ endpoints:
         required: [baseline, stack_a, stack_b, horizon_weeks, outcomes]
         properties:
           baseline: { type: object, additionalProperties: { type: number } }
-          stack_a:  { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
-          stack_b:  { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
+          stack_a: { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
+          stack_b: { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
           horizon_weeks: { type: integer, default: 260 }
           outcomes: { type: array, items: { type: string } }
     response:
@@ -127,8 +127,8 @@ endpoints:
               properties:
                 stack_a_final: { type: number }
                 stack_b_final: { type: number }
-                difference:    { type: number }
-                ci95:          { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+                difference: { type: number }
+                ci95: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
 
 errors:
   - http_status: 422
