@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { db } from "@/lib/db"
 import { env, getRuntimeBaseline } from "@/lib/env"
+import { probeSidecars } from "@/lib/health/sidecar-health"
 import { getOrchestrationJobMetrics } from "@/lib/jobs/queue"
 import { isOtelConfigured } from "@/lib/observability/otel"
 import { getRateLimitBackend } from "@/lib/rate-limit"
@@ -10,7 +11,10 @@ export async function GET() {
   try {
     // Verify database connectivity with a lightweight query
     await db.$queryRaw`SELECT 1`
-    const jobMetrics = await getOrchestrationJobMetrics()
+    const [jobMetrics, sidecars] = await Promise.all([
+      getOrchestrationJobMetrics(),
+      probeSidecars(),
+    ])
     const runtimeBaseline = getRuntimeBaseline()
     const baselineSatisfied = runtimeBaseline.issues.length === 0
     const statusCode = runtimeBaseline.productionBaselineRequired && !baselineSatisfied ? 503 : 200
@@ -25,6 +29,7 @@ export async function GET() {
           rateLimit: getRateLimitBackend(),
           observability: isOtelConfigured() ? "active" : runtimeBaseline.otelConfigured ? "configured-not-active" : "missing",
         },
+        sidecars,
         runtime: {
           appEnv: runtimeBaseline.appEnv,
           productionBaselineRequired: runtimeBaseline.productionBaselineRequired,
