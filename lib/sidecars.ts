@@ -217,4 +217,89 @@ export const vcSigner = {
     request<{ revoked: string[] }>(vcSigner.url(), "/v1/revocations", { traceparent }),
 }
 
+// ---------- mechanistic-sidecar ----------
+
+export type MechanisticBackend = "mechanistic" | "statistical" | "hybrid"
+export type MechanisticBackendUsed =
+  | MechanisticBackend
+  | "fallback-exponential"
+
+export interface SimInterventionInput {
+  intervention_id: string
+  dose: number
+  dose_unit?: string
+  schedule: "daily" | "weekly" | "biweekly" | "monthly" | "prn"
+  start_week: number
+  stop_week?: number
+  adherence?: number
+}
+
+export interface SimulateRequest {
+  baseline: Record<string, number>
+  interventions: SimInterventionInput[]
+  horizon_weeks: number
+  outcomes: string[]
+  backend?: MechanisticBackend
+  random_seed?: number
+}
+
+export interface OutcomeTrajectory {
+  weekly_means: number[]
+  ci95_low: number[]
+  ci95_high: number[]
+  contributors?: Record<string, number>
+  low_confidence_flag?: boolean
+}
+
+export interface SimulateResponse {
+  simulation_id: string
+  horizon_weeks: number
+  backend_used: MechanisticBackendUsed
+  model_version: string
+  trajectories: Record<string, OutcomeTrajectory>
+  warnings?: string[]
+}
+
+export interface CompareStacksRequest {
+  baseline: Record<string, number>
+  stack_a: SimInterventionInput[]
+  stack_b: SimInterventionInput[]
+  horizon_weeks: number
+  outcomes: string[]
+}
+
+export interface CompareStacksResponse {
+  simulation_id_a: string
+  simulation_id_b: string
+  delta_of_deltas: Record<
+    string,
+    { stack_a_final: number; stack_b_final: number; difference: number; ci95: [number, number] }
+  >
+}
+
+export const mechanisticSidecar = {
+  url: () => process.env.MECHANISTIC_SIDECAR_URL || "http://mechanistic-sidecar:8080",
+  configured: () => Boolean(process.env.MECHANISTIC_SIDECAR_URL),
+  health: (traceparent?: string) =>
+    request<{ status: string; version: string }>(
+      mechanisticSidecar.url(),
+      "/healthz",
+      { traceparent },
+    ),
+  simulate: (req: SimulateRequest, traceparent?: string) =>
+    request<SimulateResponse>(mechanisticSidecar.url(), "/v1/simulate", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 30_000,
+    }),
+  compareStacks: (req: CompareStacksRequest, traceparent?: string) =>
+    request<CompareStacksResponse>(mechanisticSidecar.url(), "/v1/compare-stacks", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 60_000,
+    }),
+}
+
 export { SidecarError, envOrThrow }
