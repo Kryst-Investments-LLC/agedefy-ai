@@ -229,4 +229,78 @@ describe("POST /api/v1/credentials/verify", () => {
     expect(body.display_ui.pkpdProfile).toBe("2-cmt")
     expect(body.display_ui.badge).toContain("2-compartment PK/PD")
   })
+
+  it("surfaces causal_summary for CausalEffectEstimate VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const causalVc = {
+      ...VC,
+      id: "urn:vc:causal-1",
+      type: ["VerifiableCredential", "CausalEffectEstimate"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          intervention: "rapamycin",
+          outcome: "hs_crp",
+          expected_delta: -0.18,
+          ci95: [-0.31, -0.05],
+          n_similar_profiles: 1240,
+          cohort_source: "uk_biobank",
+          identification_strategy: "backdoor",
+          model_version: "causal-sidecar@0.2.0",
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: causalVc }))
+    const body = await res.json()
+    expect(body.display_policy).toBeNull()
+    expect(body.causal_summary).toEqual({
+      intervention: "rapamycin",
+      outcome: "hs_crp",
+      expected_delta: -0.18,
+      ci95: [-0.31, -0.05],
+      cohort_source: "uk_biobank",
+      identification_strategy: "backdoor",
+      n_similar_profiles: 1240,
+      model_version: "causal-sidecar@0.2.0",
+      low_evidence: false,
+    })
+  })
+
+  it("flags low_evidence=true when the CI crosses zero or n is small", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const causalVc = {
+      ...VC,
+      id: "urn:vc:causal-2",
+      type: ["VerifiableCredential", "CausalEffectEstimate"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          intervention: "metformin",
+          outcome: "fasting_glucose",
+          expected_delta: -0.05,
+          ci95: [-0.12, 0.04],
+          n_similar_profiles: 800,
+          cohort_source: "all_of_us",
+          identification_strategy: "backdoor",
+          model_version: "causal-sidecar@0.2.0",
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: causalVc }))
+    const body = await res.json()
+    expect(body.causal_summary.low_evidence).toBe(true)
+  })
+
+  it("returns causal_summary=null for non-causal VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: VC }))
+    const body = await res.json()
+    expect(body.causal_summary).toBeNull()
+  })
 })
