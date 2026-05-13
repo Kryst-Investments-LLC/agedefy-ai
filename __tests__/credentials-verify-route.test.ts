@@ -140,5 +140,20 @@ describe("POST /api/v1/credentials/verify", () => {
     expect(body.display_policy.tier).toBe("calibrated-partial")
     expect(body.display_policy.backendUsed).toBe("mechanistic")
     expect(body.display_policy.lowConfidenceOutcomes).toEqual(["hs_crp"])
+    expect(body.display_ui).toEqual({
+      banner:
+        "CALIBRATED (PARTIAL) - some outcomes are low-confidence; review before clinical use",
+      badge: body.display_policy.badgeLabel,
+    })
+  })
+
+  it("returns display_ui=null when display_policy is null", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: VC }))
+    const body = await res.json()
+    expect(body.display_policy).toBeNull()
+    expect(body.display_ui).toBeNull()
   })
 })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { twinDisplayUiHints } from "@/lib/agents/twin-display-ui"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { SidecarError, vcSigner, type VerifiableCredential } from "@/lib/sidecars"
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
     // signature check. policyFromVc tolerates missing fields and falls back
     // to fallback-exponential → illustrative for pre-PR-#24 VCs.
     const display_policy = isDigitalTwinReceipt(vc) ? policyFromVc(vc) : null
+    const display_ui = display_policy ? twinDisplayUiHints(display_policy) : null
 
     return NextResponse.json({
       valid: result.valid && !revoked,
@@ -81,6 +83,7 @@ export async function POST(request: NextRequest) {
       issuer: vc.issuer ?? null,
       id: vc.id,
       display_policy,
+      display_ui,
     })
   } catch (err) {
     if (err instanceof SidecarError) {
