@@ -156,4 +156,27 @@ describe("POST /api/v1/credentials/verify", () => {
     expect(body.display_policy).toBeNull()
     expect(body.display_ui).toBeNull()
   })
+
+  it("derives display_policy from DigitalTwinComparisonReceipt VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const cmpVc = {
+      ...VC,
+      id: "urn:vc:cmp-1",
+      type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          backend_used: "fallback-exponential",
+          low_confidence_outcomes: [],
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: cmpVc }))
+    const body = await res.json()
+    expect(body.display_policy).not.toBeNull()
+    expect(body.display_policy.tier).toBe("illustrative")
+    expect(body.display_ui.banner).toContain("ILLUSTRATIVE")
+  })
 })

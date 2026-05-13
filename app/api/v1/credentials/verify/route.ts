@@ -12,8 +12,9 @@ interface VerifyRequestBody {
 
 function isDigitalTwinReceipt(vc: VerifiableCredential): boolean {
   const t = (vc as { type?: unknown }).type
-  if (Array.isArray(t)) return t.includes("DigitalTwinForecastReceipt")
-  return t === "DigitalTwinForecastReceipt"
+  const targets = ["DigitalTwinForecastReceipt", "DigitalTwinComparisonReceipt"]
+  if (Array.isArray(t)) return t.some((v) => targets.includes(String(v)))
+  return typeof t === "string" && targets.includes(t)
 }
 
 /**

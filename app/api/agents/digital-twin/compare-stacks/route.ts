@@ -7,6 +7,7 @@ import {
   type DigitalTwinAgentInput,
   type DigitalTwinAgentOutput,
 } from '@/lib/agents/digital-twin-agent'
+import { signStackComparison } from '@/lib/agents/compare-stacks-vc'
 import { getTwinDisplayPolicy, synthesiseDisplayPolicy } from '@/lib/agents/twin-display-policy'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
@@ -28,6 +29,9 @@ interface CompareStacksRequestBody {
   horizonWeeks?: number
   backend?: DigitalTwinAgentInput['backend']
   randomSeed?: number
+  /** When true, also issue a signed DigitalTwinComparisonReceipt VC for the result. */
+  sign?: boolean
+  stackLabels?: { a: string; b: string }
 }
 
 function deltaOfDeltas(
@@ -125,6 +129,20 @@ export async function POST(request: NextRequest) {
           },
           traceparent,
         )
+        const policy = synthesiseDisplayPolicy(
+          (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic',
+          resp.low_confidence_outcomes ?? [],
+        )
+        let vc = null
+        if (body.sign) {
+          vc = await signStackComparison({
+            userId: session.user.id,
+            comparison: resp,
+            policy,
+            stackLabels: body.stackLabels,
+            traceparent,
+          })
+        }
         await logAudit({
           actorUserId: session.user.id,
           actorEmail: session.user.email ?? undefined,
@@ -136,14 +154,14 @@ export async function POST(request: NextRequest) {
             simulation_id_a: resp.simulation_id_a,
             simulation_id_b: resp.simulation_id_b,
             outcomes,
+            display_tier: policy.tier,
+            signed: Boolean(vc),
           },
         })
         return NextResponse.json({
           ...resp,
-          policy: synthesiseDisplayPolicy(
-            (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic',
-            resp.low_confidence_outcomes ?? [],
-          ),
+          policy,
+          vc,
         })
       } catch (err) {
         // 5xx falls through to the Node-side fallback; 4xx propagates.
@@ -184,6 +202,25 @@ export async function POST(request: NextRequest) {
         : a.backend_used
     const policy = synthesiseDisplayPolicy(backendUsed, mergedLowConfidence)
 
+    const comparison: CompareStacksResponse = {
+      simulation_id_a: a.simulation_id,
+      simulation_id_b: b.simulation_id,
+      delta_of_deltas: delta,
+      backend_used: a.backend_used,
+      low_confidence_outcomes: mergedLowConfidence,
+    }
+
+    let vc = null
+    if (body.sign) {
+      vc = await signStackComparison({
+        userId: session.user.id,
+        comparison,
+        policy,
+        stackLabels: body.stackLabels,
+        traceparent,
+      })
+    }
+
     await logAudit({
       actorUserId: session.user.id,
       actorEmail: session.user.email ?? undefined,
@@ -197,15 +234,14 @@ export async function POST(request: NextRequest) {
         outcomes,
         display_tier: policy.tier,
         low_confidence_outcomes: policy.lowConfidenceOutcomes,
+        signed: Boolean(vc),
       },
     })
 
     return NextResponse.json({
-      simulation_id_a: a.simulation_id,
-      simulation_id_b: b.simulation_id,
-      delta_of_deltas: delta,
-      backend_used: a.backend_used,
+      ...comparison,
       policy,
+      vc,
     })
   } catch (err) {
     if (err instanceof DigitalTwinValidationError) {
