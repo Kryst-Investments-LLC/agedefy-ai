@@ -31,6 +31,20 @@ export interface CausalSummary {
    * (n < 50). Verifiers should de-emphasise such estimates.
    */
   low_evidence: boolean
+  /**
+   * Human-readable single-line effect description, e.g.
+   * `"rapamycin → hs_crp: -0.18 (95% CI -0.31 to -0.05)"`. Suitable for
+   * direct rendering as a wallet UI badge.
+   */
+  effect_label: string
+  /**
+   * Human-readable evidence qualifier, e.g.
+   * `"Strong evidence (uk_biobank, n=1240)"` or
+   * `"LOW EVIDENCE - CI crosses zero (uk_biobank, n=1240)"`. Mirrors the
+   * twin display_ui banner ergonomics so verifier wallets render causal
+   * estimates without re-deriving qualifiers.
+   */
+  evidence_label: string
 }
 
 function isCausalEffectEstimate(vc: VerifiableCredential): boolean {
@@ -67,15 +81,28 @@ export function causalSummaryFromVc(vc: VerifiableCredential): CausalSummary | n
   const ciCrossesZero = ci95[0] <= 0 && ci95[1] >= 0
   const low_evidence = ciCrossesZero || n < 50
 
+  const intervention = String(payload.intervention ?? "")
+  const outcome = String(payload.outcome ?? "")
+  const cohort_source = String(payload.cohort_source ?? "")
+  const identification_strategy = String(payload.identification_strategy ?? "")
+  const model_version = String(payload.model_version ?? "")
+
+  const effect_label = `${intervention} -> ${outcome}: ${expected.toFixed(3)} (95% CI ${ci95[0].toFixed(3)} to ${ci95[1].toFixed(3)})`
+  const evidence_label = low_evidence
+    ? `LOW EVIDENCE - ${ciCrossesZero ? "CI crosses zero" : `cohort too small (n=${n})`} (${cohort_source}, n=${n})`
+    : `Strong evidence (${cohort_source}, n=${n})`
+
   return {
-    intervention: String(payload.intervention ?? ""),
-    outcome: String(payload.outcome ?? ""),
+    intervention,
+    outcome,
     expected_delta: expected,
     ci95,
-    cohort_source: String(payload.cohort_source ?? ""),
-    identification_strategy: String(payload.identification_strategy ?? ""),
+    cohort_source,
+    identification_strategy,
     n_similar_profiles: n,
-    model_version: String(payload.model_version ?? ""),
+    model_version,
     low_evidence,
+    effect_label,
+    evidence_label,
   }
 }
