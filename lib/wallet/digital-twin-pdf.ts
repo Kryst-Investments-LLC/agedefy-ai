@@ -204,6 +204,25 @@ function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[]
   }
   y -= 6
 
+  // Low-confidence outcomes call-out (mirrors stack-comparison-pdf). Renders
+  // before the (potentially truncated) outcome table so the names are always
+  // visible even when many outcomes overflow the page.
+  const lowConfidence = Array.from(
+    new Set(policy.lowConfidenceOutcomes ?? []),
+  ).sort()
+  if (lowConfidence.length > 0) {
+    text.push({ text: "Low-confidence outcomes", font: "F2", size: 11, x: MARGIN_X, y })
+    y -= 14
+    text.push({
+      text: asciiOnly(`* ${lowConfidence.join(", ")} (clinician review recommended)`).slice(0, 160),
+      font: "F1",
+      size: 9,
+      x: MARGIN_X,
+      y,
+    })
+    y -= 16
+  }
+
   // Interventions
   text.push({ text: "Interventions", font: "F2", size: 12, x: MARGIN_X, y })
   y -= 16
@@ -242,8 +261,9 @@ function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[]
   const summaries = payload.outcome_summaries ?? []
   for (const s of summaries) {
     const conf = s.low_confidence_flag ? "low" : "ok"
+    const marker = s.low_confidence_flag ? "*" : " "
     const lineText =
-      `${s.outcome.padEnd(20).slice(0, 20)}` +
+      `${(marker + s.outcome).padEnd(20).slice(0, 20)}` +
       ` ${fmt(s.baseline).padStart(9)}` +
       ` ${fmt(s.final_week_mean).padStart(12)}` +
       ` ${fmt(s.total_delta).padStart(11)}` +
