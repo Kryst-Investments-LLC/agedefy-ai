@@ -16,11 +16,18 @@ const BANNER_BY_TIER: Record<TwinDisplayPolicy["tier"], string | null> = {
 export interface TwinDisplayUiHints {
   banner: string | null
   badge: string
+  /**
+   * Mirrors `policy.pkpdProfile` so consumers that only deserialise the
+   * compact `display_ui` block (e.g. external verifier portals) can render
+   * a "2-compartment PK/PD" chip without traversing the full policy.
+   */
+  pkpdProfile: TwinDisplayPolicy["pkpdProfile"]
 }
 
 export function twinDisplayUiHints(policy: TwinDisplayPolicy): TwinDisplayUiHints {
   return {
     banner: BANNER_BY_TIER[policy.tier] ?? null,
     badge: policy.badgeLabel,
+    pkpdProfile: policy.pkpdProfile,
   }
 }
