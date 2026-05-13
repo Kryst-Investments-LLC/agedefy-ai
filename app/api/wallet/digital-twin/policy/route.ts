@@ -24,6 +24,7 @@ import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { getTwinDisplayPolicy } from '@/lib/agents/twin-display-policy'
+import { twinDisplayUiHints } from '@/lib/agents/twin-display-ui'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
 import { applyRateLimit } from '@/lib/rate-limit'
@@ -34,13 +35,6 @@ import { policyFromVc } from '@/lib/wallet/digital-twin-pdf'
 interface PolicyRequestBody {
   vc?: VerifiableCredential
   forecast?: Pick<SimulateResponse, 'backend_used' | 'trajectories'>
-}
-
-const BANNER_BY_TIER: Record<string, string | null> = {
-  illustrative: 'ILLUSTRATIVE - NOT CLINICAL GUIDANCE',
-  'calibrated-partial':
-    'CALIBRATED (PARTIAL) - some outcomes are low-confidence; review before clinical use',
-  calibrated: null,
 }
 
 export async function POST(request: NextRequest) {
@@ -82,10 +76,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       policy,
-      ui: {
-        banner: BANNER_BY_TIER[policy.tier] ?? null,
-        badge: policy.badgeLabel,
-      },
+      ui: twinDisplayUiHints(policy),
     },
     {
       headers: {
