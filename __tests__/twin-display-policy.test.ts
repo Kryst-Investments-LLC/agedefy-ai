@@ -104,3 +104,63 @@ describe("synthesiseDisplayPolicy", () => {
     expect(p.badgeLabel).toMatch(/2 outcomes low-confidence/)
   })
 })
+
+describe("twin-display-policy PK/PD profile", () => {
+  it("derives pkpdProfile=2-cmt from a mechanistic-sidecar pkpd-2cmt model_version", () => {
+    const p = getTwinDisplayPolicy({
+      backend_used: "mechanistic",
+      model_version: "mechanistic-sidecar-pkpd-2cmt@0.4.0",
+      trajectories: { a: TRAJ(false) },
+    })
+    expect(p.pkpdProfile).toBe("2-cmt")
+    expect(p.badgeLabel).toBe("Calibrated (mechanistic ODE) · 2-compartment PK/PD")
+  })
+
+  it("defaults pkpdProfile=1-cmt for mechanistic runs without the pkpd-2cmt tag", () => {
+    const p = getTwinDisplayPolicy({
+      backend_used: "mechanistic",
+      model_version: "mechanistic-sidecar@0.3.0",
+      trajectories: { a: TRAJ(false) },
+    })
+    expect(p.pkpdProfile).toBe("1-cmt")
+    expect(p.badgeLabel).toBe("Calibrated (mechanistic ODE)")
+  })
+
+  it("returns pkpdProfile=null for non-mechanistic backends even with pkpd-2cmt in version", () => {
+    const stat = getTwinDisplayPolicy({
+      backend_used: "statistical",
+      model_version: "mechanistic-sidecar-pkpd-2cmt@0.4.0",
+      trajectories: { a: TRAJ(false) },
+    })
+    expect(stat.pkpdProfile).toBeNull()
+    expect(stat.badgeLabel).toBe("Calibrated (statistical priors)")
+  })
+
+  it("returns pkpdProfile=null for the in-process fallback", () => {
+    const p = getTwinDisplayPolicy({
+      backend_used: "fallback-exponential",
+      model_version: "fallback-exponential@0.1.0",
+      trajectories: { a: TRAJ(false) },
+    })
+    expect(p.pkpdProfile).toBeNull()
+  })
+
+  it("synthesiseDisplayPolicy honours an explicit pkpdProfile=2-cmt for mechanistic", () => {
+    const p = synthesiseDisplayPolicy("mechanistic", [], "2-cmt")
+    expect(p.pkpdProfile).toBe("2-cmt")
+    expect(p.badgeLabel).toBe("Calibrated (mechanistic ODE) · 2-compartment PK/PD")
+  })
+
+  it("synthesiseDisplayPolicy ignores pkpdProfile for non-mechanistic backends", () => {
+    const p = synthesiseDisplayPolicy("hybrid", [], "2-cmt")
+    expect(p.pkpdProfile).toBeNull()
+    expect(p.badgeLabel).toBe("Calibrated (hybrid (mechanistic + statistical))")
+  })
+
+  it("partial-confidence + 2-cmt badge stacks both suffixes", () => {
+    const p = synthesiseDisplayPolicy("mechanistic", ["hs_crp"], "2-cmt")
+    expect(p.badgeLabel).toBe(
+      "Calibrated (mechanistic ODE) — 1 outcome low-confidence · 2-compartment PK/PD",
+    )
+  })
+})

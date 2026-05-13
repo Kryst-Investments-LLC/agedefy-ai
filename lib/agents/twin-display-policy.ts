@@ -24,6 +24,14 @@ import type {
 
 export type TwinDisplayTier = "calibrated" | "calibrated-partial" | "illustrative"
 
+/**
+ * Mechanistic-sidecar PK/PD model profile, derived from the response's
+ * `model_version` tag. Lets callers (badges, PDFs, audit) distinguish 1-cmt
+ * vs 2-cmt runs without re-parsing the version string everywhere. Always
+ * `null` for non-mechanistic backends and for the in-process fallback.
+ */
+export type TwinPkpdProfile = "1-cmt" | "2-cmt" | null
+
 export interface TwinDisplayPolicy {
   tier: TwinDisplayTier
   backendUsed: MechanisticBackendUsed
@@ -33,6 +41,8 @@ export interface TwinDisplayPolicy {
   requiresClinicianBanner: boolean
   /** Outcome ids that carried a low_confidence_flag. */
   lowConfidenceOutcomes: string[]
+  /** PK/PD model profile, when known and applicable (mechanistic backend only). */
+  pkpdProfile: TwinPkpdProfile
   /** Human-readable badge label for use in UI chips. */
   badgeLabel: string
   /** One-line tooltip / aria-label explaining the badge. */
@@ -53,6 +63,26 @@ function backendDescriptor(backendUsed: MechanisticBackendUsed): string {
   return BACKEND_LABEL[backendUsed] ?? String(backendUsed)
 }
 
+/**
+ * Detect the PK/PD profile from a mechanistic-sidecar `model_version`. The
+ * 2-compartment backend (v0.4.0+) tags itself `mechanistic-sidecar-pkpd-2cmt@`;
+ * everything else mechanistic is the original 1-compartment ODE.
+ */
+function pkpdProfileFor(
+  backendUsed: MechanisticBackendUsed,
+  modelVersion: string | undefined,
+): TwinPkpdProfile {
+  if (backendUsed !== "mechanistic") return null
+  if (typeof modelVersion === "string" && modelVersion.includes("pkpd-2cmt")) {
+    return "2-cmt"
+  }
+  return "1-cmt"
+}
+
+function pkpdSuffix(profile: TwinPkpdProfile): string {
+  return profile === "2-cmt" ? " \u00b7 2-compartment PK/PD" : ""
+}
+
 function lowConfidenceOutcomesOf(
   trajectories: Record<string, OutcomeTrajectory>,
 ): string[] {
@@ -69,12 +99,16 @@ function lowConfidenceOutcomesOf(
  * are treated as illustrative.
  */
 export function getTwinDisplayPolicy(
-  forecast: Pick<SimulateResponse, "backend_used" | "trajectories"> | null | undefined,
+  forecast:
+    | Pick<SimulateResponse, "backend_used" | "trajectories" | "model_version">
+    | null
+    | undefined,
 ): TwinDisplayPolicy {
   const backendUsed: MechanisticBackendUsed =
     (forecast?.backend_used as MechanisticBackendUsed | undefined) ?? FALLBACK_BACKEND
   const trajectories = forecast?.trajectories ?? {}
   const lowConfidenceOutcomes = lowConfidenceOutcomesOf(trajectories)
+  const pkpdProfile = pkpdProfileFor(backendUsed, forecast?.model_version)
 
   if (backendUsed === FALLBACK_BACKEND) {
     return {
@@ -83,6 +117,7 @@ export function getTwinDisplayPolicy(
       isIllustrative: true,
       requiresClinicianBanner: true,
       lowConfidenceOutcomes,
+      pkpdProfile: null,
       badgeLabel: "Illustrative — not clinical",
       badgeTooltip:
         "Trajectories were produced by the in-process fallback simulator because the mechanistic sidecar was unavailable. Do not present as a clinical forecast.",
@@ -96,9 +131,10 @@ export function getTwinDisplayPolicy(
       isIllustrative: false,
       requiresClinicianBanner: true,
       lowConfidenceOutcomes,
+      pkpdProfile,
       badgeLabel: `Calibrated (${backendDescriptor(backendUsed)}) — ${lowConfidenceOutcomes.length} outcome${
         lowConfidenceOutcomes.length === 1 ? "" : "s"
-      } low-confidence`,
+      } low-confidence${pkpdSuffix(pkpdProfile)}`,
       badgeTooltip: `Backend: ${backendUsed}. Some outcomes were flagged low-confidence (missing baseline or unknown intervention-outcome pair): ${lowConfidenceOutcomes.join(", ")}.`,
     }
   }
@@ -109,7 +145,8 @@ export function getTwinDisplayPolicy(
     isIllustrative: false,
     requiresClinicianBanner: false,
     lowConfidenceOutcomes: [],
-    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})`,
+    pkpdProfile,
+    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})${pkpdSuffix(pkpdProfile)}`,
     badgeTooltip: `Backend: ${backendUsed}. All requested outcomes have full-confidence trajectories.`,
   }
 }
@@ -123,8 +160,13 @@ export function getTwinDisplayPolicy(
 export function synthesiseDisplayPolicy(
   backendUsed: MechanisticBackendUsed,
   lowConfidenceOutcomes: string[] = [],
+  pkpdProfile: TwinPkpdProfile = null,
 ): TwinDisplayPolicy {
   const sorted = [...lowConfidenceOutcomes].sort()
+  // Only the mechanistic backend has a meaningful PK/PD profile; coerce
+  // anything else to null so callers don't accidentally label statistical or
+  // hybrid runs with "2-compartment PK/PD".
+  const profile: TwinPkpdProfile = backendUsed === "mechanistic" ? pkpdProfile : null
   if (backendUsed === FALLBACK_BACKEND) {
     return {
       tier: "illustrative",
@@ -132,6 +174,7 @@ export function synthesiseDisplayPolicy(
       isIllustrative: true,
       requiresClinicianBanner: true,
       lowConfidenceOutcomes: sorted,
+      pkpdProfile: null,
       badgeLabel: "Illustrative — not clinical",
       badgeTooltip:
         "Trajectories were produced by the in-process fallback simulator because the mechanistic sidecar was unavailable. Do not present as a clinical forecast.",
@@ -144,9 +187,10 @@ export function synthesiseDisplayPolicy(
       isIllustrative: false,
       requiresClinicianBanner: true,
       lowConfidenceOutcomes: sorted,
+      pkpdProfile: profile,
       badgeLabel: `Calibrated (${backendDescriptor(backendUsed)}) — ${sorted.length} outcome${
         sorted.length === 1 ? "" : "s"
-      } low-confidence`,
+      } low-confidence${pkpdSuffix(profile)}`,
       badgeTooltip: `Backend: ${backendUsed}. Some outcomes were flagged low-confidence: ${sorted.join(", ")}.`,
     }
   }
@@ -156,7 +200,8 @@ export function synthesiseDisplayPolicy(
     isIllustrative: false,
     requiresClinicianBanner: false,
     lowConfidenceOutcomes: [],
-    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})`,
+    pkpdProfile: profile,
+    badgeLabel: `Calibrated (${backendDescriptor(backendUsed)})${pkpdSuffix(profile)}`,
     badgeTooltip: `Backend: ${backendUsed}. Full-confidence trajectories.`,
   }
 }
