@@ -35,6 +35,12 @@ export interface DigitalTwinAgentInput {
   horizonWeeks?: number
   backend?: SimulateRequest['backend']
   randomSeed?: number
+  /**
+   * Opt into the mechanistic-sidecar v0.4.0 2-compartment PK/PD backend.
+   * Forwarded as `pkpd_two_compartment` to /v1/simulate. Ignored by the
+   * in-process fallback (which has no PK/PD model).
+   */
+  pkpdTwoCompartment?: boolean
   traceparent?: string
 }
 
@@ -250,6 +256,7 @@ export async function runDigitalTwinAgent(
           outcomes: input.outcomes,
           backend,
           ...(input.randomSeed !== undefined ? { random_seed: input.randomSeed } : {}),
+          ...(input.pkpdTwoCompartment ? { pkpd_two_compartment: true } : {}),
         },
         input.traceparent,
       )

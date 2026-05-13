@@ -1,5 +1,5 @@
 contract: mechanistic-sidecar
-version: 0.3.0
+version: 0.4.0
 description: |
   HTTP contract between the Node-side `digital-twin-agent` orchestration
   and a Python sidecar that hosts the mechanistic simulation libraries
@@ -17,6 +17,13 @@ description: |
       solver cannot service the request.
     - `statistical` — Monte-Carlo first-order relaxation with literature
       effect priors. Always available.
+
+  v0.4.0 adds an opt-in 2-compartment PK/PD backend via the
+  `pkpd_two_compartment` request field. Honoured only by the
+  `mechanistic` and `hybrid` backends; `statistical` ignores it. EC50 is
+  calibrated so steady-state predictions match the existing single-
+  compartment priors, keeping audit/policy chrome stable across the
+  toggle.
 
   The Node-side adapter (`lib/agents/digital-twin-agent.ts`) still keeps a
   deterministic exponential-relaxation fallback for the case where the
@@ -79,6 +86,13 @@ endpoints:
           random_seed:
             type: integer
             description: For reproducible CI bands during testing.
+          # Added in mechanistic-sidecar v0.4.0. Opt into the 2-compartment
+          # PK/PD backend (saturating Hill response, peripheral compartment).
+          # Honoured only by `backend: mechanistic` or `backend: hybrid`;
+          # `backend: statistical` ignores the flag. Default false.
+          pkpd_two_compartment:
+            type: boolean
+            default: false
     response:
       content_type: application/json
       schema:
@@ -122,6 +136,10 @@ endpoints:
           stack_b: { type: array, items: { $ref: "#/endpoints/0/request/schema/properties/interventions/items" } }
           horizon_weeks: { type: integer, default: 260 }
           outcomes: { type: array, items: { type: string } }
+          # See /v1/simulate; same semantics in compare-stacks (v0.4.0).
+          pkpd_two_compartment:
+            type: boolean
+            default: false
     response:
       schema:
         type: object
