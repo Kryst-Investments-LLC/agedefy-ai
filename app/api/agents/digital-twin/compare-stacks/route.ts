@@ -132,9 +132,14 @@ export async function POST(request: NextRequest) {
           },
           traceparent,
         )
+        const sidecarBackend =
+          (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic'
         const policy = synthesiseDisplayPolicy(
-          (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic',
+          sidecarBackend,
           resp.low_confidence_outcomes ?? [],
+          // Only the mechanistic sidecar path honours the 2-cmt flag; the
+          // policy helper coerces non-mechanistic backends to null anyway.
+          body.pkpdTwoCompartment ? '2-cmt' : '1-cmt',
         )
         let vc = null
         if (body.sign) {
@@ -158,6 +163,7 @@ export async function POST(request: NextRequest) {
             simulation_id_b: resp.simulation_id_b,
             outcomes,
             display_tier: policy.tier,
+            pkpd_profile: policy.pkpdProfile,
             signed: Boolean(vc),
           },
         })
@@ -204,7 +210,9 @@ export async function POST(request: NextRequest) {
       policyA.tier === 'illustrative' || policyB.tier === 'illustrative'
         ? 'fallback-exponential'
         : a.backend_used
-    const policy = synthesiseDisplayPolicy(backendUsed, mergedLowConfidence)
+    // Both stacks ran with the same flag (it's threaded through `common`),
+    // so policyA.pkpdProfile already reflects it; carry it forward.
+    const policy = synthesiseDisplayPolicy(backendUsed, mergedLowConfidence, policyA.pkpdProfile)
 
     const comparison: CompareStacksResponse = {
       simulation_id_a: a.simulation_id,
@@ -237,6 +245,7 @@ export async function POST(request: NextRequest) {
         simulation_id_b: b.simulation_id,
         outcomes,
         display_tier: policy.tier,
+        pkpd_profile: policy.pkpdProfile,
         low_confidence_outcomes: policy.lowConfidenceOutcomes,
         signed: Boolean(vc),
       },
