@@ -108,6 +108,27 @@ describe("renderDigitalTwinForecastPDF", () => {
     expect(txt).toContain("0.920 0.620 0.130 rg")
   })
 
+  it("lists low-confidence outcomes in a dedicated section", () => {
+    const bytes = renderDigitalTwinForecastPDF({
+      vc: buildVc(),
+      policy: getTwinDisplayPolicy(buildForecast("statistical", true)),
+      generatedAt: "2025-01-01T00:00:00Z",
+    })
+    const txt = new TextDecoder().decode(bytes)
+    expect(txt).toContain("Low-confidence outcomes")
+    expect(txt).toContain("* hs_crp")
+  })
+
+  it("omits the low-confidence section for fully calibrated forecasts", () => {
+    const bytes = renderDigitalTwinForecastPDF({
+      vc: buildVc(),
+      policy: getTwinDisplayPolicy(buildForecast("statistical", false)),
+      generatedAt: "2025-01-01T00:00:00Z",
+    })
+    const txt = new TextDecoder().decode(bytes)
+    expect(txt).not.toContain("Low-confidence outcomes")
+  })
+
   it("escapes parentheses and strips non-ASCII text from the recipient line", () => {
     const bytes = renderDigitalTwinForecastPDF({
       vc: buildVc(),
