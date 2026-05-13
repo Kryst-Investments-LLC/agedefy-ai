@@ -114,6 +114,21 @@ function buildOps(input: StackComparisonPdfInput): { text: TextOp[]; rects: Rect
   }
   y -= 6
 
+  const lowConfidence = new Set(policy.lowConfidenceOutcomes ?? [])
+  if (lowConfidence.size > 0) {
+    text.push({ text: "Low-confidence outcomes", font: "F2", size: 11, x: MARGIN_X, y })
+    y -= 14
+    const list = Array.from(lowConfidence).sort().join(", ")
+    text.push({
+      text: asciiOnly(`* ${list} (clinician review recommended)`).slice(0, 160),
+      font: "F1",
+      size: 9,
+      x: MARGIN_X,
+      y,
+    })
+    y -= 16
+  }
+
   text.push({ text: "Delta-of-deltas by outcome", font: "F2", size: 12, x: MARGIN_X, y })
   y -= 16
   text.push({
@@ -134,8 +149,9 @@ function buildOps(input: StackComparisonPdfInput): { text: TextOp[]; rects: Rect
     y -= 13
   } else {
     for (const [outcome, row] of entries) {
+      const marker = lowConfidence.has(outcome) ? "*" : " "
       const lineText =
-        outcome.padEnd(20).slice(0, 20) +
+        (marker + outcome).padEnd(20).slice(0, 20) +
         " " +
         fmt(row.stack_a_final).padStart(12) +
         " " +

@@ -92,6 +92,31 @@ describe("renderStackComparisonPDF", () => {
     expect(txt).toContain("0.920 0.620 0.130 rg")
   })
 
+  it("lists low-confidence outcomes in a dedicated section and marks the table row", () => {
+    const txt = new TextDecoder().decode(
+      renderStackComparisonPDF({
+        comparison: COMPARISON,
+        policy: PARTIAL,
+        generatedAt: "2025-01-01T00:00:00Z",
+      }),
+    )
+    expect(txt).toContain("Low-confidence outcomes")
+    expect(txt).toContain("* ldl")
+    // The matching row in the delta-of-deltas table is also prefixed.
+    expect(txt).toMatch(/\*ldl\s/)
+  })
+
+  it("omits the low-confidence section when the policy has none", () => {
+    const txt = new TextDecoder().decode(
+      renderStackComparisonPDF({
+        comparison: COMPARISON,
+        policy: CALIBRATED,
+        generatedAt: "2025-01-01T00:00:00Z",
+      }),
+    )
+    expect(txt).not.toContain("Low-confidence outcomes")
+  })
+
   it("respects custom stack labels and title", () => {
     const txt = new TextDecoder().decode(
       renderStackComparisonPDF({
