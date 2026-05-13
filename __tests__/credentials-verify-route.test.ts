@@ -265,6 +265,8 @@ describe("POST /api/v1/credentials/verify", () => {
       n_similar_profiles: 1240,
       model_version: "causal-sidecar@0.2.0",
       low_evidence: false,
+      effect_label: "rapamycin -> hs_crp: -0.180 (95% CI -0.310 to -0.050)",
+      evidence_label: "Strong evidence (uk_biobank, n=1240)",
     })
   })
 
@@ -293,6 +295,8 @@ describe("POST /api/v1/credentials/verify", () => {
     const res = await POST(buildRequest({ vc: causalVc }))
     const body = await res.json()
     expect(body.causal_summary.low_evidence).toBe(true)
+    expect(body.causal_summary.evidence_label).toContain("LOW EVIDENCE")
+    expect(body.causal_summary.evidence_label).toContain("CI crosses zero")
   })
 
   it("returns causal_summary=null for non-causal VCs", async () => {
