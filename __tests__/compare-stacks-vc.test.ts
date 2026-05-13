@@ -34,7 +34,9 @@ describe("signStackComparison", () => {
     isIllustrative: false,
     requiresClinicianBanner: false,
     lowConfidenceOutcomes: ["hs_crp"],
+    pkpdProfile: "1-cmt" as const,
     badgeLabel: "Calibrated (mechanistic) — 1 outcome low-confidence",
+    badgeTooltip: "",
   }
 
   it("issues a DigitalTwinComparisonReceipt VC with the compact summary payload", async () => {
@@ -89,5 +91,43 @@ describe("signStackComparison", () => {
     const [req] = issueMock.mock.calls[0]
     const payload = req.credentialSubject.payload as Record<string, unknown>
     expect(payload.stack_labels).toEqual({ a: "Stack A", b: "Stack B" })
+  })
+
+  it("embeds pkpd_profile and a 2-cmt model_version when policy.pkpdProfile is 2-cmt", async () => {
+    issueMock.mockResolvedValue({
+      id: "urn:vc:cmp-3",
+      issuer: "did:web:vc.agedefy.ai",
+      type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
+      proof: { proofValue: "z" },
+    })
+    const { signStackComparison } = await import("@/lib/agents/compare-stacks-vc")
+    await signStackComparison({
+      userId: "user-1",
+      comparison: COMPARISON,
+      policy: { ...POLICY, pkpdProfile: "2-cmt" as const, lowConfidenceOutcomes: [] },
+    })
+    const [req] = issueMock.mock.calls[0]
+    const payload = req.credentialSubject.payload as Record<string, unknown>
+    expect(payload.pkpd_profile).toBe("2-cmt")
+    expect(String(payload.model_version)).toContain("pkpd-2cmt")
+  })
+
+  it("omits model_version (and keeps pkpd_profile=1-cmt) for 1-compartment runs", async () => {
+    issueMock.mockResolvedValue({
+      id: "urn:vc:cmp-4",
+      issuer: "did:web:vc.agedefy.ai",
+      type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
+      proof: { proofValue: "z" },
+    })
+    const { signStackComparison } = await import("@/lib/agents/compare-stacks-vc")
+    await signStackComparison({
+      userId: "user-1",
+      comparison: COMPARISON,
+      policy: POLICY,
+    })
+    const [req] = issueMock.mock.calls[0]
+    const payload = req.credentialSubject.payload as Record<string, unknown>
+    expect(payload.pkpd_profile).toBe("1-cmt")
+    expect(payload.model_version).toBeUndefined()
   })
 })

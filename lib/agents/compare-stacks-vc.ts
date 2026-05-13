@@ -39,6 +39,15 @@ export async function signStackComparison(
     simulation_id_a: comparison.simulation_id_a,
     simulation_id_b: comparison.simulation_id_b,
     backend_used: policy.backendUsed,
+    // Embed model_version so verifiers can derive pkpdProfile via
+    // policyFromVc(vc) — same shape as DigitalTwinForecastReceipt. Synthesised
+    // from the policy's pkpdProfile when the route doesn't have an explicit
+    // model_version (compare-stacks responses don't carry one today).
+    model_version:
+      policy.pkpdProfile === "2-cmt"
+        ? "mechanistic-sidecar-pkpd-2cmt@compare-stacks"
+        : undefined,
+    pkpd_profile: policy.pkpdProfile,
     display_tier: policy.tier,
     is_illustrative: policy.isIllustrative,
     requires_clinician_banner: policy.requiresClinicianBanner,
