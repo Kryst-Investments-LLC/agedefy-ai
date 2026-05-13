@@ -204,4 +204,29 @@ describe("POST /api/v1/credentials/verify", () => {
     expect(body.display_ui.pkpdProfile).toBe("2-cmt")
     expect(body.display_ui.badge).toContain("2-compartment PK/PD")
   })
+
+  it("surfaces display_ui.pkpdProfile=2-cmt for DigitalTwinComparisonReceipt VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const cmpVc = {
+      ...VC,
+      id: "urn:vc:cmp-pkpd",
+      type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          backend_used: "mechanistic",
+          model_version: "mechanistic-sidecar-pkpd-2cmt@compare-stacks",
+          pkpd_profile: "2-cmt",
+          low_confidence_outcomes: [],
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: cmpVc }))
+    const body = await res.json()
+    expect(body.display_policy.pkpdProfile).toBe("2-cmt")
+    expect(body.display_ui.pkpdProfile).toBe("2-cmt")
+    expect(body.display_ui.badge).toContain("2-compartment PK/PD")
+  })
 })
