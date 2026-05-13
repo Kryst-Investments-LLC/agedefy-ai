@@ -108,4 +108,37 @@ describe("POST /api/v1/credentials/verify", () => {
     const res = await POST(buildRequest({ vc: VC }))
     expect(res.status).toBe(503)
   })
+
+  it("returns display_policy=null for non-DigitalTwinForecastReceipt VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: VC }))
+    const body = await res.json()
+    expect(body.display_policy).toBeNull()
+  })
+
+  it("derives display_policy from a DigitalTwinForecastReceipt's embedded fields", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const twinVc = {
+      ...VC,
+      id: "urn:vc:twin-1",
+      type: ["VerifiableCredential", "DigitalTwinForecastReceipt"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          backend_used: "mechanistic",
+          low_confidence_outcomes: ["hs_crp"],
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: twinVc }))
+    const body = await res.json()
+    expect(body.display_policy).not.toBeNull()
+    expect(body.display_policy.tier).toBe("calibrated-partial")
+    expect(body.display_policy.backendUsed).toBe("mechanistic")
+    expect(body.display_policy.lowConfidenceOutcomes).toEqual(["hs_crp"])
+  })
 })
