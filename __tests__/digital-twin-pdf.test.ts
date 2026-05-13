@@ -170,4 +170,37 @@ describe("renderDigitalTwinForecastPDF", () => {
     const txt = new TextDecoder().decode(bytes)
     expect(txt).toContain("ILLUSTRATIVE - NOT CLINICAL GUIDANCE")
   })
+
+  it("prefers an explicit pkpd_profile field over model_version sniffing", async () => {
+    const { policyFromVc } = await import("@/lib/wallet/digital-twin-pdf")
+    // No "pkpd-2cmt" substring in model_version, but explicit pkpd_profile=2-cmt
+    // (as DigitalTwinComparisonReceipt VCs may emit) should still surface.
+    const vc = buildVc({
+      credentialSubject: {
+        id: "user-123",
+        payload: {
+          backend_used: "mechanistic",
+          model_version: "mechanistic-sidecar@0.4.0",
+          pkpd_profile: "2-cmt",
+          low_confidence_outcomes: [],
+        },
+      },
+    })
+    expect(policyFromVc(vc).pkpdProfile).toBe("2-cmt")
+  })
+
+  it("ignores pkpd_profile for non-mechanistic backends", async () => {
+    const { policyFromVc } = await import("@/lib/wallet/digital-twin-pdf")
+    const vc = buildVc({
+      credentialSubject: {
+        id: "user-123",
+        payload: {
+          backend_used: "fallback-exponential",
+          pkpd_profile: "2-cmt",
+          low_confidence_outcomes: [],
+        },
+      },
+    })
+    expect(policyFromVc(vc).pkpdProfile).toBeNull()
+  })
 })
