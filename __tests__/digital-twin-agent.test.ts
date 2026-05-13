@@ -182,4 +182,74 @@ describe('digital-twin-agent (T3)', () => {
       }),
     ).rejects.toBeInstanceOf(SidecarError)
   })
+
+  it('forwards pkpdTwoCompartment as pkpd_two_compartment in the sidecar request body', async () => {
+    process.env.MECHANISTIC_SIDECAR_URL = 'http://mech.test'
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        simulation_id: 'sim-pkpd',
+        horizon_weeks: 16,
+        backend_used: 'mechanistic',
+        model_version: 'mechanistic-sidecar-pkpd-2cmt@0.4.0',
+        trajectories: {
+          hs_crp: {
+            weekly_means: new Array(16).fill(1.5),
+            ci95_low: new Array(16).fill(1.2),
+            ci95_high: new Array(16).fill(1.8),
+          },
+        },
+      }),
+    )
+
+    const { runDigitalTwinAgent } = await import('@/lib/agents/digital-twin-agent')
+    await runDigitalTwinAgent({
+      baseline: { hs_crp: 2.0 },
+      interventions: [
+        { intervention_id: 'rapamycin_6mg_weekly', dose: 6, schedule: 'weekly', start_week: 0 },
+      ],
+      outcomes: ['hs_crp'],
+      horizonWeeks: 16,
+      backend: 'mechanistic',
+      pkpdTwoCompartment: true,
+    })
+
+    const init = fetchMock.mock.calls[0][1] as { body?: string }
+    expect(typeof init.body).toBe('string')
+    const sent = JSON.parse(String(init.body)) as Record<string, unknown>
+    expect(sent.pkpd_two_compartment).toBe(true)
+    expect(sent.backend).toBe('mechanistic')
+  })
+
+  it('omits pkpd_two_compartment when the flag is false/unset', async () => {
+    process.env.MECHANISTIC_SIDECAR_URL = 'http://mech.test'
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        simulation_id: 'sim-no-pkpd',
+        horizon_weeks: 16,
+        backend_used: 'hybrid',
+        model_version: 'mechanistic-sidecar@1.2.3',
+        trajectories: {
+          hs_crp: {
+            weekly_means: new Array(16).fill(1.5),
+            ci95_low: new Array(16).fill(1.2),
+            ci95_high: new Array(16).fill(1.8),
+          },
+        },
+      }),
+    )
+
+    const { runDigitalTwinAgent } = await import('@/lib/agents/digital-twin-agent')
+    await runDigitalTwinAgent({
+      baseline: { hs_crp: 2.0 },
+      interventions: [
+        { intervention_id: 'rapamycin_6mg_weekly', dose: 6, schedule: 'weekly', start_week: 0 },
+      ],
+      outcomes: ['hs_crp'],
+      horizonWeeks: 16,
+    })
+
+    const init = fetchMock.mock.calls[0][1] as { body?: string }
+    const sent = JSON.parse(String(init.body)) as Record<string, unknown>
+    expect(sent.pkpd_two_compartment).toBeUndefined()
+  })
 })

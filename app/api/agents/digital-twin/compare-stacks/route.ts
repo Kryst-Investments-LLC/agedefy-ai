@@ -29,6 +29,8 @@ interface CompareStacksRequestBody {
   horizonWeeks?: number
   backend?: DigitalTwinAgentInput['backend']
   randomSeed?: number
+  /** When true, request the mechanistic-sidecar v0.4.0 2-compartment PK/PD backend. */
+  pkpdTwoCompartment?: boolean
   /** When true, also issue a signed DigitalTwinComparisonReceipt VC for the result. */
   sign?: boolean
   stackLabels?: { a: string; b: string }
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
             stack_b: body.stack_b,
             horizon_weeks: horizonWeeks ?? 260,
             outcomes,
+            ...(body.pkpdTwoCompartment ? { pkpd_two_compartment: true } : {}),
           },
           traceparent,
         )
@@ -179,6 +182,7 @@ export async function POST(request: NextRequest) {
       horizonWeeks,
       backend: body.backend,
       randomSeed: body.randomSeed,
+      pkpdTwoCompartment: body.pkpdTwoCompartment,
       traceparent,
     } as const
 

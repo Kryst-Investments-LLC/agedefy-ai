@@ -241,6 +241,12 @@ export interface SimulateRequest {
   outcomes: string[]
   backend?: MechanisticBackend
   random_seed?: number
+  /**
+   * Opt into the 2-compartment PK/PD backend (mechanistic-sidecar v0.4.0).
+   * Honoured only by `backend: "mechanistic"` or `backend: "hybrid"`;
+   * the statistical backend ignores the flag.
+   */
+  pkpd_two_compartment?: boolean
 }
 
 export interface OutcomeTrajectory {
@@ -266,6 +272,8 @@ export interface CompareStacksRequest {
   stack_b: SimInterventionInput[]
   horizon_weeks: number
   outcomes: string[]
+  /** See SimulateRequest.pkpd_two_compartment (mechanistic-sidecar v0.4.0). */
+  pkpd_two_compartment?: boolean
 }
 
 export interface CompareStacksResponse {

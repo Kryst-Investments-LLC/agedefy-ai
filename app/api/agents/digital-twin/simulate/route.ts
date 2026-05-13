@@ -22,6 +22,8 @@ interface SimulateRequestBody {
   horizonWeeks?: number
   backend?: DigitalTwinAgentInput['backend']
   randomSeed?: number
+  /** Opt into mechanistic-sidecar v0.4.0 2-compartment PK/PD backend. */
+  pkpdTwoCompartment?: boolean
   /** Skip signing and return only the raw forecast (cheaper for previews). */
   skipSigning?: boolean
 }
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest) {
       horizonWeeks: body.horizonWeeks,
       backend: body.backend,
       randomSeed: body.randomSeed,
+      pkpdTwoCompartment: body.pkpdTwoCompartment,
       traceparent,
     }
 
