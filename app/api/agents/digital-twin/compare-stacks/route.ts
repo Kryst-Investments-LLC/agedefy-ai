@@ -171,13 +171,17 @@ export async function POST(request: NextRequest) {
     const delta = deltaOfDeltas(baseline, outcomes, a, b)
     const policyA = getTwinDisplayPolicy(a)
     const policyB = getTwinDisplayPolicy(b)
-    // The pair is no better than the weaker side.
-    const tier =
+    // Union the two stacks' low-confidence outcomes — the comparison is
+    // only as strong as the weaker side per outcome.
+    const mergedLowConfidence = Array.from(
+      new Set([...policyA.lowConfidenceOutcomes, ...policyB.lowConfidenceOutcomes]),
+    )
+    // The pair is illustrative if either side is.
+    const backendUsed =
       policyA.tier === 'illustrative' || policyB.tier === 'illustrative'
-        ? 'illustrative'
-        : policyA.tier === 'calibrated' && policyB.tier === 'calibrated'
-        ? 'calibrated'
-        : 'calibrated-partial'
+        ? 'fallback-exponential'
+        : a.backend_used
+    const policy = synthesiseDisplayPolicy(backendUsed, mergedLowConfidence)
 
     await logAudit({
       actorUserId: session.user.id,
@@ -190,7 +194,8 @@ export async function POST(request: NextRequest) {
         simulation_id_a: a.simulation_id,
         simulation_id_b: b.simulation_id,
         outcomes,
-        display_tier: tier,
+        display_tier: policy.tier,
+        low_confidence_outcomes: policy.lowConfidenceOutcomes,
       },
     })
 
@@ -199,11 +204,7 @@ export async function POST(request: NextRequest) {
       simulation_id_b: b.simulation_id,
       delta_of_deltas: delta,
       backend_used: a.backend_used,
-      policy: {
-        tier,
-        backendUsed: a.backend_used,
-        isIllustrative: tier === 'illustrative',
-      },
+      policy,
     })
   } catch (err) {
     if (err instanceof DigitalTwinValidationError) {

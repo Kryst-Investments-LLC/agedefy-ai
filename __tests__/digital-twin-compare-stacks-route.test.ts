@@ -160,6 +160,33 @@ describe("POST /api/agents/digital-twin/compare-stacks", () => {
     expect(runDigitalTwinMock).toHaveBeenCalledTimes(2)
   })
 
+  it("unions low_confidence_outcomes from both stacks in the fallback policy", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "u1", email: "u@x" } })
+    const a = buildForecast("sim_a", 1.6)
+    a.backend_used = "mechanistic"
+    a.fallbackUsed = false
+    a.trajectories.hs_crp.low_confidence_flag = true
+    const b = buildForecast("sim_b", 1.9)
+    b.backend_used = "mechanistic"
+    b.fallbackUsed = false
+    b.trajectories.igf1 = {
+      weekly_means: Array.from({ length: 52 }, () => 100),
+      ci95_low: Array.from({ length: 52 }, () => 90),
+      ci95_high: Array.from({ length: 52 }, () => 110),
+      low_confidence_flag: true,
+    }
+    runDigitalTwinMock.mockResolvedValueOnce(a).mockResolvedValueOnce(b)
+
+    const { POST } = await import("@/app/api/agents/digital-twin/compare-stacks/route")
+    const res = await POST(buildRequest(VALID_BODY))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.policy.tier).toBe("calibrated-partial")
+    expect(body.policy.backendUsed).toBe("mechanistic")
+    expect(new Set(body.policy.lowConfidenceOutcomes)).toEqual(new Set(["hs_crp", "igf1"]))
+    expect(body.policy.badgeLabel).toContain("Calibrated (mechanistic ODE)")
+  })
+
   it("falls back to local twin on sidecar 5xx", async () => {
     getServerSessionMock.mockResolvedValue({ user: { id: "u1", email: "u@x" } })
     mechanisticConfiguredMock.mockReturnValue(true)
