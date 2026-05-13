@@ -134,8 +134,31 @@ describe("POST /api/agents/digital-twin/compare-stacks", () => {
     const body = await res.json()
     expect(body.simulation_id_a).toBe("sid_a")
     expect(body.policy.tier).toBe("calibrated")
+    expect(body.policy.lowConfidenceOutcomes).toEqual([])
     expect(mechanisticCompareMock).toHaveBeenCalledTimes(1)
     expect(runDigitalTwinMock).not.toHaveBeenCalled()
+  })
+
+  it("propagates sidecar's low_confidence_outcomes into the synthesised policy", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "u1", email: "u@x" } })
+    mechanisticConfiguredMock.mockReturnValue(true)
+    mechanisticCompareMock.mockResolvedValue({
+      simulation_id_a: "sid_a",
+      simulation_id_b: "sid_b",
+      delta_of_deltas: {
+        hs_crp: { stack_a_final: 1.6, stack_b_final: 1.9, difference: 0.3, ci95: [0.1, 0.5] },
+      },
+      low_confidence_outcomes: ["hs_crp"],
+    })
+
+    const { POST } = await import("@/app/api/agents/digital-twin/compare-stacks/route")
+    const res = await POST(buildRequest(VALID_BODY))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.policy.tier).toBe("calibrated-partial")
+    expect(body.policy.lowConfidenceOutcomes).toEqual(["hs_crp"])
+    expect(body.policy.badgeLabel).toContain("Calibrated (")
+    expect(body.policy.badgeLabel).toContain("low-confidence")
   })
 
   it("falls back to local twin and computes delta-of-deltas when sidecar is not configured", async () => {

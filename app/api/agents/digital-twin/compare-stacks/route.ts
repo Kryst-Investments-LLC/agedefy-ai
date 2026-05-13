@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
           ...resp,
           policy: synthesiseDisplayPolicy(
             (body.backend ?? 'hybrid') === 'statistical' ? 'statistical' : 'mechanistic',
+            resp.low_confidence_outcomes ?? [],
           ),
         })
       } catch (err) {
