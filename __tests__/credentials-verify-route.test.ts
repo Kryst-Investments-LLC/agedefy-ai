@@ -144,6 +144,7 @@ describe("POST /api/v1/credentials/verify", () => {
       banner:
         "CALIBRATED (PARTIAL) - some outcomes are low-confidence; review before clinical use",
       badge: body.display_policy.badgeLabel,
+      pkpdProfile: "1-cmt",
     })
   })
 
@@ -178,5 +179,29 @@ describe("POST /api/v1/credentials/verify", () => {
     expect(body.display_policy).not.toBeNull()
     expect(body.display_policy.tier).toBe("illustrative")
     expect(body.display_ui.banner).toContain("ILLUSTRATIVE")
+  })
+
+  it("surfaces display_ui.pkpdProfile=2-cmt for v0.4.0 mechanistic-sidecar VCs", async () => {
+    verifyMock.mockResolvedValue({ valid: true, errors: [] })
+    statusMock.mockResolvedValue({ id: VC.id, revoked: false })
+    const twinVc = {
+      ...VC,
+      id: "urn:vc:twin-pkpd",
+      type: ["VerifiableCredential", "DigitalTwinForecastReceipt"],
+      credentialSubject: {
+        id: "user-1",
+        payload: {
+          backend_used: "mechanistic",
+          model_version: "mechanistic-sidecar-pkpd-2cmt@0.4.0",
+          low_confidence_outcomes: [],
+        },
+      },
+    }
+    const { POST } = await import("@/app/api/v1/credentials/verify/route")
+    const res = await POST(buildRequest({ vc: twinVc }))
+    const body = await res.json()
+    expect(body.display_policy.pkpdProfile).toBe("2-cmt")
+    expect(body.display_ui.pkpdProfile).toBe("2-cmt")
+    expect(body.display_ui.badge).toContain("2-compartment PK/PD")
   })
 })

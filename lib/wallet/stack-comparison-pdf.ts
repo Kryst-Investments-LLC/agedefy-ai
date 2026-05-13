@@ -107,6 +107,9 @@ function buildOps(input: StackComparisonPdfInput): { text: TextOp[]; rects: Rect
     `simulation_id_b: ${asciiOnly(comparison.simulation_id_b)}`,
     `backend_used:    ${asciiOnly(policy.backendUsed)}`,
     `display_tier:    ${policy.tier}`,
+    ...(policy.pkpdProfile
+      ? [`pkpd_profile:    ${policy.pkpdProfile === "2-cmt" ? "2-compartment" : "1-compartment"}`]
+      : []),
   ]
   for (const line of metaLines) {
     text.push({ text: line, font: "F1", size: 10, x: MARGIN_X, y })

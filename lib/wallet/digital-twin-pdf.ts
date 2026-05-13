@@ -204,6 +204,9 @@ function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[]
     `model_version: ${asciiOnly(String(payload.model_version ?? "-"))}`,
     `horizon_weeks: ${payload.horizon_weeks ?? "-"}`,
     `display_tier: ${policy.tier}`,
+    ...(policy.pkpdProfile
+      ? [`pkpd_profile: ${policy.pkpdProfile === "2-cmt" ? "2-compartment" : "1-compartment"}`]
+      : []),
   ]
   for (const line of metadataLines) {
     text.push({ text: line, font: "F1", size: 10, x: MARGIN_X, y })
