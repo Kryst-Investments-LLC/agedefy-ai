@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { causalSummaryFromVc } from "@/lib/agents/causal-summary"
 import { twinDisplayUiHints } from "@/lib/agents/twin-display-ui"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
@@ -75,6 +76,11 @@ export async function POST(request: NextRequest) {
     // to fallback-exponential → illustrative for pre-PR-#24 VCs.
     const display_policy = isDigitalTwinReceipt(vc) ? policyFromVc(vc) : null
     const display_ui = display_policy ? twinDisplayUiHints(display_policy) : null
+    // For CausalEffectEstimate VCs (issued by runCausalInferenceAgent), surface
+    // a compact intervention/outcome/effect/ci/cohort summary so verifier
+    // wallets render the result in one round-trip — same ergonomics as
+    // display_ui for digital-twin receipts. Returns null for other VC types.
+    const causal_summary = causalSummaryFromVc(vc)
 
     return NextResponse.json({
       valid: result.valid && !revoked,
@@ -85,6 +91,7 @@ export async function POST(request: NextRequest) {
       id: vc.id,
       display_policy,
       display_ui,
+      causal_summary,
     })
   } catch (err) {
     if (err instanceof SidecarError) {
