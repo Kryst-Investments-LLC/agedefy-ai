@@ -1,5 +1,5 @@
 contract: mechanistic-sidecar
-version: 0.2.0
+version: 0.3.0
 description: |
   HTTP contract between the Node-side `digital-twin-agent` orchestration
   and a Python sidecar that hosts the mechanistic simulation libraries
@@ -139,6 +139,13 @@ endpoints:
                 stack_b_final: { type: number }
                 difference: { type: number }
                 ci95: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+          # Added in mechanistic-sidecar v0.3.0: union of outcomes flagged
+          # low_confidence_flag=true in either stack's individual simulate()
+          # result. Empty when both stacks are fully calibrated. Optional for
+          # backwards-compat with v0.2.x sidecars.
+          low_confidence_outcomes:
+            type: array
+            items: { type: string }
 
 errors:
   - http_status: 422

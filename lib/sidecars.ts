@@ -275,6 +275,12 @@ export interface CompareStacksResponse {
     string,
     { stack_a_final: number; stack_b_final: number; difference: number; ci95: [number, number] }
   >
+  /**
+   * Union of outcomes flagged low_confidence_flag=true in either stack's
+   * individual SimulateResponse. Empty when both stacks are fully calibrated.
+   * Added in mechanistic-sidecar v0.3.0; older sidecars omit the field.
+   */
+  low_confidence_outcomes?: string[]
 }
 
 export const mechanisticSidecar = {
