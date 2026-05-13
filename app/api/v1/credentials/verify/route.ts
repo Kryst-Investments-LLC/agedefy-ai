@@ -3,9 +3,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { SidecarError, vcSigner, type VerifiableCredential } from "@/lib/sidecars"
+import { policyFromVc } from "@/lib/wallet/digital-twin-pdf"
 
 interface VerifyRequestBody {
   vc?: VerifiableCredential
+}
+
+function isDigitalTwinReceipt(vc: VerifiableCredential): boolean {
+  const t = (vc as { type?: unknown }).type
+  if (Array.isArray(t)) return t.includes("DigitalTwinForecastReceipt")
+  return t === "DigitalTwinForecastReceipt"
 }
 
 /**
@@ -59,6 +66,13 @@ export async function POST(request: NextRequest) {
     const errors = [...(result.errors ?? [])]
     if (revoked) errors.push("revoked")
 
+    // For DigitalTwinForecastReceipt VCs, surface the embedded display tier
+    // (PR #24) so external verifiers (regulators, clinician portals, wallet
+    // UIs) see the disclosure verdict in the same round-trip as the
+    // signature check. policyFromVc tolerates missing fields and falls back
+    // to fallback-exponential → illustrative for pre-PR-#24 VCs.
+    const display_policy = isDigitalTwinReceipt(vc) ? policyFromVc(vc) : null
+
     return NextResponse.json({
       valid: result.valid && !revoked,
       revoked,
@@ -66,6 +80,7 @@ export async function POST(request: NextRequest) {
       revocation_check: revokedCheckError ? "unavailable" : "ok",
       issuer: vc.issuer ?? null,
       id: vc.id,
+      display_policy,
     })
   } catch (err) {
     if (err instanceof SidecarError) {
