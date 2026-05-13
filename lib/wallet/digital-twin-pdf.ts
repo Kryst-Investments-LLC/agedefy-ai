@@ -116,7 +116,14 @@ export function policyFromVc(vc: VerifiableCredential): TwinDisplayPolicy {
   const lowConfidence = Array.isArray(payload.low_confidence_outcomes)
     ? payload.low_confidence_outcomes
     : []
-  return synthesiseDisplayPolicy(backendUsed, lowConfidence)
+  // Mechanistic-sidecar v0.4.0+ tags 2-cmt runs with model_version
+  // "mechanistic-sidecar-pkpd-2cmt@..."; surface that profile so verifier
+  // badges can distinguish 1-cmt vs 2-cmt without re-parsing the version.
+  const modelVersion =
+    typeof payload.model_version === "string" ? payload.model_version : undefined
+  const pkpdProfile =
+    backendUsed === "mechanistic" && modelVersion?.includes("pkpd-2cmt") ? "2-cmt" : null
+  return synthesiseDisplayPolicy(backendUsed, lowConfidence, pkpdProfile)
 }
 
 interface TextOp {
