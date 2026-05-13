@@ -119,10 +119,19 @@ export function policyFromVc(vc: VerifiableCredential): TwinDisplayPolicy {
   // Mechanistic-sidecar v0.4.0+ tags 2-cmt runs with model_version
   // "mechanistic-sidecar-pkpd-2cmt@..."; surface that profile so verifier
   // badges can distinguish 1-cmt vs 2-cmt without re-parsing the version.
+  // DigitalTwinComparisonReceipt VCs (PR #39) embed `pkpd_profile` directly,
+  // so prefer that explicit field when present and fall back to the
+  // model_version sniff for older forecast receipts.
+  const explicitProfile =
+    payload.pkpd_profile === "2-cmt" || payload.pkpd_profile === "1-cmt"
+      ? (payload.pkpd_profile as "2-cmt" | "1-cmt")
+      : null
   const modelVersion =
     typeof payload.model_version === "string" ? payload.model_version : undefined
   const pkpdProfile =
-    backendUsed === "mechanistic" && modelVersion?.includes("pkpd-2cmt") ? "2-cmt" : null
+    backendUsed === "mechanistic"
+      ? (explicitProfile ?? (modelVersion?.includes("pkpd-2cmt") ? "2-cmt" : null))
+      : null
   return synthesiseDisplayPolicy(backendUsed, lowConfidence, pkpdProfile)
 }
 
