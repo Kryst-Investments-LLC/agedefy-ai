@@ -65,6 +65,26 @@ endpoints:
           refuter:
             type: string
             enum: [placebo_treatment, random_common_cause, data_subset_refuter]
+    response:
+      schema:
+        type: object
+        required: [estimate_id, refuter, refuted_estimate, passed]
+        properties:
+          estimate_id: { type: string }
+          refuter:
+            type: string
+            enum: [placebo_treatment, random_common_cause, data_subset_refuter]
+          # Refuted estimate under the chosen perturbation. The original
+          # estimate is considered robust when |refuted_estimate| is small
+          # *and* p_value is large (failure to reject the null of "no effect
+          # under the placebo/random/subset intervention").
+          refuted_estimate: { type: number }
+          p_value:
+            oneOf:
+              - { type: number }
+              - { type: "null" }
+          passed: { type: boolean }
+          notes: { type: string }
 
 deployment:
   kind: container

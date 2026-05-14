@@ -110,13 +110,35 @@ export const causalSidecar = {
       traceparent,
       timeoutMs: 30_000,
     }),
-  refute: (req: { estimate_id: string }, traceparent?: string) =>
-    request(causalSidecar.url(), "/v1/refute", {
+  refute: (req: RefuteRequest, traceparent?: string) =>
+    request<RefuteResponse>(causalSidecar.url(), "/v1/refute", {
       method: "POST",
       body: JSON.stringify(req),
       traceparent,
       timeoutMs: 60_000,
     }),
+}
+
+export type CausalRefuter =
+  | "placebo_treatment"
+  | "random_common_cause"
+  | "data_subset_refuter"
+
+export interface RefuteRequest {
+  estimate_id: string
+  refuter: CausalRefuter
+}
+
+export interface RefuteResponse {
+  estimate_id: string
+  refuter: CausalRefuter
+  /** Refuted causal effect under the placebo / random-cause / subset perturbation. */
+  refuted_estimate: number
+  /** p-value of the refutation test; small p ⇒ original estimate is robust. */
+  p_value: number | null
+  /** True when the refutation passes (i.e. the original estimate survived). */
+  passed: boolean
+  notes?: string
 }
 
 // ---------- dp-accountant ----------
