@@ -45,12 +45,12 @@
     "@hookform/resolvers": "^3.9.1",
     "@kryst-investments-llc/master-orchestrator": "^0.1.0",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.72.0",
-    "@opentelemetry/exporter-metrics-otlp-http": "^0.214.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.217.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.217.0",
     "@opentelemetry/resources": "^2.6.1",
     "@opentelemetry/sdk-metrics": "^2.6.1",
-    "@opentelemetry/sdk-node": "^0.214.0",
+    "@opentelemetry/sdk-node": "^0.217.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-accordion": "1.2.2",
@@ -94,7 +94,7 @@
     "input-otp": "1.4.1",
     "kafkajs": "^2.2.4",
     "lucide-react": "^0.454.0",
-    "next": "^16.2.3",
+    "next": "^16.2.6",
     "next-auth": "^4.24.13",
     "next-themes": "^0.4.4",
     "nodemailer": "^8.0.3",
@@ -137,7 +137,7 @@
   },
   "pnpm": {
     "overrides": {
-      "next": "^16.2.3",
+      "next": "^16.2.6",
       "vite": "^6.3.6",
       "rollup": "^4.45.4",
       "lodash": "^4.17.21",
@@ -147,7 +147,7 @@
       "flatted": "^3.3.3",
       "yaml": "^2.8.3",
       "brace-expansion": "^2.0.2",
-      "protobufjs": "^7.5.5",
+      "protobufjs": "^7.5.6",
       "effect": "^3.18.4"
     }
   }
