@@ -49,7 +49,7 @@ export async function runLongevityDemo(req: DemoRequest): Promise<DemoResult> {
   // 2. Run the causal estimator.
   const estimate = await causalSidecar.estimate(
     {
-      cohort: req.cohort,
+      cohort_source: req.cohort,
       exposure: req.exposure,
       outcome: req.outcome,
       covariates: req.covariates,

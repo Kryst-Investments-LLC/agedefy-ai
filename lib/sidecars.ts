@@ -76,12 +76,15 @@ export type CausalEstimator =
   | "dml.causal_forest"
 
 export interface EstimateRequest {
-  cohort: string
+  /** Per causal-sidecar contract v0.1.0: field is `cohort_source`, not `cohort`. */
+  cohort_source: string
   exposure: string
   outcome: string
   covariates?: string[]
   estimator?: CausalEstimator
   n_bootstrap?: number
+  /** SHA-256 of biomarker vector for cohort matching (no PII). */
+  user_profile_hash?: string
 }
 
 export interface EstimateResponse {

@@ -52,11 +52,13 @@ export async function runCausalInferenceAgent(
 ): Promise<CausalInferenceAgentOutput> {
   const estimate = await causalSidecar.estimate(
     {
-      cohort: input.cohort,
+      cohort_source: input.cohort,
       exposure: input.exposure,
       outcome: input.outcome,
       covariates: input.covariates,
       estimator: input.estimator ?? "backdoor.linear_regression",
+      n_bootstrap: input.n_bootstrap,
+      user_profile_hash: input.user_profile_hash,
     },
     input.traceparent,
   )

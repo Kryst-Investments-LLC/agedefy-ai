@@ -37,7 +37,7 @@ describe("sidecar clients", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(response))
 
     const result = await causalSidecar.estimate({
-      cohort: "agedefy_federated_v1",
+      cohort_source: "agedefy_federated_v1",
       exposure: "rapamycin_6mg_weekly",
       outcome: "hs_crp",
     })
