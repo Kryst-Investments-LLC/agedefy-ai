@@ -1,5 +1,5 @@
 contract: mechanistic-sidecar
-version: 0.4.0
+version: 0.5.0
 description: |
   HTTP contract between the Node-side `digital-twin-agent` orchestration
   and a Python sidecar that hosts the mechanistic simulation libraries
@@ -164,6 +164,16 @@ endpoints:
           low_confidence_outcomes:
             type: array
             items: { type: string }
+          # Added in mechanistic-sidecar v0.5.0: backend + model_version that
+          # actually ran (taken from the first stack's SimulateResponse since
+          # both stacks share dispatch). Lets comparison VCs carry the real
+          # model_version instead of a synthetic placeholder. Optional for
+          # backwards-compat with v0.4.x sidecars.
+          backend_used:
+            type: string
+            enum: [mechanistic, statistical, hybrid, fallback-exponential]
+          model_version:
+            type: string
 
 errors:
   - http_status: 422

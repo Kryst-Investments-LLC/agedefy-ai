@@ -25,6 +25,14 @@ export interface SignStackComparisonInput {
   comparison: CompareStacksResponse
   policy: TwinDisplayPolicy
   stackLabels?: { a: string; b: string }
+  /**
+   * Real model_version reported by the sidecar's CompareStacksResponse
+   * (mechanistic-sidecar v0.5.0+). When supplied, takes precedence over the
+   * synthetic `mechanistic-sidecar-pkpd-2cmt@compare-stacks` placeholder
+   * derived from policy.pkpdProfile. The fallback path (in-process
+   * simulator) passes the chosen stack's model_version here.
+   */
+  modelVersion?: string
   jurisdictionRulesVersion?: string
   expirationDate?: string
   traceparent?: string
@@ -40,13 +48,15 @@ export async function signStackComparison(
     simulation_id_b: comparison.simulation_id_b,
     backend_used: policy.backendUsed,
     // Embed model_version so verifiers can derive pkpdProfile via
-    // policyFromVc(vc) — same shape as DigitalTwinForecastReceipt. Synthesised
-    // from the policy's pkpdProfile when the route doesn't have an explicit
-    // model_version (compare-stacks responses don't carry one today).
+    // policyFromVc(vc) — same shape as DigitalTwinForecastReceipt.
+    // Prefers the real sidecar-supplied modelVersion (v0.5.0+); falls back
+    // to a synthetic placeholder when the route only knows the policy's
+    // pkpdProfile (older sidecars / fallback path that didn't pass it).
     model_version:
-      policy.pkpdProfile === "2-cmt"
+      input.modelVersion ??
+      (policy.pkpdProfile === "2-cmt"
         ? "mechanistic-sidecar-pkpd-2cmt@compare-stacks"
-        : undefined,
+        : undefined),
     pkpd_profile: policy.pkpdProfile,
     display_tier: policy.tier,
     is_illustrative: policy.isIllustrative,

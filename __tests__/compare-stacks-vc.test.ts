@@ -130,4 +130,25 @@ describe("signStackComparison", () => {
     expect(payload.pkpd_profile).toBe("1-cmt")
     expect(payload.model_version).toBeUndefined()
   })
+
+  it("prefers an explicit modelVersion over the synthetic placeholder", async () => {
+    issueMock.mockResolvedValue({
+      id: "urn:vc:cmp-5",
+      issuer: "did:web:vc.agedefy.ai",
+      type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
+      proof: { proofValue: "z" },
+    })
+    const { signStackComparison } = await import("@/lib/agents/compare-stacks-vc")
+    await signStackComparison({
+      userId: "user-1",
+      comparison: COMPARISON,
+      policy: { ...POLICY, pkpdProfile: "2-cmt" as const, lowConfidenceOutcomes: [] },
+      // Real sidecar-supplied version (mechanistic-sidecar v0.5.0+).
+      modelVersion: "mechanistic-sidecar-pkpd-2cmt@0.5.0",
+    })
+    const [req] = issueMock.mock.calls[0]
+    const payload = req.credentialSubject.payload as Record<string, unknown>
+    expect(payload.model_version).toBe("mechanistic-sidecar-pkpd-2cmt@0.5.0")
+    expect(payload.pkpd_profile).toBe("2-cmt")
+  })
 })
