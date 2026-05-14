@@ -148,6 +148,10 @@ export async function POST(request: NextRequest) {
             comparison: resp,
             policy,
             stackLabels: body.stackLabels,
+            // Real model_version from mechanistic-sidecar v0.5.0+; older
+            // sidecars omit it and signStackComparison falls back to a
+            // synthetic placeholder.
+            modelVersion: resp.model_version,
             traceparent,
           })
         }
@@ -219,6 +223,7 @@ export async function POST(request: NextRequest) {
       simulation_id_b: b.simulation_id,
       delta_of_deltas: delta,
       backend_used: a.backend_used,
+      model_version: a.model_version,
       low_confidence_outcomes: mergedLowConfidence,
     }
 
@@ -229,6 +234,9 @@ export async function POST(request: NextRequest) {
         comparison,
         policy,
         stackLabels: body.stackLabels,
+        // Both stacks share dispatch in this branch; either model_version
+        // is correct. Pick a's for stable ordering.
+        modelVersion: a.model_version,
         traceparent,
       })
     }

@@ -284,6 +284,14 @@ export interface CompareStacksResponse {
     { stack_a_final: number; stack_b_final: number; difference: number; ci95: [number, number] }
   >
   /**
+   * Backend + model_version that actually ran. Both stacks share dispatch in
+   * mechanistic-sidecar's compare_stacks(), so a single pair is returned
+   * (taken from the first stack's SimulateResponse). Added in v0.5.0;
+   * optional so older sidecar versions still parse cleanly.
+   */
+  backend_used?: MechanisticBackendUsed
+  model_version?: string
+  /**
    * Union of outcomes flagged low_confidence_flag=true in either stack's
    * individual SimulateResponse. Empty when both stacks are fully calibrated.
    * Added in mechanistic-sidecar v0.3.0; older sidecars omit the field.
