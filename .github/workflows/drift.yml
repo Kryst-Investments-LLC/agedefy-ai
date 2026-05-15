@@ -18,7 +18,7 @@ jobs:
         run: ./tools-v3/v3-jurisdiction-validator.ps1
       - name: Open issue if any rule older than 12 months
         if: failure()
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@v6
         with:
           title: "Legal rule freshness check failed"
           content-filepath: .github/ISSUE_TEMPLATE/legal-drift.md
