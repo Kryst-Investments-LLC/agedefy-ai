@@ -40,7 +40,8 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Badge variant="secondary">{topicLabel[article.topic] ?? article.topic}</Badge>
-            {article.reviewed && <Badge variant="outline" className="text-xs text-green-400 border-green-600">Reviewed</Badge>}
+            {/* REMOVED: green "Reviewed" badge — no clinical review process is wired to this field.
+                TODO: restore only when a real editorial/clinical review workflow populates it. */}
           </div>
           <h1 className="text-4xl font-bold leading-tight">{article.title}</h1>
           <p className="mt-3 text-lg text-gray-400">{article.summary}</p>

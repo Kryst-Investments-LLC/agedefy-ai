@@ -1,4 +1,14 @@
 /**
+ * ⚠ TODO: THIS LOADER IS NOT ACTIVE — `@longevity-standards/legal-rules` IS NOT INSTALLED
+ * ────────────────────────────────────────────────────────────────────────────────────────
+ * The package import in `loadJurisdictionRuleSet` will always throw, triggering the
+ * catch-block fallback that returns an empty rule set. Every gate evaluation will
+ * therefore default-ALLOW with no enforcement applied.
+ *
+ * This file is inert scaffolding. Do not cite it as evidence of active legal/regulatory
+ * enforcement in any user-facing copy, documentation, or sales material.
+ * ────────────────────────────────────────────────────────────────────────────────────────
+ *
  * Adapter that converts the rich rule packs published by
  * `@longevity-standards/legal-rules` into the simpler `JurisdictionRuleSet`
  * shape consumed by `lib/legal/jurisdiction-gate.ts`.

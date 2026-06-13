@@ -1,4 +1,20 @@
 /**
+ * ⚠ TODO: THIS GATE IS NOT ACTIVE — DO NOT PRESENT IT AS COMPLIANCE
+ * ──────────────────────────────────────────────────────────────────
+ * `gateAndRecord` is never called from any production route. Zero enforcement
+ * happens at runtime. No UI, no API handler, and no middleware invokes this
+ * file. The layer exists as scaffolding only.
+ *
+ * Before treating this as real compliance enforcement:
+ *  1. Install `@longevity-standards/legal-rules` (see rules-loader.ts).
+ *  2. Call `gateAndRecord` from every route that surfaces health recommendations.
+ *  3. Have legal counsel review the rule set and the default-ALLOW fallback.
+ *  4. Remove this notice and update any user-facing copy accordingly.
+ *
+ * Until then: do NOT use "jurisdiction-aware", "legally compliant", or any
+ * similar language in UI copy, sales materials, or API documentation.
+ * ──────────────────────────────────────────────────────────────────
+ *
  * Jurisdiction-aware runtime gate.
  *
  * Reads the rules pack from `.github-private/agents/agedefy/legal-rules`

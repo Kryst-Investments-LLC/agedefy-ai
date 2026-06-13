@@ -6,7 +6,6 @@ import { Footer } from "@/components/footer"
 import { CookieConsent } from "@/components/cookie-consent"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
-import { Shield, Stethoscope, Lock, Activity } from "lucide-react"
 import { db } from "@/lib/db"
 
 export default async function HomePage() {
@@ -59,27 +58,18 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Trust strip */}
-      <section className="border-y border-border bg-muted/30">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-8 px-4 py-6 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Lock className="h-4 w-4 text-primary" />
-            <span>SOC 2 Aware</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            <span>HIPAA-Aware Architecture</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Stethoscope className="h-4 w-4 text-primary" />
-            <span>Clinician-Reviewed Protocols</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            <span>Real Biomarker Data — No Simulations</span>
-          </div>
-        </div>
-      </section>
+      {/*
+        REMOVED TRUST STRIP — 2026-06-13
+        The following claims were displayed here and have been removed because
+        none are backed by active enforcement in this codebase:
+          • "SOC 2 Aware"               — no third-party audit performed
+          • "HIPAA-Aware Architecture"  — no BAA process or enforcement wired in
+          • "Clinician-Reviewed Protocols" — no clinical review workflow exists
+        "Real Biomarker Data — No Simulations" was true but orphaned without
+        the others; the Stats section below makes the same point more concretely.
+        TODO: restore a trust strip only after the relevant certifications/
+        processes are genuinely in place.
+      */}
 
       <Stats />
       <Features />
