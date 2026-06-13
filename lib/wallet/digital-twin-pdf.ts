@@ -130,7 +130,7 @@ export function policyFromVc(vc: VerifiableCredential): TwinDisplayPolicy {
     typeof payload.model_version === "string" ? payload.model_version : undefined
   const pkpdProfile =
     backendUsed === "mechanistic"
-      ? (explicitProfile ?? (modelVersion?.includes("pkpd-2cmt") ? "2-cmt" : null))
+      ? (explicitProfile ?? (modelVersion?.includes("pkpd-2cmt") ? "2-cmt" : "1-cmt"))
       : null
   return synthesiseDisplayPolicy(backendUsed, lowConfidence, pkpdProfile)
 }
