@@ -10,7 +10,7 @@ type JwtForTestsResponse = {
 const testServerBaseUrl = process.env.TEST_SERVER_BASE_URL ?? 'http://127.0.0.1:3101'
 
 describe('Live /api/auth/jwt-for-tests', () => {
-  it.skip('returns no-store headers when enabled', async () => {
+  it('returns no-store headers when enabled', async () => {
     const email = 'live-jwt-test@example.com'
     const password = 'TestPass123!'
     const passwordHash = await bcrypt.hash(password, 12)
