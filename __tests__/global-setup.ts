@@ -87,17 +87,26 @@ export default async function globalSetup() {
     }).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   ) as NodeJS.ProcessEnv
 
-  const prismaCommand = process.platform === "win32" ? "cmd.exe" : "pnpm"
-  const prismaArgs = process.platform === "win32"
-    ? ["/d", "/s", "/c", "pnpm exec prisma db push --accept-data-loss --config prisma.config.ts"]
-    : ["exec", "prisma", "db", "push", "--accept-data-loss", "--config", "prisma.config.ts"]
+  const dbUrl = env.DATABASE_URL ?? ""
+  const isPgUrl = dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")
 
-  await runCommand({
-    command: prismaCommand,
-    args: prismaArgs,
-    env,
-    description: "Prisma schema sync for tests",
-  })
+  if (isPgUrl) {
+    const prismaCommand = process.platform === "win32" ? "cmd.exe" : "pnpm"
+    const prismaArgs = process.platform === "win32"
+      ? ["/d", "/s", "/c", "pnpm exec prisma db push --accept-data-loss --config prisma.config.ts"]
+      : ["exec", "prisma", "db", "push", "--accept-data-loss", "--config", "prisma.config.ts"]
+
+    await runCommand({
+      command: prismaCommand,
+      args: prismaArgs,
+      env,
+      description: "Prisma schema sync for tests",
+    })
+  } else {
+    // Non-PostgreSQL URL (e.g. SQLite file:// during local dev) — skip db push.
+    // Unit tests that need the DB mock it entirely; integration tests require a real PG URL.
+    console.warn("[global-setup] Skipping prisma db push: DATABASE_URL is not a PostgreSQL URL")
+  }
 
   const spawnCommand = process.platform === "win32" ? "cmd.exe" : "pnpm"
   const spawnArgs = process.platform === "win32"
