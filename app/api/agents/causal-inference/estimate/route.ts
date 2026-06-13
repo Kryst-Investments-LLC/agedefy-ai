@@ -8,6 +8,7 @@ import {
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
+import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { SidecarError } from '@/lib/sidecars'
@@ -43,6 +44,11 @@ const ALLOWED_COHORTS: ReadonlyArray<CausalInferenceAgentInput['cohort']> = [
 ]
 
 export async function POST(request: NextRequest) {
+  // Feature flag gate — ENABLE_CAUSAL_SIDECAR defaults OFF
+  if (env.ENABLE_CAUSAL_SIDECAR !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const blocked = await applyRateLimit(request, { maxRequests: 20, windowMs: 60_000 })
   if (blocked) return blocked
 

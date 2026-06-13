@@ -55,6 +55,12 @@ export async function getKgBackend(): Promise<KgBackend> {
   if (cached) return cached
   const choice = env.KG_BACKEND ?? "relational"
   if (choice === "neo4j") {
+    // Feature flag gate — ENABLE_NEO4J_BACKEND defaults OFF; KG_BACKEND=neo4j alone is not enough
+    if (env.ENABLE_NEO4J_BACKEND !== 'true') {
+      const mod = await import("./relational-backend")
+      cached = mod.createRelationalBackend()
+      return cached
+    }
     const mod = await import("./neo4j-backend")
     cached = mod.createNeo4jBackend()
     return cached

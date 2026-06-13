@@ -7,15 +7,21 @@
  * @module app/admin/fl/page
  */
 
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
 import { Navigation } from '@/components/navigation'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { env } from '@/lib/env'
 import { DEFAULT_FL_CONFIG } from '@/lib/fl/server-config'
 
 export default async function AdminFLDashboardPage() {
+  // Feature flag gate — ENABLE_FEDERATED_LEARNING defaults OFF
+  if (env.ENABLE_FEDERATED_LEARNING !== 'true') {
+    notFound()
+  }
+
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id || session.user.role !== 'ADMIN') {

@@ -52,6 +52,10 @@ const envSchema = z.object({
   KG_NEO4J_USER: z.string().optional(),
   KG_NEO4J_PASSWORD: z.string().optional(),
   BIO_AGE_USE_OMICS: z.enum(["true", "false"]).optional(),
+  // ─── Experimental / in-development feature gates (default OFF) ───────────
+  ENABLE_FEDERATED_LEARNING: z.enum(["true", "false"]).optional(),
+  ENABLE_CAUSAL_SIDECAR: z.enum(["true", "false"]).optional(),
+  ENABLE_NEO4J_BACKEND: z.enum(["true", "false"]).optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>
@@ -126,6 +130,9 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     JOB_WORKER_LEASE_MS: process.env.JOB_WORKER_LEASE_MS,
     JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
     JOB_TENANT_ID: process.env.JOB_TENANT_ID,
+    ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+    ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+    ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
   }
 }
 
@@ -280,6 +287,9 @@ const fallbackEnv: ParsedEnvironment = {
   JOB_WORKER_LEASE_MS: process.env.JOB_WORKER_LEASE_MS,
   JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
   JOB_TENANT_ID: process.env.JOB_TENANT_ID,
+  ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+  ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+  ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
 }
 
 export const env = parsedEnv.success ? parsedEnv.data : fallbackEnv

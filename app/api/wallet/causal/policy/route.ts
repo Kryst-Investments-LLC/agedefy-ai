@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { causalSummaryFromVc } from '@/lib/agents/causal-summary'
 import { authOptions } from '@/lib/auth'
 import { requireGdprConsent } from '@/lib/consent'
+import { env } from '@/lib/env'
 import { applyRateLimit } from '@/lib/rate-limit'
 import type { VerifiableCredential } from '@/lib/sidecars'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
@@ -35,6 +36,11 @@ interface PolicyRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  // Feature flag gate — ENABLE_CAUSAL_SIDECAR defaults OFF
+  if (env.ENABLE_CAUSAL_SIDECAR !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const blocked = await applyRateLimit(request, { maxRequests: 60, windowMs: 60_000 })
   if (blocked) return blocked
 

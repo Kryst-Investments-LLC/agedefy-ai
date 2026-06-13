@@ -16,6 +16,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logAudit } from '@/lib/audit'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { env } from '@/lib/env'
 
 /* ------------------------------------------------------------------ */
 /*  Validation                                                        */
@@ -32,6 +33,11 @@ const createModelSchema = z.object({
 /* ------------------------------------------------------------------ */
 
 export async function GET(request: NextRequest) {
+  // Feature flag gate — ENABLE_FEDERATED_LEARNING defaults OFF
+  if (env.ENABLE_FEDERATED_LEARNING !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const blocked = await applyRateLimit(request)
   if (blocked) return blocked
 
@@ -73,6 +79,11 @@ export async function GET(request: NextRequest) {
 /* ------------------------------------------------------------------ */
 
 export async function POST(request: NextRequest) {
+  // Feature flag gate — ENABLE_FEDERATED_LEARNING defaults OFF
+  if (env.ENABLE_FEDERATED_LEARNING !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const blocked = await applyRateLimit(request, { maxRequests: 10, windowMs: 60_000 })
   if (blocked) return blocked
 
