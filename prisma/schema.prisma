@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -266,9 +266,9 @@ model UserProfile {
   activityLevel         String? // sedentary, light, moderate, active, very_active
   sleepQuality          Int? // 1-5
   stressLevel           Int? // 1-5
-  healthConditions      String    @default("[]") // JSON array of condition strings
-  supplementStack       String    @default("[]") // JSON array of supplement strings
-  healthGoals           String    @default("[]") // JSON array: cognitive, cardiovascular, metabolic, athletic, aesthetic
+  healthConditions      Json      @default("[]") // JSON array of condition strings
+  supplementStack       Json      @default("[]") // JSON array of supplement strings
+  healthGoals           Json      @default("[]") // JSON array: cognitive, cardiovascular, metabolic, athletic, aesthetic
   primaryMotivation     String?
   onboardingCompletedAt DateTime?
   // Notification preferences
@@ -442,7 +442,7 @@ model AuditLog {
   action      String
   entityType  String
   entityId    String?
-  details     String?
+  details     Json?
   prevHash    String?
   entryHash   String?
   createdAt   DateTime @default(now())
@@ -856,7 +856,7 @@ model PartnerDataRecord {
   source     PartnerDataSource
   partnerId  String?
   label      String
-  payload    String
+  payload    Json
   receivedAt DateTime          @default(now())
   createdAt  DateTime          @default(now())
   user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1081,7 +1081,7 @@ model LabTestPanel {
   name           String        @unique
   category       String
   description    String?
-  biomarkers     String
+  biomarkers     Json
   priceCents     Int
   turnaroundDays Int           @default(5)
   status         LabTestStatus @default(AVAILABLE)
@@ -1153,7 +1153,7 @@ model TelehealthProvider {
   credentials   String // e.g. "MD, Board Certified Internal Medicine"
   specialty     String // e.g. "longevity medicine", "endocrinology"
   bio           String?
-  licenseStates String? // JSON array of states/regions
+  licenseStates Json? // JSON array of states/regions
   acceptingNew  Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -1873,8 +1873,8 @@ model BiologicalAgeSnapshot {
   userId           String
   chronologicalAge Float
   biologicalAge    Float
-  hallmarkScores   String   @default("{}") // JSON: per-hallmark 0-1 scores
-  inputSummary     String? // JSON: biomarkers used for computation
+  hallmarkScores   Json     @default("{}") // JSON: per-hallmark 0-1 scores
+  inputSummary     Json? // JSON: biomarkers used for computation
   confidence       Float    @default(0.5)
   createdAt        DateTime @default(now())
 
@@ -1949,7 +1949,7 @@ model WearableConnection {
   userId         String
   provider       String // terra, apple_health, garmin, oura, whoop, fitbit
   externalUserId String? // provider-specific user ID
-  scopes         String    @default("[]") // JSON array of granted scopes
+  scopes         Json      @default("[]") // JSON array of granted scopes
   status         String    @default("active") // active, disconnected, error
   connectedAt    DateTime  @default(now())
   lastSyncAt     DateTime?
@@ -1968,7 +1968,7 @@ model PendingGraphContribution {
   tenantId      String    @default("default")
   contributorId String
   entityType    String // pathway-link, interaction, biomarker-effect, study-link
-  payload       String // JSON of the proposed entity data
+  payload       Json // JSON of the proposed entity data
   status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
   reviewerId    String?
   reviewedAt    DateTime?
@@ -2080,7 +2080,7 @@ model FederatedModel {
   epsilon         Float? // total differential privacy budget consumed
   accuracy        Float? // model accuracy on validation set
   loss            Float? // model loss on validation set
-  metricsJson     String    @default("{}") // JSON: additional eval metrics
+  metricsJson     Json      @default("{}") // JSON: additional eval metrics
   weightsUrl      String? // URL/path to serialised model weights
   status          String    @default("training") // training, published, deprecated
   publishedAt     DateTime?
@@ -2189,7 +2189,7 @@ model DriftSweep {
   ranAt              DateTime @default(now())
   biomarkersScanned  Int      @default(0)
   driftsDetected     Int      @default(0)
-  findings           String   @default("[]") // JSON array of DriftFinding
+  findings           Json     @default("[]") // JSON array of DriftFinding
   triggerType        String   @default("scheduled") // scheduled | manual
   proactiveSessionId String? // AgentSession spawned, if any
   createdAt          DateTime @default(now())
@@ -2208,7 +2208,7 @@ model DriftNotification {
   title          String
   body           String
   severity       DriftSeverity @default(MEDIUM)
-  biomarkerNames String        @default("[]") // JSON array of names
+  biomarkerNames Json          @default("[]") // JSON array of names
   sessionId      String? // linked proactive session
   readAt         DateTime?
   dismissedAt    DateTime?
@@ -2248,7 +2248,7 @@ model GovernanceAuditLog {
   compoundName   String
   riskCategory   RiskCategory
   decision       String // AUTO_APPROVED, AWAITING_REVIEW, ESCALATED
-  policySnapshot String // JSON snapshot of the policy at decision time
+  policySnapshot Json // JSON snapshot of the policy at decision time
   adherenceRate  Float?
   reason         String
   createdAt      DateTime     @default(now())
@@ -2375,7 +2375,7 @@ model OmicsSample {
   receivedAt   DateTime?
   externalId   String? // accession at the lab
   qcPassed     Boolean            @default(false)
-  qcMetrics    String? // JSON blob: yield, RIN, contamination, etc.
+  qcMetrics    Json? // JSON blob: yield, RIN, contamination, etc.
   createdAt    DateTime           @default(now())
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   batch        OmicsAssayBatch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
@@ -2461,8 +2461,8 @@ model PhysiologicalTwin {
   ancestry       String?
   egfrMlMin      Float? // renal function for PBPK
   childPughClass String? // "A","B","C" for hepatic
-  parameterJson  String // PBPK compartment params (volumes, clearances)
-  hallmarkJson   String // hallmark-of-aging × hallmark-of-cancer state vector
+  parameterJson  Json // PBPK compartment params (volumes, clearances)
+  hallmarkJson   Json // hallmark-of-aging × hallmark-of-cancer state vector
   modelVersion   String
   updatedAt      DateTime            @updatedAt
   user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2522,11 +2522,11 @@ model NofOneTrial {
   hypothesis         String
   design             NofOneDesign
   primaryEndpoint    String // analyte code or biomarker name
-  secondaryEndpoints String // JSON list
+  secondaryEndpoints Json // JSON list
   preregisteredHash  String // sha256 of pre-registration JSON (frozen at start)
-  preregisteredJson  String // full pre-registration document
+  preregisteredJson  Json // full pre-registration document
   status             NofOneStatus   @default(DESIGN)
-  bayesianStopJson   String // {priorMu, priorSd, deltaThreshold, futilityCutoff}
+  bayesianStopJson   Json // {priorMu, priorSd, deltaThreshold, futilityCutoff}
   irbApprovalRef     String?
   startedAt          DateTime?
   stoppedAt          DateTime?
@@ -2560,7 +2560,7 @@ model NofOnePeriod {
   orderIndex   Int
   startDate    DateTime
   endDate      DateTime
-  observations String // JSON: [{measuredAt, analyte, value, unit}]
+  observations Json // JSON: [{measuredAt, analyte, value, unit}]
   trial        NofOneTrial @relation(fields: [trialId], references: [id], onDelete: Cascade)
 
   @@index([trialId, orderIndex])
@@ -2582,7 +2582,7 @@ model PharmacogenomicProfile {
   tenantId     String    @default("default")
   userId       String    @unique
   // Each gene + diplotype + assigned phenotype (CPIC convention).
-  variantsJson String // [{gene:"CYP2D6", diplotype:"*1/*4", phenotype:"INTERMEDIATE", activityScore:1.0}]
+  variantsJson Json // [{gene:"CYP2D6", diplotype:"*1/*4", phenotype:"INTERMEDIATE", activityScore:1.0}]
   panelVendor  String?
   panelVersion String?
   reportedAt   DateTime?
@@ -2639,8 +2639,8 @@ model KgNode {
   kind       String // "gene","protein","compound","pathway","disease","cell_type"
   externalId String // HGNC, UniProt, ChEMBL, MONDO, etc.
   label      String
-  synonyms   String? // JSON array
-  attributes String? // JSON
+  synonyms   Json? // JSON array
+  attributes Json? // JSON
   createdAt  DateTime @default(now())
   outgoing   KgEdge[] @relation("EdgeFrom")
   incoming   KgEdge[] @relation("EdgeTo")
@@ -2657,11 +2657,11 @@ model KgEdge {
   edgeType       KgEdgeType
   evidenceGrade  KgEvidenceGrade
   source         String // "OpenTargets","ChEMBL","DepMap","PubMed:PMID"
-  pubmedIds      String? // JSON array of PMIDs
+  pubmedIds      Json? // JSON array of PMIDs
   effectSize     Float?
   effectSizeUnit String?
   confidence     Float? // 0..1
-  attributes     String? // JSON
+  attributes     Json? // JSON
   createdAt      DateTime        @default(now())
   fromNode       KgNode          @relation("EdgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
   toNode         KgNode          @relation("EdgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
@@ -2685,8 +2685,8 @@ model TumorProfile {
   msiStatus         String? // "MSS","MSI-L","MSI-H"
   hrdScore          Float? // homologous recombination deficiency
   pdL1Cps           Float?
-  driverMutations   String // JSON: [{gene, hgvs, vaf, depth}]
-  neoantigensJson   String? // [{peptide, hla, affinity_nM}]
+  driverMutations   Json // JSON: [{gene, hgvs, vaf, depth}]
+  neoantigensJson   Json? // [{peptide, hla, affinity_nM}]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2729,8 +2729,8 @@ model TranscriptomicSignature {
   userId               String? // null => published reference signature
   name                 String
   sourceAssay          String // bulk RNA-seq, microarray
-  upGenes              String // JSON array of HGNC symbols
-  downGenes            String // JSON array
+  upGenes              Json // JSON array of HGNC symbols
+  downGenes            Json // JSON array
   createdAt            DateTime               @default(now())
   user                 User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   DrugRepurposingScore DrugRepurposingScore[]
@@ -2805,7 +2805,7 @@ model LabResultReconciliation {
   vendor          String
   receivedAt      DateTime           @default(now())
   rawPayload      String
-  parsedJson      String?
+  parsedJson      Json?
   status          LabResultRecStatus @default(RECEIVED)
   matchedSampleId String? // OmicsSample.id once reconciled
   notes           String?
@@ -2835,8 +2835,8 @@ model AgentSessionReplayManifest {
   id             String   @id @default(cuid())
   sessionId      String   @unique
   scratchpadHash String // sha256 of canonicalized scratchpad
-  modelIds       String // JSON: {discovery:"gpt-x@v1", safety:"claude-y@v2"}
-  promptHashes   String // JSON: {discovery:"abc...", ...}
+  modelIds       Json // JSON: {discovery:"gpt-x@v1", safety:"claude-y@v2"}
+  promptHashes   Json // JSON: {discovery:"abc...", ...}
   inputsHash     String
   determinismOk  Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -2865,7 +2865,7 @@ model EvalBenchRun {
   benchName    String // "drift_detection_v1","mech_calibration_v2","safety_panel_v1"
   benchVersion String
   datasetHash  String
-  metricsJson  String // {precision, recall, brier, ece, ...}
+  metricsJson  Json // {precision, recall, brier, ece, ...}
   agentClass   String?
   modelVersion String?
   ranAt        DateTime @default(now())
