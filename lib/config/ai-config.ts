@@ -52,12 +52,12 @@ export const getAIConfig = (): AIConfig => {
       grok: {
         enabled: process.env.NEXT_PUBLIC_ENABLE_GROK === 'true',
         apiKey: process.env.GROK_API_KEY,
-        model: 'grok-beta',
+        model: 'grok-3',
       },
       anthropic: {
         enabled: process.env.NEXT_PUBLIC_ENABLE_ANTHROPIC === 'true',
         apiKey: process.env.ANTHROPIC_API_KEY,
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-6',
       },
     },
     scientificData: {

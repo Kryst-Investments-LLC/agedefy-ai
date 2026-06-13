@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
         candidateCount: parsed.data.candidates.length,
       },
       execute: async () => aeonforgeService.generateVirtualTwin(
-        parsed.data.candidates,
-        parsed.data.userContext,
+        parsed.data.candidates as import('@/lib/services/aeonforge').AeonForgeCandidateMolecule[],
+        parsed.data.userContext as Parameters<typeof aeonforgeService.generateVirtualTwin>[1],
       ),
     })
 

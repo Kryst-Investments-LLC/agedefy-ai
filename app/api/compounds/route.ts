@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         data: {
           ...data,
           aliases: aliases ? JSON.stringify(aliases) : null,
-        },
+        } as Prisma.CompoundUncheckedCreateInput,
       })
 
       logger.info("Compound created", { compoundId: compound.id, name: compound.name, actor: session.user.id })

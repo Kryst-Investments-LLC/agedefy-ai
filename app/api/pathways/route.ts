@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     actorUserId: session.user.id,
     requestFingerprint: createIdempotencyFingerprint({ userId: session.user.id, ...parsed.data }),
     execute: async () => {
-      const pathway = await db.pathway.create({ data: parsed.data })
+      const pathway = await db.pathway.create({ data: parsed.data as Prisma.PathwayUncheckedCreateInput })
 
       logger.info("Pathway created", { pathwayId: pathway.id, name: pathway.name, actor: session.user.id })
 

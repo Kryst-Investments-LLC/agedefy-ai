@@ -7,7 +7,6 @@
 //   const result = await graph.dispatch({ intent: "<natural language intent>" });
 
 import path from 'node:path';
-// @ts-expect-error -- shared package ships JS only; types arrive in v0.2.0
 import { loadAgentGraph } from '@kryst-investments-llc/master-orchestrator';
 
 type AgentGraph = {

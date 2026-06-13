@@ -23,7 +23,7 @@ function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCrede
         model_version: "causal-sidecar@0.2.0",
       },
     },
-    proof: { proofValue: "z-test" },
+    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.agedefy.ai#key-1" },
   }
   return { ...base, ...overrides }
 }

@@ -64,7 +64,7 @@ async function resolveRiskCategory(compoundName: string): Promise<'GREEN' | 'YEL
   const compound = await db.compound.findFirst({
     where: {
       OR: [
-        { name: { equals: compoundName, mode: 'insensitive' } },
+        { name: { equals: compoundName } },
         { aliases: { contains: compoundName } },
       ],
     },

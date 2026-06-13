@@ -4,9 +4,9 @@ import { AIGovernanceError, assertGovernedAIRequest, parseAllowedAIModels } from
 
 describe("parseAllowedAIModels", () => {
   it("normalizes comma-separated allowlists", () => {
-    expect(parseAllowedAIModels("gpt-4o-mini, claude-3-sonnet-20240229, gpt-4o-mini")).toEqual([
+    expect(parseAllowedAIModels("gpt-4o-mini, claude-sonnet-4-6, gpt-4o-mini")).toEqual([
       "gpt-4o-mini",
-      "claude-3-sonnet-20240229",
+      "claude-sonnet-4-6",
     ])
   })
 })

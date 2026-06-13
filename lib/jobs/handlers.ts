@@ -75,7 +75,7 @@ async function handleNotificationMarketplaceDispatch(job: OrchestrationJob) {
 async function handleAIGovernanceAudit(job: OrchestrationJob) {
   const payload = aiGovernanceAuditJobPayloadSchema.parse(job.payload)
 
-  await auditGovernedAIRequest(payload)
+  await auditGovernedAIRequest(payload as Parameters<typeof auditGovernedAIRequest>[0])
 
   if (payload.outcome !== "success") {
     await createReviewItem({

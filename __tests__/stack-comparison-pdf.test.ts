@@ -19,6 +19,7 @@ const CALIBRATED: TwinDisplayPolicy = {
   isIllustrative: false,
   requiresClinicianBanner: false,
   lowConfidenceOutcomes: [],
+  pkpdProfile: null,
   badgeLabel: "Calibrated",
   badgeTooltip: "Backend: statistical.",
 }
@@ -29,6 +30,7 @@ const ILLUSTRATIVE: TwinDisplayPolicy = {
   isIllustrative: true,
   requiresClinicianBanner: true,
   lowConfidenceOutcomes: [],
+  pkpdProfile: null,
   badgeLabel: "Illustrative - not clinical",
   badgeTooltip: "fallback",
 }
@@ -39,6 +41,7 @@ const PARTIAL: TwinDisplayPolicy = {
   isIllustrative: false,
   requiresClinicianBanner: true,
   lowConfidenceOutcomes: ["ldl"],
+  pkpdProfile: "1-cmt",
   badgeLabel: "Calibrated - 1 outcome low-confidence",
   badgeTooltip: "Backend: statistical. ldl flagged.",
 }

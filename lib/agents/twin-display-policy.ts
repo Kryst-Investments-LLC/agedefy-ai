@@ -100,7 +100,7 @@ function lowConfidenceOutcomesOf(
  */
 export function getTwinDisplayPolicy(
   forecast:
-    | Pick<SimulateResponse, "backend_used" | "trajectories" | "model_version">
+    | (Pick<SimulateResponse, "backend_used" | "trajectories"> & { model_version?: string })
     | null
     | undefined,
 ): TwinDisplayPolicy {

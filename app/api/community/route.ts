@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
         data: {
           ...parsed.data,
           authorId: session.user.id,
-        },
+        } as Prisma.CommunityPostUncheckedCreateInput,
       })
 
       await logAudit({

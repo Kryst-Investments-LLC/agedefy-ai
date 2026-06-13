@@ -137,7 +137,7 @@ describe('AI provider orchestration routes', () => {
     runWithReservedAICreditsMock.mockImplementation(async ({ execute }: { execute: () => Promise<unknown> }) => execute())
     getAIConfigMock.mockReturnValue({
       providers: {
-        anthropic: { enabled: true, apiKey: 'anthropic-key', model: 'claude-3-sonnet-20240229' },
+        anthropic: { enabled: true, apiKey: 'anthropic-key', model: 'claude-sonnet-4-6' },
         grok: { enabled: true, apiKey: 'grok-key', model: 'grok-2-latest' },
         openai: { enabled: true, apiKey: 'openai-key', model: 'gpt-4o-mini' },
       },

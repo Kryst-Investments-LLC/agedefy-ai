@@ -23,8 +23,8 @@ describe("signStackComparison", () => {
     simulation_id_b: "sim-b",
     backend_used: "mechanistic" as const,
     delta_of_deltas: {
-      hs_crp: { a_delta: -0.1, b_delta: -0.25, difference: -0.15, ci95_half_width: 0.05 },
-      ldl: { a_delta: -0.3, b_delta: -0.6, difference: -0.3, ci95_half_width: 0.1 },
+      hs_crp: { stack_a_final: -0.1, stack_b_final: -0.25, difference: -0.15, ci95: [-0.2, -0.1] as [number, number] },
+      ldl: { stack_a_final: -0.3, stack_b_final: -0.6, difference: -0.3, ci95: [-0.4, -0.2] as [number, number] },
     },
     low_confidence_outcomes: ["hs_crp"],
   }

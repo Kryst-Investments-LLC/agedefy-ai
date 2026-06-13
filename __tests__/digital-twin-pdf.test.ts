@@ -35,7 +35,7 @@ function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCrede
         ],
       },
     },
-    proof: { proofValue: "z-test" },
+    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.agedefy.ai#key-1" },
   }
   return { ...base, ...overrides }
 }
@@ -55,7 +55,7 @@ function buildForecast(
         low_confidence_flag: lowConfidence,
       },
     },
-  } as const
+  }
 }
 
 describe("renderDigitalTwinForecastPDF", () => {

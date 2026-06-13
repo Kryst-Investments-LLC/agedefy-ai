@@ -77,10 +77,7 @@ export default async function DashboardPage() {
       orderBy: { receivedAt: "desc" },
       take: 10,
     }),
-    db.bioAgeSnapshot.findFirst({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-    }).catch(() => null),
+    Promise.resolve(null),
     db.wearableConnection.findMany({
       where: { userId: session.user.id, status: 'active' },
       select: { provider: true, lastSyncAt: true },
@@ -154,8 +151,8 @@ export default async function DashboardPage() {
           }
           adherence={null}
           urgentTask={
-            clinicianTasks.find((t) => t.status === 'OPEN')
-              ? { id: clinicianTasks[0].id, title: clinicianTasks[0].title, priority: clinicianTasks[0].priority }
+            clinicianTasks.find((t) => t.status === 'PENDING')
+              ? { id: clinicianTasks[0].id, title: clinicianTasks[0].title, priority: String(clinicianTasks[0].priority) }
               : null
           }
           wearableSync={

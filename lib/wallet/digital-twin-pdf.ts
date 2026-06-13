@@ -66,6 +66,7 @@ interface ReceiptPayload {
   interventions?: InterventionRow[]
   outcome_summaries?: OutcomeSummary[]
   warnings?: string[]
+  pkpd_profile?: "1-cmt" | "2-cmt"
 }
 
 function asciiOnly(value: string): string {

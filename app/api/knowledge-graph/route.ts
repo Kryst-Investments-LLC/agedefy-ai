@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
         if (!parsed.success) {
           return { status: 400, body: { error: "Invalid data", details: parsed.error.flatten() } }
         }
-        const link = await db.compoundPathway.create({ data: parsed.data })
+        const link = await db.compoundPathway.create({ data: parsed.data as Prisma.CompoundPathwayUncheckedCreateInput })
         logger.info("Compound-pathway link created", { linkId: link.id, actor: session.user.id })
         return { status: 201, body: link }
       }
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         if (parsed.data.compoundAId === parsed.data.compoundBId) {
           return { status: 400, body: { error: "Cannot create self-interaction" } }
         }
-        const interaction = await db.compoundInteraction.create({ data: parsed.data })
+        const interaction = await db.compoundInteraction.create({ data: parsed.data as Prisma.CompoundInteractionUncheckedCreateInput })
         logger.info("Compound interaction created", { interactionId: interaction.id, actor: session.user.id })
         return { status: 201, body: interaction }
       }
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
         if (!parsed.success) {
           return { status: 400, body: { error: "Invalid data", details: parsed.error.flatten() } }
         }
-        const effect = await db.compoundBiomarkerEffect.create({ data: parsed.data })
+        const effect = await db.compoundBiomarkerEffect.create({ data: parsed.data as Prisma.CompoundBiomarkerEffectUncheckedCreateInput })
         logger.info("Biomarker effect created", { effectId: effect.id, actor: session.user.id })
         return { status: 201, body: effect }
       }

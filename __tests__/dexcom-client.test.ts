@@ -44,8 +44,7 @@ describe('Dexcom client — normalizeDexcomEgv', () => {
       recordVersion: '3.0',
       userId: 'dx-user-1',
       records: [
-        // @ts-expect-error testing bad input
-        { systemTime: 'x', displayTime: 'x', value: null, unit: 'mg/dL' },
+        { systemTime: 'x', displayTime: 'x', value: null as unknown as number, unit: 'mg/dL' },
         { systemTime: '2026-05-12T10:00:00', displayTime: 'x', value: NaN, unit: 'mg/dL' },
         { systemTime: '2026-05-12T10:00:00', displayTime: 'x', value: 100, unit: 'mg/dL' },
       ],

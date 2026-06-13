@@ -33,6 +33,7 @@ describe('canonical event ingestion helpers', () => {
         name: 'CRP',
         value: 1.5,
         unit: 'mg/L',
+        source: 'manual',
         target: 1.0,
         trend: BiomarkerTrend.STABLE,
         measuredAt: new Date('2026-03-01T00:00:00.000Z'),

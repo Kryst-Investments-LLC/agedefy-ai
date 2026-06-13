@@ -40,10 +40,18 @@ vi.mock("@/lib/sidecars", async () => {
 })
 
 function buildForecast(simId: string, finalCrp: number) {
-  return {
+  const result: {
+    simulation_id: string
+    horizon_weeks: number
+    backend_used: string
+    model_version: string
+    fallbackUsed: boolean
+    trajectories: Record<string, { weekly_means: number[]; ci95_low: number[]; ci95_high: number[]; low_confidence_flag?: boolean }>
+    warnings: string[]
+  } = {
     simulation_id: simId,
     horizon_weeks: 52,
-    backend_used: "fallback-exponential" as const,
+    backend_used: "fallback-exponential",
     model_version: "fallback-exponential@0.1.0",
     fallbackUsed: true,
     trajectories: {
@@ -53,10 +61,12 @@ function buildForecast(simId: string, finalCrp: number) {
         ),
         ci95_low: Array.from({ length: 52 }, () => finalCrp - 0.2),
         ci95_high: Array.from({ length: 52 }, () => finalCrp + 0.2),
+        low_confidence_flag: false,
       },
     },
     warnings: [],
   }
+  return result
 }
 
 function buildRequest(body: unknown) {

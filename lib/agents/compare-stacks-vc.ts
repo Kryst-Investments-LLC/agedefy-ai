@@ -66,10 +66,10 @@ export async function signStackComparison(
     delta_of_deltas_summary: Object.entries(comparison.delta_of_deltas).map(
       ([outcome, d]) => ({
         outcome,
-        a_delta: d.a_delta,
-        b_delta: d.b_delta,
+        stack_a_final: d.stack_a_final,
+        stack_b_final: d.stack_b_final,
         difference: d.difference,
-        ci95_half_width: d.ci95_half_width,
+        ci95: d.ci95,
       }),
     ),
   }

@@ -139,7 +139,7 @@ export class PerceptionAgent implements BioAgentInterface {
     const wearableSources = new Set<string>()
     for (const b of clinicalContext.biomarkers) {
       // biomarkers promoted via the bridge have source like "wearable:oura"
-      const raw = (b as Record<string, unknown>).source
+      const raw = (b as unknown as Record<string, unknown>).source
       if (typeof raw === 'string' && raw.startsWith('wearable:')) {
         wearableSources.add(raw.replace('wearable:', ''))
       }

@@ -32,21 +32,20 @@ export async function POST(req: NextRequest) {
   const traceparent = req.headers.get("traceparent") ?? undefined
 
   try {
-    const result = await runLongevityDemo({ ...payload, traceparent })
+    const result = await runLongevityDemo({ ...payload, traceparent } as Parameters<typeof runLongevityDemo>[0])
     return NextResponse.json(result, { status: 200 })
   } catch (err) {
     if (err instanceof SidecarError) {
-      logger.warn(
-        { status: err.status, body: err.body, message: err.message },
-        "longevity-demo: sidecar error",
-      )
+      logger.warn("longevity-demo: sidecar error", {
+        status: err.status, body: err.body, message: err.message,
+      })
       const code = err.status === 409 ? 409 : 502
       return NextResponse.json(
         { error: "sidecar_error", status: err.status, detail: err.message, body: err.body },
         { status: code },
       )
     }
-    logger.error({ err }, "longevity-demo: unexpected failure")
+    logger.error("longevity-demo: unexpected failure", { err })
     return NextResponse.json(
       { error: "internal_error", detail: (err as Error).message },
       { status: 500 },

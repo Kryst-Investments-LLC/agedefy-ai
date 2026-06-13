@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         simulationTypeCount: parsed.data.simulationTypes.length,
       },
       execute: async () => aeonforgeService.simulateCandidates(
-        parsed.data.candidates,
+        parsed.data.candidates as import('@/lib/services/aeonforge').AeonForgeCandidateMolecule[],
         parsed.data.simulationTypes,
         parsed.data.userContext as Record<string, unknown> | undefined,
       ),

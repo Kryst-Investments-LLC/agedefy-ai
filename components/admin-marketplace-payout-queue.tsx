@@ -91,7 +91,7 @@ function getPersistedPayoutReview(metadata: unknown): MarketplacePayoutReviewRej
 
   const parsedReview = marketplacePayoutReviewRejectionSchema.safeParse(payoutReview)
 
-  return parsedReview.success ? parsedReview.data : null
+  return parsedReview.success ? parsedReview.data as MarketplacePayoutReviewRejection : null
 }
 
 function createRejectionDraft(review: MarketplacePayoutReviewRejection | null | undefined): RejectionDraft {

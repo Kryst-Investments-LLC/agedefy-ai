@@ -209,7 +209,7 @@ export function DashboardDailyBrief({
       {hasDrift && (
         <DriftAlertBanner
           notifications={notifications}
-          onDismiss={dismiss}
+          onDismiss={(id: string) => { void dismiss([id]) }}
         />
       )}
     </div>

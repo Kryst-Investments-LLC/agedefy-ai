@@ -115,7 +115,7 @@ describe("POST /api/agents/causal-inference/refute", () => {
   it("propagates SidecarError status as the response status", async () => {
     getServerSessionMock.mockResolvedValue({ user: { id: "user-1" } })
     const { SidecarError } = await import("@/lib/sidecars")
-    refuteMock.mockRejectedValue(new SidecarError("estimate not found", 404))
+    refuteMock.mockRejectedValue(new SidecarError("estimate not found", 404, {}))
     const { POST } = await import("@/app/api/agents/causal-inference/refute/route")
     const res = await POST(
       buildRequest({ estimate_id: "missing", refuter: "data_subset_refuter" }),
