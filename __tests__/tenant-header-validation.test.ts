@@ -1,4 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/lib/env', () => ({
+  env: { DEFAULT_TENANT_ID: 'default', TENANCY_MODE: 'single' },
+}))
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    user: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+  },
+}))
 
 import { deriveTenantContext, deriveTenantContextWithValidation, getFallbackTenantId } from '@/lib/tenancy'
 

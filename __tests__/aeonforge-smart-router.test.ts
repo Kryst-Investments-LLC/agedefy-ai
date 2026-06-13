@@ -54,6 +54,36 @@ vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: applyRateLimitMock,
 }))
 
+vi.mock("@/lib/ai-credits", () => ({
+  AICreditLimitError: class AICreditLimitError extends Error {
+    status: number
+    constructor(message: string, status = 402) { super(message); this.status = status }
+  },
+  estimateAICreditCost: vi.fn().mockReturnValue(5),
+  runWithReservedAICredits: vi.fn().mockImplementation(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+  serializeAICreditLimitError: vi.fn(),
+}))
+
+vi.mock("@/lib/consent", () => ({
+  requireGdprConsent: vi.fn().mockResolvedValue(null),
+}))
+
+vi.mock("@/lib/tenancy", () => ({
+  deriveTenantContextWithValidation: vi.fn().mockResolvedValue({ tenantId: "tenant_1", source: "session" }),
+}))
+
+vi.mock("@/lib/ai/governance", () => ({
+  assertGovernedAIRequest: vi.fn(),
+  auditGovernedAIRequest: vi.fn().mockResolvedValue(undefined),
+  AIGovernanceError: class AIGovernanceError extends Error {
+    status: number
+    constructor(message: string, status: number) {
+      super(message)
+      this.status = status
+    }
+  },
+}))
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: loggerInfoMock,

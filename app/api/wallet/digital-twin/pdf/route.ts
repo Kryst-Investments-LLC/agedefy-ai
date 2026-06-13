@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
     policy,
     recipient: body.recipient,
     generatedAt: body.generatedAt,
-  })  await logAudit({
+  })
+  await logAudit({
     actorUserId: session.user.id,
     actorEmail: session.user.email ?? undefined,
     tenantId: tenantContext.tenantId,

@@ -203,7 +203,7 @@ function runFallback(
         const ivDelta = steadyState * progress
         value += ivDelta
         perIvDelta[iv.intervention_id] = (perIvDelta[iv.intervention_id] ?? 0) + ivDelta
-        totalAbsTargetDelta += Math.abs(steadyState)
+        totalAbsTargetDelta += Math.abs(ivDelta)
       }
 
       weeklyMeans[week] = round3(value)

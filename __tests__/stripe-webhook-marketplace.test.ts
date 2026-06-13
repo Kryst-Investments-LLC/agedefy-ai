@@ -35,6 +35,9 @@ vi.mock("@/lib/db", () => ({
       upsert: vi.fn(),
       updateMany: vi.fn(),
     },
+    idempotencyRecord: {
+      create: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 

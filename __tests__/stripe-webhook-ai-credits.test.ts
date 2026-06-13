@@ -40,6 +40,9 @@ vi.mock("@/lib/db", () => ({
     billingRecord: {
       upsert: billingRecordUpsertMock,
     },
+    idempotencyRecord: {
+      create: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 
