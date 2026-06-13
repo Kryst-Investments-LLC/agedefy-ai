@@ -71,7 +71,7 @@ function buildRedirectResponse(request: NextRequest, pathname: string, nonce: st
   return applyCspHeaders(NextResponse.redirect(redirectUrl), nonce)
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = generateNonce()
   const { pathname } = request.nextUrl
   const needsAuth = AUTH_PATHS.some((p) => pathname.startsWith(p))
