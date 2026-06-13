@@ -241,7 +241,7 @@ const fallbackEnv: ParsedEnvironment = {
   POSTGRES_DATABASE_URL: process.env.POSTGRES_DATABASE_URL,
   POSTGRES_SHADOW_DATABASE_URL: process.env.POSTGRES_SHADOW_DATABASE_URL,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? "http://localhost:3000",
-  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? "development-secret-change-me-before-production",
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "development-secret-change-me-before-production-32c",
   APP_ENV: parseOptionalEnum(process.env.APP_ENV, ["development", "test", "staging", "production"]),
   RUNTIME_REQUIREMENTS_ENFORCED: parseOptionalEnum(process.env.RUNTIME_REQUIREMENTS_ENFORCED, ["true", "false"]),
   PRISMA_RUNTIME: parseOptionalEnum(process.env.PRISMA_RUNTIME, ["sqlite", "postgres"]),

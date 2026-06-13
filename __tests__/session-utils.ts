@@ -49,6 +49,7 @@ function loadNextAuthSecret() {
 
       const rawValue = line.slice(separatorIndex + 1).trim();
       const unquotedValue = rawValue.replace(/^['"]|['"]$/g, '');
+      if (!unquotedValue) break;
       process.env.NEXTAUTH_SECRET = unquotedValue;
       return unquotedValue;
     }

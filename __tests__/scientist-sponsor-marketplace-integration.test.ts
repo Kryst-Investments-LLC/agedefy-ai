@@ -93,6 +93,7 @@ async function upsertUser(input: { email: string; password: string; name: string
 }
 
 beforeAll(async () => {
+  if (!process.env.TEST_SERVER_BASE_URL) return
   const [owner, sponsor, outsider, reviewer, admin] = await Promise.all([
     upsertUser(ownerUser),
     upsertUser(sponsorUser),
@@ -484,7 +485,7 @@ afterAll(async () => {
   })
 })
 
-describe("live marketplace API integration", () => {
+describe.skipIf(!process.env.TEST_SERVER_BASE_URL)("live marketplace API integration", () => {
   it("returns a seeded workspace snapshot for the owner scientist", async () => {
     const response = await fetch(`${testServerBaseUrl}/api/scientist-sponsor-marketplace/workspace?actingAsRole=scientist`, {
       headers: getAuthHeaders(ownerToken),

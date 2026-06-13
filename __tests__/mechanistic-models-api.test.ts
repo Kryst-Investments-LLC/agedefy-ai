@@ -15,9 +15,10 @@ function getAuthHeaders() {
 }
 
 vitestBeforeAll(async () => {
+  if (!process.env.TEST_SERVER_BASE_URL) return
   jwtToken = await getTestJwtToken(testUser);
 });
-describe('MechanisticModel API', () => {
+describe.skipIf(!process.env.TEST_SERVER_BASE_URL)('MechanisticModel API', () => {
   let createdId: string;
 
   it('creates a mechanistic model', async () => {
