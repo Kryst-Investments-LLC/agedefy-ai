@@ -3,6 +3,7 @@ import { type EvidenceGrade } from '@/lib/aeonforge/evidence-grade';
 import { runSimulations } from '@/lib/aeonforge/simulation';
 import { generateVirtualTwinLocal } from '@/lib/aeonforge/virtual-twin';
 import { logger } from '@/lib/logger';
+import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check';
 
 /**
  * ÆonForge Service Client
@@ -41,6 +42,8 @@ export interface AeonForgeCandidateMolecule {
     contraindications: string[];
     knownAdverseEvents?: string[];
   };
+  /** Real-world verification against PubChem + ChEMBL. Set by the local engine after candidate generation. */
+  realityCheck?: CandidateRealityCheck;
 }
 
 export interface SimulationData {

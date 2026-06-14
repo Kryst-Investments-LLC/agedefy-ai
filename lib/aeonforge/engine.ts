@@ -10,11 +10,13 @@ import {
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { gradeCandidate, gradeFromConfidence, gradeSimulation, type EvidenceGrade } from '@/lib/aeonforge/evidence-grade'
+import { applyHealthGuardrail } from '@/lib/ai/health-guardrail'
 import type {
   AeonForgeCandidateMolecule,
   AeonForgePromptRequest,
   AeonForgeResponse,
 } from '@/lib/services/aeonforge'
+import { candidateRealityCheckService } from '@/lib/services/candidate-reality-check'
 import type { InteractionSeverity } from '@prisma/client'
 
 // ---------------------------------------------------------------------------
@@ -340,12 +342,55 @@ export async function discoverCandidatesLocal(
 
   // Step 4: Call AI provider for structured candidate generation
   const rawResponse = await callAIProvider(enrichedPrompt)
+
+  // Output guardrail: scan raw response before parsing candidates.
+  // Fires if the AI embedded prescriptive dosing/prescription/cure language.
+  const guardrail = applyHealthGuardrail(rawResponse, { surface: 'aeonforge' })
+  if (guardrail.blocked) {
+    return {
+      status: 'partial',
+      requestId: `af-local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      candidates: [],
+      confidence: 0,
+      evidenceGrade: gradeFromConfidence(0),
+      candidateEvidenceGrades: [],
+      modelVersion: 'biozephyra-local-v1',
+      disclaimers: [guardrail.disclaimer],
+      warnings: [
+        `Discovery response withheld by health guardrail (${guardrail.triggeredCategory}).`,
+        guardrail.content,
+      ],
+      executionTimeMs: Date.now() - startTime,
+    }
+  }
+
   let candidates = parseAICandidates(rawResponse)
 
   // Step 5: Enrich with safety scoring from knowledge graph
   candidates = candidates.map((c) => scoreSafety(c, kgCompounds))
 
-  // Step 6: Compute overall confidence from evidence scoring
+  // Step 6: Reality-check each candidate's SMILES against PubChem + ChEMBL.
+  // allSettled so one slow/failing lookup never blocks the rest.
+  const realitySettled = await Promise.allSettled(
+    candidates.map((c) => candidateRealityCheckService.check(c.smiles))
+  )
+  candidates = candidates.map((c, i) => {
+    const outcome = realitySettled[i]
+    return {
+      ...c,
+      realityCheck:
+        outcome.status === 'fulfilled'
+          ? outcome.value
+          : {
+              status: 'UNRESOLVABLE' as const,
+              queriedSmiles: c.smiles,
+              checkedAt: new Date().toISOString(),
+              lookupError: 'Internal error during reality check',
+            },
+    }
+  })
+
+  // Step 7: Compute overall confidence from evidence scoring
   const confidence = scoreEvidence(analysis)
 
   const executionTimeMs = Date.now() - startTime
@@ -369,8 +414,9 @@ export async function discoverCandidatesLocal(
     ),
     modelVersion: 'biozephyra-local-v1',
     disclaimers: [
+      guardrail.disclaimer,
       'All candidates are AI-generated hypotheses for informational purposes only.',
-      'Not medical advice. Candidates require full preclinical and clinical validation.',
+      'Candidates require full preclinical and clinical validation.',
       'Safety scores are estimates based on available knowledge-graph data.',
     ],
     warnings: candidates.length === 0

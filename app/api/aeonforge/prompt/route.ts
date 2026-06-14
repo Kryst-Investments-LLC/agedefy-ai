@@ -12,6 +12,7 @@ import { createIdempotencyFingerprint, executeIdempotentJsonMutation } from '@/l
 import { applyRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { aeonforgeService, type AeonForgePromptRequest } from '@/lib/services/aeonforge'
+import { applyHealthGuardrail } from '@/lib/ai/health-guardrail'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 import { aeonforgePromptSchema } from '@/lib/validators/ai'
 
@@ -73,6 +74,21 @@ export async function POST(request: NextRequest) {
           details: parsedPayload.error.flatten(),
         },
         { status: 400 }
+      )
+    }
+
+    // Input guardrail: reject prompts containing prescriptive medical directives
+    // before consuming AI credits or calling the discovery engine.
+    const inputGuardrail = applyHealthGuardrail(parsedPayload.data.prompt, { surface: 'aeonforge-input' })
+    if (inputGuardrail.blocked) {
+      return NextResponse.json(
+        {
+          error: 'Discovery prompt blocked by health guardrail.',
+          message: inputGuardrail.content,
+          disclaimer: inputGuardrail.disclaimer,
+          triggeredCategory: inputGuardrail.triggeredCategory,
+        },
+        { status: 400 },
       )
     }
 
@@ -213,6 +229,7 @@ export async function POST(request: NextRequest) {
                     toxicity: mol.safetyProfile?.toxicity,
                     contraindications: mol.safetyProfile?.contraindications,
                   },
+                  realityCheck: mol.realityCheck,
                 })),
                 simulationResults: aeonforgeResponse.simulationResults?.map((sim) => ({
                   type: sim.type,
@@ -257,7 +274,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'ÆonForge service not available',
-          message: 'Pharmaceutical superintelligence features are not configured',
+          message: 'AI-assisted discovery features are not configured',
         },
         { status: 503 }
       )

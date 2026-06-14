@@ -10,6 +10,14 @@ const { findManyMock, fetchMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
 }))
 
+const { realityCheckMock } = vi.hoisted(() => ({
+  realityCheckMock: vi.fn(),
+}))
+
+vi.mock('@/lib/services/candidate-reality-check', () => ({
+  candidateRealityCheckService: { check: realityCheckMock },
+}))
+
 vi.mock('@/lib/db', () => ({
   db: {
     compound: {
@@ -124,6 +132,13 @@ describe('discoverCandidatesLocal', () => {
     fetchMock.mockReset()
     findManyMock.mockReset()
     findManyMock.mockResolvedValue([])
+    realityCheckMock.mockReset()
+    realityCheckMock.mockResolvedValue({
+      status: 'KNOWN_COMPOUND' as const,
+      queriedSmiles: '',
+      checkedAt: new Date().toISOString(),
+      pubchemCid: 12345,
+    })
   })
 
   it('returns a valid AeonForgeResponse when AI provider returns candidates', async () => {
@@ -286,5 +301,48 @@ describe('discoverCandidatesLocal', () => {
     expect(userMessage).toContain('age=55')
     expect(userMessage).toContain('NAD')
     expect(userMessage).toContain('enterprise')
+  })
+
+  it('attaches realityCheck to every returned candidate', async () => {
+    const smiles = 'OC1=CC(=O)c2c(O)cccc2O1'
+    realityCheckMock.mockResolvedValue({
+      status: 'KNOWN_COMPOUND' as const,
+      queriedSmiles: smiles,
+      checkedAt: '2026-06-14T00:00:00.000Z',
+      pubchemCid: 5281614,
+      confirmedName: 'fisetin',
+    })
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: JSON.stringify([{
+              id: 'af-1',
+              iupacName: 'fisetin',
+              commonName: 'Fisetin',
+              smiles,
+              mechanism: 'Senolytic via Bcl-2 inhibition',
+              targetPathways: ['p53/p21'],
+              safetyProfile: { toxicity: 0.15, contraindications: [] },
+            }]),
+          },
+        }],
+      }),
+    })
+
+    const response = await discoverCandidatesLocal({
+      prompt: 'Senolytic compounds targeting p16 senescence',
+      userId: 'user-rc',
+    })
+
+    expect(response.candidates).toHaveLength(1)
+    expect(response.candidates[0].realityCheck).toMatchObject({
+      status: 'KNOWN_COMPOUND',
+      pubchemCid: 5281614,
+      confirmedName: 'fisetin',
+    })
+    expect(realityCheckMock).toHaveBeenCalledWith(smiles)
   })
 })
