@@ -11,6 +11,7 @@ import { logAudit } from '@/lib/audit'
 import { createIdempotencyFingerprint, executeIdempotentJsonMutation } from '@/lib/idempotency'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { enqueueOrchestrationJob } from '@/lib/jobs/queue'
 import { aeonforgeService, type AeonForgePromptRequest } from '@/lib/services/aeonforge'
 import { applyHealthGuardrail } from '@/lib/ai/health-guardrail'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
@@ -178,7 +179,30 @@ export async function POST(request: NextRequest) {
               },
             })
 
-            if (aeonforgeResponse.simulationResults && aeonforgeResponse.simulationResults.length > 0) {
+            // Enqueue background chemistry reality-check for each molecule.
+                            // allSettled: a failed enqueue must never block the response.
+                            if (aeonforgeResponse.candidates.length > 0) {
+                              await Promise.allSettled(
+                                aeonforgeResponse.candidates.map((mol) =>
+                                  enqueueOrchestrationJob({
+                                    tenantId: tenantContext.tenantId,
+                                    queue: 'AI',
+                                    jobType: 'chemistry.reality-check',
+                                    correlationId: candidate.id,
+                                    dedupeKey: `rc-${candidate.id}-${mol.id}`,
+                                    createdByUserId: user.id,
+                                    maxAttempts: 3,
+                                    payload: toInputJson({
+                                      aeonForgeCandidateId: candidate.id,
+                                      moleculeId: mol.id,
+                                      smiles: mol.smiles,
+                                    }),
+                                  })
+                                )
+                              )
+                            }
+
+                            if (aeonforgeResponse.simulationResults && aeonforgeResponse.simulationResults.length > 0) {
               await db.simulationResult.createMany({
                 data: aeonforgeResponse.simulationResults.map((sim) => ({
                   aeonForgeCandidateId: candidate.id,

@@ -5,8 +5,10 @@ import { createReviewItem, logAudit } from "@/lib/audit"
 import { createEvidenceDraft, estimateReviewConfidence } from "@/lib/biomedical-intelligence"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
+import { candidateRealityCheckService } from "@/lib/services/candidate-reality-check"
 import {
   aiGovernanceAuditJobPayloadSchema,
+  chemistryRealityCheckJobPayloadSchema,
   governanceReviewJobPayloadSchema,
   notificationJobPayloadSchema,
   researchIngestionMaterializeJobPayloadSchema,
@@ -230,6 +232,17 @@ async function handleResearchIngestionMaterialization(job: OrchestrationJob) {
   }
 }
 
+async function handleChemistryRealityCheck(job: OrchestrationJob) {
+  const payload = chemistryRealityCheckJobPayloadSchema.parse(job.payload)
+  const realityCheck = await candidateRealityCheckService.check(payload.smiles)
+  logger.info("Chemistry reality-check complete", {
+    jobId: job.id,
+    moleculeId: payload.moleculeId,
+    status: realityCheck.status,
+  })
+  return realityCheck
+}
+
 export async function processOrchestrationJob(job: OrchestrationJob) {
   logger.info("Processing orchestration job", {
     jobId: job.id,
@@ -248,6 +261,8 @@ export async function processOrchestrationJob(job: OrchestrationJob) {
       return handleGovernanceReviewEscalation(job)
     case "ingestion.research.materialize":
       return handleResearchIngestionMaterialization(job)
+    case "chemistry.reality-check":
+      return handleChemistryRealityCheck(job)
     default:
       throw new Error(`No orchestration handler registered for job type ${job.jobType}`)
   }

@@ -16,7 +16,6 @@ import type {
   AeonForgePromptRequest,
   AeonForgeResponse,
 } from '@/lib/services/aeonforge'
-import { candidateRealityCheckService } from '@/lib/services/candidate-reality-check'
 import type { InteractionSeverity } from '@prisma/client'
 
 // ---------------------------------------------------------------------------
@@ -366,31 +365,19 @@ export async function discoverCandidatesLocal(
 
   let candidates = parseAICandidates(rawResponse)
 
-  // Step 5: Enrich with safety scoring from knowledge graph
-  candidates = candidates.map((c) => scoreSafety(c, kgCompounds))
+  // Step 5: Enrich with safety scoring from knowledge graph; stamp PENDING reality-check
+  // (the background worker resolves these via chemistry.reality-check jobs)
+  const checkedAt = new Date().toISOString()
+  candidates = candidates.map((c) => ({
+    ...scoreSafety(c, kgCompounds),
+    realityCheck: {
+      status: 'PENDING' as const,
+      queriedSmiles: c.smiles,
+      checkedAt,
+    },
+  }))
 
-  // Step 6: Reality-check each candidate's SMILES against PubChem + ChEMBL.
-  // allSettled so one slow/failing lookup never blocks the rest.
-  const realitySettled = await Promise.allSettled(
-    candidates.map((c) => candidateRealityCheckService.check(c.smiles))
-  )
-  candidates = candidates.map((c, i) => {
-    const outcome = realitySettled[i]
-    return {
-      ...c,
-      realityCheck:
-        outcome.status === 'fulfilled'
-          ? outcome.value
-          : {
-              status: 'UNRESOLVABLE' as const,
-              queriedSmiles: c.smiles,
-              checkedAt: new Date().toISOString(),
-              lookupError: 'Internal error during reality check',
-            },
-    }
-  })
-
-  // Step 7: Compute overall confidence from evidence scoring
+  // Step 6: Compute overall confidence from evidence scoring
   const confidence = scoreEvidence(analysis)
 
   const executionTimeMs = Date.now() - startTime

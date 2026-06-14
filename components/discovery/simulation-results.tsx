@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Loader2, Beaker, BarChart3, Activity } from 'lucide-react'
+import { Loader2, Beaker, BarChart3, Activity, FlaskConical } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,11 +14,73 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs'
 import { MolecularViewer } from './molecular-viewer'
+import type { AeonForgeCandidateMolecule } from '@/lib/services/aeonforge'
+import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check'
 import type {
   DiscoveryCandidateDetails,
   DiscoveryCandidateSummary,
   DiscoveryVirtualTwinRun,
 } from './types'
+
+// ── Reality-check badge ───────────────────────────────────────────────────────
+
+function RealityCheckBadge({ rc }: { rc: CandidateRealityCheck }) {
+  if (rc.status === 'PENDING') {
+    return (
+      <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Verifying against PubChem / ChEMBL…
+      </span>
+    )
+  }
+
+  if (rc.status === 'KNOWN_COMPOUND') {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <Badge variant="outline" className="text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+          <FlaskConical className="h-3 w-3 mr-1" />
+          Known compound
+        </Badge>
+        {rc.confirmedName && (
+          <span className="text-gray-500 dark:text-gray-400 truncate max-w-[180px]" title={rc.confirmedName}>
+            {rc.confirmedName}
+          </span>
+        )}
+        {rc.maxClinicalPhase != null && (
+          <Badge variant="secondary" className="text-xs">
+            Phase {rc.maxClinicalPhase}
+          </Badge>
+        )}
+        {rc.pubchemCid && (
+          <span className="text-gray-400 dark:text-gray-500">CID {rc.pubchemCid}</span>
+        )}
+        {rc.knownBioactivities != null && (
+          <span className="text-gray-400 dark:text-gray-500">{rc.knownBioactivities} bioactivities</span>
+        )}
+        {rc.topTargets && rc.topTargets.length > 0 && (
+          <span className="text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+            Targets: {rc.topTargets.join(', ')}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  if (rc.status === 'NOT_FOUND_IN_DATABASES') {
+    return (
+      <Badge variant="outline" className="text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 text-xs">
+        Not found in PubChem / ChEMBL
+      </Badge>
+    )
+  }
+
+  // UNRESOLVABLE
+  return (
+    <Badge variant="outline" className="text-gray-400 dark:text-gray-500 border-gray-200 dark:border-slate-700 text-xs">
+      Database lookup unavailable
+    </Badge>
+  )
+}
 
 interface SimulationResultsProps {
   candidate: DiscoveryCandidateSummary
@@ -30,17 +92,21 @@ export function SimulationResults({
   tier,
 }: SimulationResultsProps) {
   const [details, setDetails] = useState<DiscoveryCandidateDetails | null>(null)
+  const [molecules, setMolecules] = useState<AeonForgeCandidateMolecule[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Fetch candidate details on selection change
   useEffect(() => {
     const fetchDetails = async () => {
       setLoading(true)
       setDetails(null)
+      setMolecules([])
       try {
         const response = await fetch(`/api/aeonforge/candidates/${candidate.id}`)
         if (response.ok) {
           const data: DiscoveryCandidateDetails = await response.json()
           setDetails(data)
+          setMolecules(data.candidates?.candidates ?? [])
         }
       } catch (error) {
         console.error('Failed to fetch candidate details:', error)
@@ -54,6 +120,37 @@ export function SimulationResults({
     }
   }, [candidate?.id])
 
+  // Stream reality-check results as background jobs complete
+  const hasPendingChecks = molecules.some((m) => m.realityCheck?.status === 'PENDING')
+  useEffect(() => {
+    if (!hasPendingChecks || !details) return
+
+    const es = new EventSource(`/api/aeonforge/candidates/${candidate.id}/stream`)
+
+    es.onmessage = (event: MessageEvent<string>) => {
+      const data = JSON.parse(event.data) as
+        | { kind: 'stream_end' }
+        | { moleculeId: string; realityCheck: CandidateRealityCheck }
+
+      if ('kind' in data && data.kind === 'stream_end') {
+        es.close()
+        return
+      }
+
+      if ('moleculeId' in data) {
+        setMolecules((prev) =>
+          prev.map((m) =>
+            m.id === data.moleculeId ? { ...m, realityCheck: data.realityCheck } : m
+          )
+        )
+      }
+    }
+
+    es.onerror = () => es.close()
+
+    return () => es.close()
+  }, [candidate.id, details?.id, hasPendingChecks])
+
   if (loading) {
     return (
       <Card>
@@ -66,7 +163,6 @@ export function SimulationResults({
 
   if (!details) return null
 
-  const candidates = details.candidates?.candidates ?? []
   const simulations = details.simulationResults
   const virtualTwin: DiscoveryVirtualTwinRun | undefined = details.virtualTwinRuns[0]
 
@@ -74,11 +170,14 @@ export function SimulationResults({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Molecular Candidates & Simulations</span>
+          <span>AI-Generated Candidate Hypotheses</span>
           <Badge variant="outline">
-            Confidence: {((details.simulationScore ?? 0) * 100).toFixed(0)}%
+            Illustrative confidence: {((details.simulationScore ?? 0) * 100).toFixed(0)}%
           </Badge>
         </CardTitle>
+        <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+          All candidates are AI-generated hypotheses — exploratory only, not validated preclinically or clinically.
+        </p>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="molecules" className="w-full space-y-4">
@@ -89,23 +188,23 @@ export function SimulationResults({
             </TabsTrigger>
             <TabsTrigger value="simulations">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Simulations
+              AI Simulations
             </TabsTrigger>
             {tier === 'enterprise' && (
               <TabsTrigger value="digital-twin">
                 <Activity className="h-4 w-4 mr-2" />
-                Digital Twin
+                AI Response Model
               </TabsTrigger>
             )}
           </TabsList>
 
           {/* Molecules Tab */}
           <TabsContent value="molecules" className="space-y-4">
-            {candidates.length === 0 ? (
+            {molecules.length === 0 ? (
               <p className="text-sm text-gray-500">No molecular candidates</p>
             ) : (
               <div className="space-y-3">
-                {candidates.slice(0, 5).map((mol, idx) => (
+                {molecules.slice(0, 5).map((mol, idx) => (
                   <div
                     key={idx}
                     className="border border-gray-200 dark:border-slate-800 rounded-lg p-4 space-y-2"
@@ -118,10 +217,13 @@ export function SimulationResults({
                             {mol.commonName}
                           </p>
                         )}
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                          AI-generated hypothesis — not validated
+                        </p>
                       </div>
                       {mol.estimatedHealthspanGain && (
-                        <Badge className="bg-green-100 text-green-900 dark:bg-green-950 dark:text-green-100">
-                          +{mol.estimatedHealthspanGain}d
+                        <Badge variant="outline" className="text-gray-600 dark:text-gray-400 border-gray-300 dark:border-slate-600">
+                          ~{mol.estimatedHealthspanGain}d (illustrative, not measured)
                         </Badge>
                       )}
                     </div>
@@ -147,7 +249,7 @@ export function SimulationResults({
 
                     {mol.safetyProfile && (
                       <div className="flex items-center gap-2 pt-2">
-                        <span className="text-xs font-medium">Safety:</span>
+                        <span className="text-xs font-medium">Safety est. (illustrative):</span>
                         <div className="w-24 h-2 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
                           <div
                             className="h-full bg-green-500"
@@ -159,6 +261,12 @@ export function SimulationResults({
                         <span className="text-xs text-gray-500">
                           {((1 - (mol.safetyProfile.toxicity || 0)) * 100).toFixed(0)}%
                         </span>
+                      </div>
+                    )}
+
+                    {mol.realityCheck && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800">
+                        <RealityCheckBadge rc={mol.realityCheck} />
                       </div>
                     )}
 
@@ -192,7 +300,7 @@ export function SimulationResults({
                         {sim.type.replace(/_/g, ' ')}
                       </h4>
                       <Badge variant="outline">
-                        {(sim.confidence * 100).toFixed(0)}% confidence
+                        {(sim.confidence * 100).toFixed(0)}% (illustrative)
                       </Badge>
                     </div>
 
@@ -220,9 +328,9 @@ export function SimulationResults({
             <TabsContent value="digital-twin" className="space-y-4">
               {virtualTwin ? (
                 <div className="space-y-4">
-                  <Alert className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                    <AlertDescription className="text-purple-900 dark:text-purple-100">
-                      <strong>Digital Twin Profile:</strong> Personalized multi-hallmark aging response prediction
+                  <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                    <AlertDescription className="text-amber-900 dark:text-amber-100">
+                      <strong>AI Hallmark Response Model:</strong> AI-generated exploratory predictions only — not measured, not validated. All scores are illustrative.
                     </AlertDescription>
                   </Alert>
 
@@ -255,6 +363,7 @@ export function SimulationResults({
                                   {(value * 100).toFixed(0)}%
                                 </span>
                               </div>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">illustrative, not measured</p>
                             </div>
                           )
                         })}

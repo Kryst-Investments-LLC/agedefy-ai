@@ -97,3 +97,9 @@ export const adminEnqueueOrchestrationJobSchema = z.discriminatedUnion("jobType"
 export const adminCancelOrRetryJobRequestSchema = z.object({
   reason: z.string().trim().min(3).max(500).optional(),
 })
+
+export const chemistryRealityCheckJobPayloadSchema = z.object({
+  aeonForgeCandidateId: z.string().min(1),
+  moleculeId: z.string().min(1),
+  smiles: z.string().min(1),
+})

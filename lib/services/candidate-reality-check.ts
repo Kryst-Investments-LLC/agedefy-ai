@@ -27,6 +27,7 @@ import { logger } from '@/lib/logger'
 // ── Public types ──────────────────────────────────────────────────────────────
 
 export type RealityCheckStatus =
+  | 'PENDING'
   | 'KNOWN_COMPOUND'
   | 'NOT_FOUND_IN_DATABASES'
   | 'UNRESOLVABLE'

@@ -10,14 +10,6 @@ const { findManyMock, fetchMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
 }))
 
-const { realityCheckMock } = vi.hoisted(() => ({
-  realityCheckMock: vi.fn(),
-}))
-
-vi.mock('@/lib/services/candidate-reality-check', () => ({
-  candidateRealityCheckService: { check: realityCheckMock },
-}))
-
 vi.mock('@/lib/db', () => ({
   db: {
     compound: {
@@ -132,13 +124,6 @@ describe('discoverCandidatesLocal', () => {
     fetchMock.mockReset()
     findManyMock.mockReset()
     findManyMock.mockResolvedValue([])
-    realityCheckMock.mockReset()
-    realityCheckMock.mockResolvedValue({
-      status: 'KNOWN_COMPOUND' as const,
-      queriedSmiles: '',
-      checkedAt: new Date().toISOString(),
-      pubchemCid: 12345,
-    })
   })
 
   it('returns a valid AeonForgeResponse when AI provider returns candidates', async () => {
@@ -303,15 +288,8 @@ describe('discoverCandidatesLocal', () => {
     expect(userMessage).toContain('enterprise')
   })
 
-  it('attaches realityCheck to every returned candidate', async () => {
+  it('stamps every returned candidate with PENDING realityCheck for background resolution', async () => {
     const smiles = 'OC1=CC(=O)c2c(O)cccc2O1'
-    realityCheckMock.mockResolvedValue({
-      status: 'KNOWN_COMPOUND' as const,
-      queriedSmiles: smiles,
-      checkedAt: '2026-06-14T00:00:00.000Z',
-      pubchemCid: 5281614,
-      confirmedName: 'fisetin',
-    })
 
     fetchMock.mockResolvedValueOnce({
       ok: true,
@@ -338,11 +316,9 @@ describe('discoverCandidatesLocal', () => {
     })
 
     expect(response.candidates).toHaveLength(1)
-    expect(response.candidates[0].realityCheck).toMatchObject({
-      status: 'KNOWN_COMPOUND',
-      pubchemCid: 5281614,
-      confirmedName: 'fisetin',
-    })
-    expect(realityCheckMock).toHaveBeenCalledWith(smiles)
+    const rc = response.candidates[0].realityCheck!
+    expect(rc.status).toBe('PENDING')
+    expect(rc.queriedSmiles).toBe(smiles)
+    expect(new Date(rc.checkedAt).toISOString()).toBe(rc.checkedAt)
   })
 })
