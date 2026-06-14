@@ -40,3 +40,6 @@ coverage/
 typecheck-output.txt
 
 testResults.xml
+
+# PDB structure file cache (can be hundreds of MB; rebuilt on demand)
+data/pdb-structures/
