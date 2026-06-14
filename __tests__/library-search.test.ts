@@ -450,4 +450,91 @@ describe('librarySearchService.search', () => {
     expect(result.searchPath).toBe('property-only')
     expect(typeof result.durationMs).toBe('number')
   })
+
+  // ── SA score ────────────────────────────────────────────────────────────────
+
+  it('includes saScore and synthesizabilityLabel from canonical SMILES on each hit', async () => {
+    // Aspirin: 13 heavy atoms, 1 ring, no stereocenters → easy
+    const aspirinMol = makeMolecule({
+      molecule_structures: {
+        canonical_smiles: 'CC(=O)Oc1ccccc1C(=O)O',
+        standard_inchi_key: 'BSYNRYMUTXBXSQ-UHFFFAOYSA-N',
+      },
+      molecule_properties: {
+        mw_freebase: '180.2', alogp: '1.2', hbd: 1, hba: 3,
+        psa: '63.6', rtb: 3, molecular_formula: 'C9H8O4',
+      },
+    })
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeMoleculeResponse([aspirinMol])))
+    )
+
+    const result = await librarySearchService.search({ mwMax: 200, maxResults: 5 })
+
+    const hit = result.hits[0]
+    expect(hit.saScore).not.toBeNull()
+    expect(hit.saScore).toBeGreaterThan(1.0)
+    expect(hit.saScore).toBeLessThan(3.5)
+    expect(hit.synthesizabilityLabel).toBe('easy')
+  })
+
+  it('sets saScore and synthesizabilityLabel to null when canonical SMILES is absent', async () => {
+    const noSmilesMol = makeMolecule({
+      molecule_structures: {
+        canonical_smiles: null,
+        standard_inchi_key: 'BSYNRYMUTXBXSQ-UHFFFAOYSA-N',
+      },
+      molecule_properties: {
+        mw_freebase: '180.2', alogp: '1.2', hbd: 1, hba: 3,
+        psa: '63.6', rtb: 3, molecular_formula: 'C9H8O4',
+      },
+    })
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeMoleculeResponse([noSmilesMol])))
+    )
+
+    const result = await librarySearchService.search({ mwMax: 200, maxResults: 5 })
+
+    expect(result.hits[0].saScore).toBeNull()
+    expect(result.hits[0].synthesizabilityLabel).toBeNull()
+  })
+
+  it('easy-SMILES molecule scores higher than hard-SMILES molecule with equal pChEMBL (SA tiebreaker)', async () => {
+    // Same pChEMBL, same clinical phase, same bioactivities — only SMILES differs
+    const easyMol = makeMolecule({
+      molecule_chembl_id: 'CHEMBL_EASY',
+      molecule_structures: { canonical_smiles: 'CC(=O)Oc1ccccc1C(=O)O', standard_inchi_key: null },
+      molecule_properties: { mw_freebase: '180', alogp: '1.2', hbd: 1, hba: 3, psa: '63', rtb: 3 },
+    })
+    // 6 stereocenters + 1 ring → score > 3.5 (moderate or hard)
+    const hardMol = makeMolecule({
+      molecule_chembl_id: 'CHEMBL_HARD',
+      molecule_structures: {
+        canonical_smiles: '[C@@H]1([C@H]([C@@H]([C@H]([C@@H]([C@H]1N)O)O)O)O)O',
+        standard_inchi_key: null,
+      },
+      molecule_properties: { mw_freebase: '180', alogp: '1.2', hbd: 1, hba: 3, psa: '63', rtb: 3 },
+    })
+
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json({ targets: [{ target_chembl_id: 'CHEMBL2842', pref_name: 'mTOR' }] }))
+    )
+    const activities = [
+      makeActivity({ molecule_chembl_id: 'CHEMBL_EASY', pchembl_value: '7.0' }),
+      makeActivity({ molecule_chembl_id: 'CHEMBL_HARD', pchembl_value: '7.0' }),
+    ]
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeActivityResponse(activities)))
+    )
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeMoleculeResponse([easyMol, hardMol])))
+    )
+
+    const result = await librarySearchService.search({ targetName: 'mTOR', maxResults: 25 })
+
+    const easyHit = result.hits.find((h) => h.chemblId === 'CHEMBL_EASY')!
+    const hardHit = result.hits.find((h) => h.chemblId === 'CHEMBL_HARD')!
+    expect(easyHit.score).toBeGreaterThan(hardHit.score)
+    expect(easyHit.rank).toBeLessThan(hardHit.rank) // lower rank number = better position
+  })
 })

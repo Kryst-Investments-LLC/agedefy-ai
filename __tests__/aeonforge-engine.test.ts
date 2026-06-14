@@ -320,5 +320,13 @@ describe('discoverCandidatesLocal', () => {
     expect(rc.status).toBe('PENDING')
     expect(rc.queriedSmiles).toBe(smiles)
     expect(new Date(rc.checkedAt).toISOString()).toBe(rc.checkedAt)
+
+    // SA score is computed synchronously alongside the PENDING stamp
+    const sa = response.candidates[0].saScore
+    expect(sa).not.toBeNull()
+    expect(sa!.score).toBeGreaterThanOrEqual(1.0)
+    expect(sa!.score).toBeLessThanOrEqual(10.0)
+    // 'OC1=CC(=O)c2c(O)cccc2O1' is a simple chromone — should be easy
+    expect(sa!.label).toBe('easy')
   })
 })

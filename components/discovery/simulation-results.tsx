@@ -16,11 +16,37 @@ import {
 import { MolecularViewer } from './molecular-viewer'
 import type { AeonForgeCandidateMolecule } from '@/lib/services/aeonforge'
 import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check'
+import type { SaScoreResult } from '@/lib/services/sa-score'
 import type {
   DiscoveryCandidateDetails,
   DiscoveryCandidateSummary,
   DiscoveryVirtualTwinRun,
 } from './types'
+
+// ── SA synthesizability badge ─────────────────────────────────────────────────
+
+function SaScoreBadge({ sa }: { sa: SaScoreResult }) {
+  const config = {
+    easy: {
+      label: 'Synthesizable',
+      className: 'text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700',
+    },
+    moderate: {
+      label: 'Moderate synthesis complexity',
+      className: 'text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700',
+    },
+    hard: {
+      label: 'Hard to synthesize',
+      className: 'text-red-700 dark:text-red-400 border-red-300 dark:border-red-700',
+    },
+  }[sa.label]
+
+  return (
+    <Badge variant="outline" className={`${config.className} text-xs`}>
+      SA {sa.score.toFixed(1)} — {config.label}
+    </Badge>
+  )
+}
 
 // ── Reality-check badge ───────────────────────────────────────────────────────
 
@@ -264,9 +290,10 @@ export function SimulationResults({
                       </div>
                     )}
 
-                    {mol.realityCheck && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800">
-                        <RealityCheckBadge rc={mol.realityCheck} />
+                    {(mol.realityCheck || mol.saScore) && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800 space-y-1.5">
+                        {mol.realityCheck && <RealityCheckBadge rc={mol.realityCheck} />}
+                        {mol.saScore && <SaScoreBadge sa={mol.saScore} />}
                       </div>
                     )}
 

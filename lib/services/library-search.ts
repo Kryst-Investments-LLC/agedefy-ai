@@ -31,6 +31,7 @@
 
 import { executeWithCircuitBreaker } from '@/lib/circuit-breaker'
 import { logger } from '@/lib/logger'
+import { computeSaScore } from '@/lib/services/sa-score'
 import type { LibrarySearchCriteria } from '@/lib/validators/library-search'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -76,6 +77,12 @@ export interface LibrarySearchHit {
   bestPchemblValue: number | null
   bestTargetName: string | null
   bestAssayType: string | null
+
+  // Synthesizability
+  /** Ertl–Schuffenhauer SA score (1.0 = easy, 10.0 = hard). Null when canonical SMILES unavailable. */
+  saScore: number | null
+  /** Broad synthesizability category. Null when canonical SMILES unavailable. */
+  synthesizabilityLabel: 'easy' | 'moderate' | 'hard' | null
 
   // Provenance
   sources: ['ChEMBL']
@@ -400,7 +407,11 @@ class LibrarySearchService {
     const phaseScore = m.maxClinicalPhase !== null ? m.maxClinicalPhase / 4 : 0
     const bioScore = Math.min(Math.log10(m.totalBioactivities + 1) / 5, 1)
     const lipinski = this.isLipinskiCompliant(m) ? 1 : 0
-    return 0.50 * pchemblScore + 0.25 * phaseScore + 0.15 * bioScore + 0.10 * lipinski
+    // SA synthesizability bonus: easy molecules (score→1) get full 0.05, hard (score→10) get 0.
+    // Falls back to 0 (neutral) when SMILES is unavailable.
+    const saResult = m.canonicalSmiles ? computeSaScore(m.canonicalSmiles) : null
+    const saFactor = saResult !== null ? (10 - saResult.score) / 9 : 0
+    return 0.45 * pchemblScore + 0.25 * phaseScore + 0.15 * bioScore + 0.10 * lipinski + 0.05 * saFactor
   }
 
   private score(m: MoleculeAccumulator): number {
@@ -417,6 +428,7 @@ class LibrarySearchService {
   }
 
   private toHit(m: MoleculeAccumulator, rank: number): LibrarySearchHit {
+    const saResult = m.canonicalSmiles ? computeSaScore(m.canonicalSmiles) : null
     return {
       rank,
       score: Math.round(this.computeScore(m) * 10000) / 10000,
@@ -437,6 +449,8 @@ class LibrarySearchService {
       bestPchemblValue: m.bestPchemblValue,
       bestTargetName: m.bestTargetName,
       bestAssayType: m.bestAssayType,
+      saScore: saResult?.score ?? null,
+      synthesizabilityLabel: saResult?.label ?? null,
       sources: ['ChEMBL'],
       chemblUrl: `https://www.ebi.ac.uk/chembl/compound_report_card/${m.chemblId}/`,
     }

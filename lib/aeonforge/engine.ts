@@ -1,4 +1,5 @@
 import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
+import { computeSaScore } from '@/lib/services/sa-score'
 import {
   calculateEvidenceScore,
   estimateReviewConfidence,
@@ -366,7 +367,7 @@ export async function discoverCandidatesLocal(
   let candidates = parseAICandidates(rawResponse)
 
   // Step 5: Enrich with safety scoring from knowledge graph; stamp PENDING reality-check
-  // (the background worker resolves these via chemistry.reality-check jobs)
+  // (the background worker resolves these via chemistry.reality-check jobs); compute SA score
   const checkedAt = new Date().toISOString()
   candidates = candidates.map((c) => ({
     ...scoreSafety(c, kgCompounds),
@@ -375,6 +376,7 @@ export async function discoverCandidatesLocal(
       queriedSmiles: c.smiles,
       checkedAt,
     },
+    saScore: computeSaScore(c.smiles),
   }))
 
   // Step 6: Compute overall confidence from evidence scoring

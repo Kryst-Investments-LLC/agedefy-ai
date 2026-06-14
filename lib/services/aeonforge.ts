@@ -3,7 +3,8 @@ import { type EvidenceGrade } from '@/lib/aeonforge/evidence-grade';
 import { runSimulations } from '@/lib/aeonforge/simulation';
 import { generateVirtualTwinLocal } from '@/lib/aeonforge/virtual-twin';
 import { logger } from '@/lib/logger';
-import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check';
+import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check'
+import type { SaScoreResult } from '@/lib/services/sa-score';
 
 /**
  * ÆonForge Service Client
@@ -44,6 +45,8 @@ export interface AeonForgeCandidateMolecule {
   };
   /** Real-world verification against PubChem + ChEMBL. Set by the local engine after candidate generation. */
   realityCheck?: CandidateRealityCheck;
+  /** Synthetic accessibility score (1 = easy, 10 = hard). Null when SMILES is absent or unscoreable. */
+  saScore?: SaScoreResult | null;
 }
 
 export interface SimulationData {
