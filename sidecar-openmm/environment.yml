@@ -1,0 +1,21 @@
+name: base
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - openmm=8.1.2
+  - openmmforcefields=0.12.0
+  - openff-toolkit=0.15.2
+  - openff-units
+  - pdbfixer=1.9
+  - rdkit=2024.03.5
+  - numpy
+  - pip
+  - pip:
+      - meeko==0.5.0
+      - fastapi==0.115.6
+      - uvicorn[standard]==0.30.6
+      - pydantic==2.7.4
+      - pytest==8.3.4
+      - httpx==0.27.2

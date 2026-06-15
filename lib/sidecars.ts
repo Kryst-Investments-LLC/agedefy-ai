@@ -480,4 +480,80 @@ export interface DockResult {
   model_version: string
 }
 
+// ---------- openmm-sidecar ----------
+
+export interface OpenmmForceFieldConfig {
+  protein?: "amber14-all" | "charmm36m"
+  small_molecule?: "openff-2.0.0" | "openff-1.3.1" | "mmff94"
+  water?: "tip3p" | "tip3pfb"
+}
+
+export interface OpenmmSimulationConfig {
+  minimization_steps?: number
+  equilibration_ps?: number
+  production_ps?: number
+  temperature_K?: number
+  pressure_bar?: number
+}
+
+export interface MdRankingWeights {
+  mmgbsa?: number
+  rmsd_penalty?: number
+}
+
+export interface RefineRequest {
+  smiles: string
+  /** Base64-encoded PDB (preferred) or PDBQT receptor */
+  receptor: string
+  receptor_format?: "pdb" | "pdbqt"
+  /** Base64-encoded PDBQT pose from /v1/dock */
+  docked_pose_pdbqt: string
+  force_field?: OpenmmForceFieldConfig
+  simulation?: OpenmmSimulationConfig
+  /** "minimize" (default) or "md" for full MD + MM-GBSA */
+  refine_mode?: "minimize" | "md"
+  compute_mmgbsa?: boolean
+  /** Weights used to compute md_ranking_score; echoed in response */
+  ranking_weights?: MdRankingWeights
+}
+
+export interface RefineResult {
+  smiles: string
+  refine_mode: "minimize" | "md"
+  force_field_used: Required<OpenmmForceFieldConfig>
+  receptor_format_received: "pdb" | "pdbqt"
+  receptor_conversion_warning: string | null
+  initial_potential_energy_kj_mol: number
+  minimized_potential_energy_kj_mol: number
+  pose_rmsd_angstrom: number | null
+  mmgbsa_binding_energy_kcal_mol: number | null
+  mmgbsa_std_kcal_mol: number | null
+  convergence_flag: boolean
+  n_trajectory_frames: number
+  /** Base64-encoded PDB of the refined complex */
+  refined_complex_pdb: string
+  md_ranking_score: number | null
+  weights_used: Required<MdRankingWeights>
+  mmgbsa_accuracy_note: string | null
+  model_version: string
+}
+
+export const openmmSidecar = {
+  url: () => process.env.OPENMM_SIDECAR_URL ?? "http://openmm-sidecar:8080",
+  configured: () => Boolean(process.env.OPENMM_SIDECAR_URL),
+  health: (traceparent?: string) =>
+    request<{ status: string; version: string; openmm_version: string | null; openmm_available: boolean }>(
+      openmmSidecar.url(),
+      "/healthz",
+      { traceparent },
+    ),
+  refine: (req: RefineRequest, traceparent?: string) =>
+    request<RefineResult>(openmmSidecar.url(), "/v1/refine", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 1_800_000, // 30 min — MD mode can take this long
+    }),
+}
+
 export { SidecarError, envOrThrow }

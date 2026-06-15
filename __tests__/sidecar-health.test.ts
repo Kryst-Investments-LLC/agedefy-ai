@@ -50,6 +50,7 @@ describe("probeSidecars", () => {
       "causal",
       "dp-accountant",
       "mechanistic",
+      "openmm",
       "screening",
       "vc-signer",
     ])

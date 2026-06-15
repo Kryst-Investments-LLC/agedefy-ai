@@ -10,7 +10,7 @@
  * up; a sidecar outage only flips the relevant sidecar to `degraded`).
  */
 
-import { causalSidecar, dpAccountant, mechanisticSidecar, screeningSidecar, vcSigner } from "@/lib/sidecars"
+import { causalSidecar, dpAccountant, mechanisticSidecar, openmmSidecar, screeningSidecar, vcSigner } from "@/lib/sidecars"
 
 export type SidecarStatus = "ok" | "degraded" | "not-configured"
 
@@ -84,6 +84,15 @@ const SPECS: SidecarSpec[] = [
     configured: screeningSidecar.configured,
     probe: async (traceparent?: string) => {
       const r = await screeningSidecar.health(traceparent)
+      return { status: r.status, version: r.version }
+    },
+  },
+  {
+    name: "openmm",
+    url: openmmSidecar.url,
+    configured: openmmSidecar.configured,
+    probe: async (traceparent?: string) => {
+      const r = await openmmSidecar.health(traceparent)
       return { status: r.status, version: r.version }
     },
   },
