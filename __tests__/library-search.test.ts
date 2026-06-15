@@ -537,4 +537,72 @@ describe('librarySearchService.search', () => {
     expect(easyHit.score).toBeGreaterThan(hardHit.score)
     expect(easyHit.rank).toBeLessThan(hardHit.rank) // lower rank number = better position
   })
+
+  // ── Score breakdown ──────────────────────────────────────────────────────────
+
+  it('computeScoreBreakdown returns named weighted contributions that sum to total', () => {
+    const m = {
+      chemblId: 'CHEMBL1', preferredName: null, canonicalSmiles: null, inchiKey: null,
+      molecularFormula: null, molecularWeight: 350, logp: 2.0, hbdCount: 2, hbaCount: 5,
+      tpsa: 80, rotatableBonds: 4, maxClinicalPhase: 4,
+      bestPchemblValue: 8.5, bestTargetName: null, bestAssayType: null, totalBioactivities: 50,
+    }
+    const breakdown = librarySearchService.computeScoreBreakdown(m, null)
+    expect(breakdown.pchembl).toBeGreaterThan(0)   // 0.45 * (8.5/10)
+    expect(breakdown.phase).toBeGreaterThan(0)     // 0.25 * (4/4)
+    expect(breakdown.bio).toBeGreaterThan(0)       // 0.15 * ...
+    expect(breakdown.lipinski).toBeGreaterThan(0)  // 0.10 (compliant)
+    expect(breakdown.sa).toBe(0)                   // null saScore → 0
+    const sum = breakdown.pchembl + breakdown.phase + breakdown.bio + breakdown.lipinski + breakdown.sa
+    expect(breakdown.total).toBeCloseTo(sum, 10)
+    expect(breakdown.total).toBeCloseTo(librarySearchService.computeScore(m), 4)
+  })
+
+  it('computeScoreBreakdown.sa is non-zero when saScore is provided', () => {
+    const m = {
+      chemblId: 'CHEMBL1', preferredName: null, canonicalSmiles: null, inchiKey: null,
+      molecularFormula: null, molecularWeight: 350, logp: 2.0, hbdCount: 2, hbaCount: 5,
+      tpsa: 80, rotatableBonds: 4, maxClinicalPhase: null,
+      bestPchemblValue: null, bestTargetName: null, bestAssayType: null, totalBioactivities: 0,
+    }
+    const breakdown = librarySearchService.computeScoreBreakdown(m, 2.0)  // easy molecule
+    expect(breakdown.sa).toBeGreaterThan(0)
+    expect(breakdown.sa).toBeCloseTo(((10 - 2.0) / 9) * 0.05, 6)
+  })
+
+  it('hit includes scoreBreakdown with total matching score', async () => {
+    fetchMock
+      .mockImplementationOnce(() => Promise.resolve(json(TARGET_RESPONSE)))
+      .mockImplementationOnce(() => Promise.resolve(json(makeActivityResponse([makeActivity()]))))
+      .mockImplementationOnce(() => Promise.resolve(json(makeActivityResponse([]))))
+      .mockImplementationOnce(() => Promise.resolve(json(makeMoleculeResponse([makeMolecule()]))))
+
+    const result = await librarySearchService.search({ targetName: 'mTOR', maxResults: 5 })
+
+    const hit = result.hits[0]
+    expect(hit.scoreBreakdown).toBeDefined()
+    expect(hit.scoreBreakdown.total).toBeCloseTo(hit.score, 4)
+    expect(hit.scoreBreakdown.pchembl).toBeGreaterThan(0)
+    expect(typeof hit.scoreBreakdown.phase).toBe('number')
+    expect(typeof hit.scoreBreakdown.bio).toBe('number')
+    expect(typeof hit.scoreBreakdown.lipinski).toBe('number')
+    expect(typeof hit.scoreBreakdown.sa).toBe('number')
+  })
+
+  it('hit includes propertySource with kind chembl', async () => {
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeMoleculeResponse([makeMolecule()])))
+    )
+    const result = await librarySearchService.search({ mwMax: 1000, maxResults: 5 })
+    expect(result.hits[0].propertySource).toMatchObject({ kind: 'chembl' })
+  })
+
+  it('hit chemblVersion is null when CHEMBL_VERSION env var is unset', async () => {
+    delete process.env.CHEMBL_VERSION
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve(json(makeMoleculeResponse([makeMolecule()])))
+    )
+    const result = await librarySearchService.search({ mwMax: 1000, maxResults: 5 })
+    expect(result.hits[0].chemblVersion).toBeNull()
+  })
 })

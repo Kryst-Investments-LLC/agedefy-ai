@@ -1,4 +1,5 @@
 import type { AeonForgeCandidateMolecule, SimulationData } from '@/lib/services/aeonforge'
+import type { EvidenceGrade } from '@/lib/aeonforge/evidence-grade'
 
 export interface DiscoveryCandidateSummary {
   id: string
@@ -11,6 +12,8 @@ export interface DiscoveryCandidateSummary {
   simulations: number
   virtualTwins: number
   createdAt: string | Date
+  /** Evidence grade derived from simulation and safety scores. Absent for legacy records. */
+  evidenceGrade?: EvidenceGrade
 }
 
 export interface DiscoverySimulationResult {

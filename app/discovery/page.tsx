@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client'
 import { Navigation } from '@/components/navigation'
 import { DiscoveryLab } from '@/components/discovery/discovery-lab'
 import type { DiscoveryCandidateSummary } from '@/components/discovery/types'
+import { gradeCandidate } from '@/lib/aeonforge/evidence-grade'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
@@ -61,6 +62,10 @@ export default async function DiscoveryPage() {
     simulations: candidate.simulationResults.length,
     virtualTwins: candidate.virtualTwinRuns.length,
     createdAt: candidate.createdAt,
+    evidenceGrade: gradeCandidate({
+      simulationScore: candidate.simulationScore,
+      safetyScore: candidate.safetyScore,
+    }),
   }))
 
   return (

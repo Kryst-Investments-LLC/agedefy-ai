@@ -5,6 +5,7 @@ import { generateVirtualTwinLocal } from '@/lib/aeonforge/virtual-twin';
 import { logger } from '@/lib/logger';
 import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check'
 import type { SaScoreResult } from '@/lib/services/sa-score';
+import type { AnnotatedValue } from '@/lib/types/annotated-value'
 
 /**
  * ÆonForge Service Client
@@ -38,11 +39,17 @@ export interface AeonForgeCandidateMolecule {
   targetPathways: string[];
   potentialSynergies?: string[];
   estimatedHealthspanGain?: number; // days
+  /** Annotated companion to estimatedHealthspanGain — carries source and uncertainty. Absent for legacy records. */
+  estimatedHealthspanGainAnnotated?: AnnotatedValue<number>
   safetyProfile: {
     toxicity: number; // 0-1
     contraindications: string[];
     knownAdverseEvents?: string[];
   };
+  /** Annotated companion to safetyProfile — carries source and uncertainty per field. Absent for legacy records. */
+  safetyProfileAnnotated?: {
+    toxicity: AnnotatedValue<number>
+  }
   /** Real-world verification against PubChem + ChEMBL. Set by the local engine after candidate generation. */
   realityCheck?: CandidateRealityCheck;
   /** Synthetic accessibility score (1 = easy, 10 = hard). Null when SMILES is absent or unscoreable. */
@@ -58,6 +65,10 @@ export interface SimulationData {
     estimatedEffect?: number;
     confidenceRatio?: string;
   };
+  /** Model or system that generated this simulation result. */
+  modelVersion?: string
+  /** Brief note on the methodology or limitations. */
+  methodologyNote?: string
 }
 
 export interface VirtualTwinProfile {

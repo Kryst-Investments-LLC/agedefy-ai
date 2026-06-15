@@ -6,7 +6,27 @@ import { ChevronDown, Loader2 } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import type { EvidenceGrade } from '@/lib/aeonforge/evidence-grade'
 import type { DiscoveryCandidateSummary } from './types'
+
+const GRADE_CLASSES: Record<string, string> = {
+  HIGH: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  MODERATE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  LOW: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  EXPLORATORY: 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400',
+}
+
+function EvidenceGradeBadge({ grade }: { grade: EvidenceGrade }) {
+  const colorClass = GRADE_CLASSES[grade.label] ?? GRADE_CLASSES.EXPLORATORY
+  return (
+    <span
+      className={`text-xs px-2 py-1 rounded font-medium ${colorClass}`}
+      title={grade.description}
+    >
+      {grade.label}
+    </span>
+  )
+}
 
 interface DiscoveryCandidatesProps {
   candidates: DiscoveryCandidateSummary[]
@@ -97,7 +117,7 @@ export function DiscoveryCandidates({
                     })}
                   </span>
                   <Badge variant="outline" className="text-xs">
-                    {candidate.candidateCount} molecules
+                    {candidate.candidateCount} AI hypotheses
                   </Badge>
                   {candidate.simulations > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -114,14 +134,18 @@ export function DiscoveryCandidates({
             </div>
 
             {/* Score indicators */}
-            {candidate.simulationScore && (
-              <div className="flex gap-2 mt-2">
-                <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-800 rounded">
-                  Confidence: {(candidate.simulationScore * 100).toFixed(0)}%
-                </span>
+            {(candidate.evidenceGrade ?? candidate.simulationScore) && (
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {candidate.evidenceGrade ? (
+                  <EvidenceGradeBadge grade={candidate.evidenceGrade} />
+                ) : candidate.simulationScore ? (
+                  <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-800 rounded">
+                    Illustrative confidence: {(candidate.simulationScore * 100).toFixed(0)}%
+                  </span>
+                ) : null}
                 {candidate.safetyScore && (
-                  <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-950 text-green-900 dark:text-green-100 rounded">
-                    Safety: {(candidate.safetyScore * 100).toFixed(0)}%
+                  <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded">
+                    Safety est.: {(candidate.safetyScore * 100).toFixed(0)}%
                   </span>
                 )}
               </div>

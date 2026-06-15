@@ -13,6 +13,8 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import { AnnotatedValueDisplay } from '@/components/ui/annotated-value'
+import { SourceBadge } from '@/components/ui/source-badge'
 import { MolecularViewer } from './molecular-viewer'
 import type { AeonForgeCandidateMolecule } from '@/lib/services/aeonforge'
 import type { CandidateRealityCheck } from '@/lib/services/candidate-reality-check'
@@ -247,11 +249,21 @@ export function SimulationResults({
                           AI-generated hypothesis — not validated
                         </p>
                       </div>
-                      {mol.estimatedHealthspanGain && (
+                      {mol.estimatedHealthspanGainAnnotated ? (
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <AnnotatedValueDisplay
+                            annotated={mol.estimatedHealthspanGainAnnotated}
+                            format={(v) => `~${v.toFixed(0)}d`}
+                          />
+                          <span className="text-xs text-gray-400 ml-1">(illustrative)</span>
+                        </span>
+                      ) : mol.estimatedHealthspanGain ? (
                         <Badge variant="outline" className="text-gray-600 dark:text-gray-400 border-gray-300 dark:border-slate-600">
-                          ~{mol.estimatedHealthspanGain}d (illustrative, not measured)
+                          ~{mol.estimatedHealthspanGain}d
+                          <SourceBadge kind="llm" className="ml-1" />
+                          <span className="ml-1 text-gray-400">(illustrative)</span>
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
 
                     <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -274,8 +286,8 @@ export function SimulationResults({
                     )}
 
                     {mol.safetyProfile && (
-                      <div className="flex items-center gap-2 pt-2">
-                        <span className="text-xs font-medium">Safety est. (illustrative):</span>
+                      <div className="flex items-center gap-2 pt-2 flex-wrap">
+                        <span className="text-xs font-medium">Safety est.:</span>
                         <div className="w-24 h-2 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
                           <div
                             className="h-full bg-green-500"
@@ -287,6 +299,15 @@ export function SimulationResults({
                         <span className="text-xs text-gray-500">
                           {((1 - (mol.safetyProfile.toxicity || 0)) * 100).toFixed(0)}%
                         </span>
+                        {mol.safetyProfileAnnotated?.toxicity ? (
+                          <SourceBadge
+                            kind={mol.safetyProfileAnnotated.toxicity.source.kind}
+                            modelId={mol.safetyProfileAnnotated.toxicity.source.modelId}
+                          />
+                        ) : (
+                          <SourceBadge kind="llm" />
+                        )}
+                        <span className="text-xs text-gray-400">(illustrative)</span>
                       </div>
                     )}
 
@@ -326,9 +347,12 @@ export function SimulationResults({
                       <h4 className="font-semibold capitalize">
                         {sim.type.replace(/_/g, ' ')}
                       </h4>
-                      <Badge variant="outline">
-                        {(sim.confidence * 100).toFixed(0)}% (illustrative)
-                      </Badge>
+                      <span className="flex items-center gap-1">
+                        <Badge variant="outline">
+                          {(sim.confidence * 100).toFixed(0)}% (illustrative)
+                        </Badge>
+                        <SourceBadge kind="aeonforge-sim" />
+                      </span>
                     </div>
 
                     <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -357,7 +381,11 @@ export function SimulationResults({
                 <div className="space-y-4">
                   <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
                     <AlertDescription className="text-amber-900 dark:text-amber-100">
-                      <strong>AI Hallmark Response Model:</strong> AI-generated exploratory predictions only — not measured, not validated. All scores are illustrative.
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <strong>AI Hallmark Response Model:</strong>
+                        <SourceBadge kind="llm" />
+                      </span>
+                      AI-generated exploratory predictions only — not measured, not validated. All scores are illustrative.
                     </AlertDescription>
                   </Alert>
 

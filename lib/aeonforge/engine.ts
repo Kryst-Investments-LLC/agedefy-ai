@@ -1,5 +1,6 @@
 import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
 import { computeSaScore } from '@/lib/services/sa-score'
+import type { DataSource, UncertaintySpec } from '@/lib/types/annotated-value'
 import {
   calculateEvidenceScore,
   estimateReviewConfidence,
@@ -134,7 +135,7 @@ Each candidate must have: id, iupacName, commonName, smiles (simplified molecula
 Return a JSON array of 3-5 candidates. Output ONLY the JSON array, no markdown fences or explanation.
 IMPORTANT: All results are hypothetical and for informational purposes only. Always be conservative with healthspan estimates.`
 
-async function callAIProvider(prompt: string): Promise<string> {
+async function callAIProvider(prompt: string): Promise<{ raw: string; modelId: string }> {
   const config = getAIConfig()
 
   if (isProviderEnabled('openai') && config.providers.openai.apiKey) {
@@ -156,7 +157,7 @@ async function callAIProvider(prompt: string): Promise<string> {
     })
     if (!response.ok) throw new Error(`OpenAI error: ${response.status}`)
     const data = await response.json()
-    return data.choices[0]?.message?.content || '[]'
+    return { raw: data.choices[0]?.message?.content || '[]', modelId: config.providers.openai.model }
   }
 
   if (isProviderEnabled('anthropic') && config.providers.anthropic.apiKey) {
@@ -176,7 +177,7 @@ async function callAIProvider(prompt: string): Promise<string> {
     })
     if (!response.ok) throw new Error(`Anthropic error: ${response.status}`)
     const data = await response.json()
-    return data.content?.[0]?.text || '[]'
+    return { raw: data.content?.[0]?.text || '[]', modelId: config.providers.anthropic.model }
   }
 
   if (isProviderEnabled('grok') && config.providers.grok.apiKey) {
@@ -198,7 +199,7 @@ async function callAIProvider(prompt: string): Promise<string> {
     })
     if (!response.ok) throw new Error(`Grok error: ${response.status}`)
     const data = await response.json()
-    return data.choices[0]?.message?.content || '[]'
+    return { raw: data.choices[0]?.message?.content || '[]', modelId: config.providers.grok.model }
   }
 
   throw new Error('No AI provider is configured for AeonForge discovery')
@@ -229,11 +230,22 @@ function scoreSafety(
   if (matched && matched.interactions.length > 0) {
     const severityScores = matched.interactions.map((i) => severityToScore[i.severity])
     const avgToxicity = severityScores.reduce((a, b) => a + b, 0) / severityScores.length
+    const clampedToxicity = Math.min(1, Math.max(0, avgToxicity))
+    const kgSource: DataSource = { kind: 'chembl' }
+    const kgUncertainty: UncertaintySpec = { kind: 'qualitative', level: 'low' }
     return {
       ...candidate,
       safetyProfile: {
         ...candidate.safetyProfile,
-        toxicity: Math.min(1, Math.max(0, avgToxicity)),
+        toxicity: clampedToxicity,
+      },
+      safetyProfileAnnotated: {
+        toxicity: {
+          value: clampedToxicity,
+          source: kgSource,
+          uncertainty: kgUncertainty,
+          measured: false,
+        },
       },
     }
   }
@@ -264,37 +276,56 @@ function scoreEvidence(analysis: PromptAnalysis): number {
 // Parse AI response
 // ---------------------------------------------------------------------------
 
-function parseAICandidates(raw: string): AeonForgeCandidateMolecule[] {
+function parseAICandidates(raw: string, modelId: string): AeonForgeCandidateMolecule[] {
   let cleaned = raw.trim()
   // Strip markdown code fences if present
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
   }
 
+  const llmSource: DataSource = { kind: 'llm', modelId }
+  const llmUncertainty: UncertaintySpec = { kind: 'qualitative', level: 'very-low' }
+
   try {
     const parsed = JSON.parse(cleaned)
     const arr = Array.isArray(parsed) ? parsed : [parsed]
-    return arr.map((item: Record<string, unknown>, idx: number) => ({
-      id: (item.id as string) || `af-candidate-${idx + 1}`,
-      iupacName: (item.iupacName as string) || 'Unknown',
-      commonName: (item.commonName as string) || undefined,
-      smiles: (item.smiles as string) || '',
-      mechanism: (item.mechanism as string) || '',
-      targetPathways: Array.isArray(item.targetPathways) ? item.targetPathways as string[] : [],
-      potentialSynergies: Array.isArray(item.potentialSynergies) ? item.potentialSynergies as string[] : [],
-      estimatedHealthspanGain: typeof item.estimatedHealthspanGain === 'number' ? item.estimatedHealthspanGain : undefined,
-      safetyProfile: {
-        toxicity: typeof (item.safetyProfile as Record<string, unknown>)?.toxicity === 'number'
-          ? (item.safetyProfile as Record<string, unknown>).toxicity as number
-          : 0.3,
-        contraindications: Array.isArray((item.safetyProfile as Record<string, unknown>)?.contraindications)
-          ? (item.safetyProfile as Record<string, unknown>).contraindications as string[]
-          : [],
-        knownAdverseEvents: Array.isArray((item.safetyProfile as Record<string, unknown>)?.knownAdverseEvents)
-          ? (item.safetyProfile as Record<string, unknown>).knownAdverseEvents as string[]
-          : [],
-      },
-    }))
+    return arr.map((item: Record<string, unknown>, idx: number) => {
+      const sp = item.safetyProfile as Record<string, unknown> | undefined
+      const healthspanGain = typeof item.estimatedHealthspanGain === 'number'
+        ? item.estimatedHealthspanGain
+        : undefined
+      const toxicity = typeof sp?.toxicity === 'number' ? sp.toxicity as number : 0.3
+      return {
+        id: (item.id as string) || `af-candidate-${idx + 1}`,
+        iupacName: (item.iupacName as string) || 'Unknown',
+        commonName: (item.commonName as string) || undefined,
+        smiles: (item.smiles as string) || '',
+        mechanism: (item.mechanism as string) || '',
+        targetPathways: Array.isArray(item.targetPathways) ? item.targetPathways as string[] : [],
+        potentialSynergies: Array.isArray(item.potentialSynergies) ? item.potentialSynergies as string[] : [],
+        estimatedHealthspanGain: healthspanGain,
+        estimatedHealthspanGainAnnotated: healthspanGain !== undefined ? {
+          value: healthspanGain,
+          unit: 'days',
+          source: llmSource,
+          uncertainty: llmUncertainty,
+          measured: false,
+        } : undefined,
+        safetyProfile: {
+          toxicity,
+          contraindications: Array.isArray(sp?.contraindications) ? sp.contraindications as string[] : [],
+          knownAdverseEvents: Array.isArray(sp?.knownAdverseEvents) ? sp.knownAdverseEvents as string[] : [],
+        },
+        safetyProfileAnnotated: {
+          toxicity: {
+            value: toxicity,
+            source: llmSource,
+            uncertainty: llmUncertainty,
+            measured: false,
+          },
+        },
+      }
+    })
   } catch (e) {
     logger.error('Failed to parse AI candidate response', { error: e, raw: raw.slice(0, 200) })
     return []
@@ -341,7 +372,7 @@ export async function discoverCandidatesLocal(
   ].join('\n')
 
   // Step 4: Call AI provider for structured candidate generation
-  const rawResponse = await callAIProvider(enrichedPrompt)
+  const { raw: rawResponse, modelId } = await callAIProvider(enrichedPrompt)
 
   // Output guardrail: scan raw response before parsing candidates.
   // Fires if the AI embedded prescriptive dosing/prescription/cure language.
@@ -364,7 +395,7 @@ export async function discoverCandidatesLocal(
     }
   }
 
-  let candidates = parseAICandidates(rawResponse)
+  let candidates = parseAICandidates(rawResponse, modelId)
 
   // Step 5: Enrich with safety scoring from knowledge graph; stamp PENDING reality-check
   // (the background worker resolves these via chemistry.reality-check jobs); compute SA score

@@ -32,6 +32,7 @@
 import { executeWithCircuitBreaker } from '@/lib/circuit-breaker'
 import { logger } from '@/lib/logger'
 import { computeSaScore } from '@/lib/services/sa-score'
+import type { DataSource } from '@/lib/types/annotated-value'
 import type { LibrarySearchCriteria } from '@/lib/validators/library-search'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -47,10 +48,27 @@ const MOLECULE_BATCH_LIMIT = 60
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
+export interface LibrarySearchScoreBreakdown {
+  /** Weighted potency contribution: 0.45 × (pChEMBL / 10). */
+  pchembl: number
+  /** Weighted clinical-phase contribution: 0.25 × (phase / 4). */
+  phase: number
+  /** Weighted bioactivity-breadth contribution: 0.15 × log10(bioactivities+1)/5. */
+  bio: number
+  /** Weighted drug-likeness bonus: 0.10 when Lipinski-compliant, else 0. */
+  lipinski: number
+  /** Weighted synthesizability contribution: 0.05 × (10 − SA) / 9. */
+  sa: number
+  /** Sum of all weighted contributions (= composite score). */
+  total: number
+}
+
 export interface LibrarySearchHit {
   rank: number
   /** Composite 0–1 score (higher = more promising). */
   score: number
+  /** Named weighted contributions that sum to `score`. */
+  scoreBreakdown: LibrarySearchScoreBreakdown
 
   // Identity
   chemblId: string
@@ -87,6 +105,10 @@ export interface LibrarySearchHit {
   // Provenance
   sources: ['ChEMBL']
   chemblUrl: string
+  /** Source annotation for all physicochemical properties in this hit. */
+  propertySource: DataSource
+  /** ChEMBL database release used, if known (set via CHEMBL_VERSION env var). */
+  chemblVersion: string | null
 }
 
 export interface LibrarySearchResult {
@@ -402,16 +424,25 @@ class LibrarySearchService {
     return [...molecules].sort((a, b) => this.score(b) - this.score(a))
   }
 
-  computeScore(m: MoleculeAccumulator): number {
-    const pchemblScore = m.bestPchemblValue !== null ? Math.min(m.bestPchemblValue / 10, 1) : 0
-    const phaseScore = m.maxClinicalPhase !== null ? m.maxClinicalPhase / 4 : 0
-    const bioScore = Math.min(Math.log10(m.totalBioactivities + 1) / 5, 1)
-    const lipinski = this.isLipinskiCompliant(m) ? 1 : 0
+  /**
+   * Compute the named weighted contributions for a molecule.
+   * Pass a precomputed SA score (or null) to avoid a redundant computeSaScore call.
+   * Each contribution is already multiplied by its weight, so contributions sum to total.
+   */
+  computeScoreBreakdown(m: MoleculeAccumulator, saScore: number | null): LibrarySearchScoreBreakdown {
+    const pchembl = m.bestPchemblValue !== null ? Math.min(m.bestPchemblValue / 10, 1) * 0.45 : 0
+    const phase = m.maxClinicalPhase !== null ? (m.maxClinicalPhase / 4) * 0.25 : 0
+    const bio = Math.min(Math.log10(m.totalBioactivities + 1) / 5, 1) * 0.15
+    const lipinski = this.isLipinskiCompliant(m) ? 0.10 : 0
     // SA synthesizability bonus: easy molecules (score→1) get full 0.05, hard (score→10) get 0.
-    // Falls back to 0 (neutral) when SMILES is unavailable.
+    const saFactor = saScore !== null ? (10 - saScore) / 9 : 0
+    const sa = saFactor * 0.05
+    return { pchembl, phase, bio, lipinski, sa, total: pchembl + phase + bio + lipinski + sa }
+  }
+
+  computeScore(m: MoleculeAccumulator): number {
     const saResult = m.canonicalSmiles ? computeSaScore(m.canonicalSmiles) : null
-    const saFactor = saResult !== null ? (10 - saResult.score) / 9 : 0
-    return 0.45 * pchemblScore + 0.25 * phaseScore + 0.15 * bioScore + 0.10 * lipinski + 0.05 * saFactor
+    return this.computeScoreBreakdown(m, saResult?.score ?? null).total
   }
 
   private score(m: MoleculeAccumulator): number {
@@ -429,9 +460,11 @@ class LibrarySearchService {
 
   private toHit(m: MoleculeAccumulator, rank: number): LibrarySearchHit {
     const saResult = m.canonicalSmiles ? computeSaScore(m.canonicalSmiles) : null
+    const breakdown = this.computeScoreBreakdown(m, saResult?.score ?? null)
     return {
       rank,
-      score: Math.round(this.computeScore(m) * 10000) / 10000,
+      score: Math.round(breakdown.total * 10000) / 10000,
+      scoreBreakdown: breakdown,
       chemblId: m.chemblId,
       preferredName: m.preferredName,
       canonicalSmiles: m.canonicalSmiles,
@@ -453,6 +486,8 @@ class LibrarySearchService {
       synthesizabilityLabel: saResult?.label ?? null,
       sources: ['ChEMBL'],
       chemblUrl: `https://www.ebi.ac.uk/chembl/compound_report_card/${m.chemblId}/`,
+      propertySource: { kind: 'chembl' } as DataSource,
+      chemblVersion: process.env.CHEMBL_VERSION ?? null,
     }
   }
 
