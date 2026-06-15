@@ -83,18 +83,25 @@ export function PromptDiscovery({
       <div className="bg-white dark:bg-slate-950 rounded-lg border border-gray-200 dark:border-slate-800 p-6 space-y-4">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
-          Deep Discover
+          AI Hypothesis Explorer
         </h2>
+
+        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-900 dark:text-amber-100 text-xs">
+            <strong>AI-generated hypotheses only.</strong> All candidates, scores, and numeric outputs are exploratory and have not been validated preclinically or clinically. No output represents a measured or confirmed finding. Candidates require lab confirmation before becoming hits. Not medical advice.
+          </AlertDescription>
+        </Alert>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Prompt textarea */}
           <div className="space-y-2">
             <label htmlFor="prompt" className="text-sm font-medium">
-              Discovery Prompt
+              Research Prompt
             </label>
             <Textarea
               id="prompt"
-              placeholder="Describe your pharmaceutical research question. Be specific about target pathways, mechanisms, or desired outcomes..."
+              placeholder="Describe your longevity research question. Be specific about target pathways, mechanisms, or desired outcomes..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={loading}
@@ -115,7 +122,7 @@ export function PromptDiscovery({
                 disabled={loading}
                 className="rounded"
               />
-              <span>Include molecular simulations</span>
+              <span>Include AI-generated exploratory simulations</span>
             </label>
 
             {canUseVirtualTwin && (
@@ -127,7 +134,7 @@ export function PromptDiscovery({
                   disabled={loading}
                   className="rounded"
                 />
-                <span>Generate digital twin profile</span>
+                <span>Generate AI hallmark response model (exploratory only)</span>
               </label>
             )}
           </div>
@@ -139,7 +146,7 @@ export function PromptDiscovery({
             className="w-full"
           >
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {loading ? 'Discovering...' : 'Deep Discover'}
+            {loading ? 'Generating hypotheses...' : 'Generate AI Hypotheses'}
           </Button>
         </form>
 

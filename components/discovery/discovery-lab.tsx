@@ -34,7 +34,7 @@ export function DiscoveryLab({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Discovery Lab</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Advanced pharmaceutical AI research platform. Transform scientific prompts into actionable molecular candidates.
+          Advanced pharmaceutical AI research platform. Transform scientific prompts into ranked molecular candidates worth testing — not conclusions.
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export function DiscoveryLab({
         <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <AlertDescription className="text-blue-900 dark:text-blue-100">
             <strong>Explorer Mode:</strong> This is an educational platform showcasing AI-powered pharmaceutical discovery. 
-            All results are hypothetical simulations. Not medical advice. For personalized recommendations, consult a healthcare provider.
+            All candidates are unvalidated AI hypotheses — not experimental results, not medical advice. A candidate only becomes a confirmed hit after lab verification. For personalised recommendations, consult a healthcare provider.
           </AlertDescription>
         </Alert>
       )}
@@ -75,7 +75,7 @@ export function DiscoveryLab({
           />
         </div>
 
-        {/* Right content: Results */}
+        {/* Right content: Candidate hypotheses */}
         <div className="lg:col-span-2 space-y-6">
           {/* Research history */}
           <DiscoveryCandidates

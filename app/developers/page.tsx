@@ -77,7 +77,7 @@ export default function DeveloperPortalPage() {
             method="POST"
             path="/api/v1/aeonforge/discover"
             scope="discover"
-            description="Submit a scientific prompt and receive ranked candidate molecules with safety profiles."
+            description="Submit a scientific prompt and receive ranked candidate molecules worth testing — exploratory hypotheses, not confirmed hits."
             body={`{
   "prompt": "Find senolytics targeting p16-positive cells",
   "discoveryTier": "pro",

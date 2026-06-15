@@ -82,7 +82,7 @@ export function DiscoveryCandidates({
       <Card>
         <CardContent className="text-center py-8">
           <p className="text-gray-500 dark:text-gray-400">
-            No discovery results yet. Submit a prompt to get started.
+            No candidate hypotheses yet. Submit a prompt to generate ranked candidates worth testing.
           </p>
         </CardContent>
       </Card>
@@ -92,7 +92,7 @@ export function DiscoveryCandidates({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Discovery History</CardTitle>
+        <CardTitle>Research Prompts</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {candidates.map((candidate) => (
