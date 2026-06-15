@@ -443,6 +443,41 @@ export const screeningSidecar = {
       traceparent,
       timeoutMs: 30_000,
     }),
+  dock: (req: DockRequest, traceparent?: string) =>
+    request<DockResult>(screeningSidecar.url(), "/v1/dock", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 300_000,
+    }),
+}
+
+// ---------- screening-sidecar / docking types ----------
+
+export interface DockingBox {
+  center: { x: number; y: number; z: number }
+  size: { x: number; y: number; z: number }
+}
+
+export interface DockRequest {
+  smiles: string
+  /** Base64-encoded PDBQT of the prepared receptor */
+  receptor_pdbqt: string
+  box: DockingBox
+  /** 1–32, default 8 */
+  exhaustiveness?: number
+  /** 1–20, default 5 */
+  n_poses?: number
+}
+
+export interface DockResult {
+  ligand_smiles: string
+  binding_affinity_kcal_mol: number
+  pose_scores_kcal_mol: number[]
+  best_pose_pdbqt: string
+  n_poses_returned: number
+  exhaustiveness: number
+  model_version: string
 }
 
 export { SidecarError, envOrThrow }
