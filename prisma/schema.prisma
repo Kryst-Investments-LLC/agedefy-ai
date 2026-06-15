@@ -168,6 +168,8 @@ model User {
   agentSessions               AgentSession[]                  @relation("AgentSessionUser")
   driftSweeps                 DriftSweep[]                    @relation("DriftSweepUser")
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
+  experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
+  experimentCandidateEvents   ExperimentCandidateEvent[]      @relation("ExperimentCandidateEventActor")
   // Translational research foundation back-relations.
   omicsSamples                OmicsSample[]
   polygenicScores             PolygenicScore[]
@@ -1226,9 +1228,10 @@ model AeonForgeCandidate {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  simulationResults SimulationResult[]
-  virtualTwinRuns   VirtualTwinRun[]
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulationResults    SimulationResult[]
+  virtualTwinRuns      VirtualTwinRun[]
+  experimentCandidates ExperimentCandidate[] @relation("ExperimentCandidateSource")
 
   @@index([userId, status])
   @@index([createdAt])
@@ -2871,4 +2874,101 @@ model EvalBenchRun {
   ranAt        DateTime @default(now())
 
   @@index([benchName, ranAt])
+}
+
+// ─── Experiment / Candidate Lifecycle Tracking ──────────────
+
+enum ExperimentCandidateStatus {
+  PROPOSED
+  SCREENED
+  SENT_TO_LAB
+  RESULT_LOGGED
+  FED_BACK
+}
+
+enum ExperimentCandidateKind {
+  CHEMBL
+  AI
+}
+
+model ExperimentCandidate {
+  id       String                    @id @default(cuid())
+  tenantId String                    @default("default")
+  userId   String
+  kind     ExperimentCandidateKind
+  status   ExperimentCandidateStatus @default(PROPOSED)
+
+  // ── Identity ───────────────────────────────────────────────
+  displayName String
+  smiles      String?
+
+  // ── ChEMBL provenance ──────────────────────────────────────
+  chemblId    String?
+  chemblScore Float?
+  chemblJson  Json? // LibrarySearchHit snapshot at time of add
+
+  // ── AI provenance ──────────────────────────────────────────
+  aeonForgeCandidateId String? // FK to AeonForgeCandidate (optional)
+  aiMolJson            Json? // AeonForgeCandidateMolecule snapshot at time of add
+
+  // ── Sidecar snapshots (populated at SCREENED) ──────────────
+  screenJson Json? // ScreenResult
+  dockJson   Json? // DockResult
+
+  // ── Researcher context ─────────────────────────────────────
+  targetName     String?
+  targetChemblId String?
+  hypothesisNote String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user               User                       @relation("ExperimentCandidateUser", fields: [userId], references: [id], onDelete: Cascade)
+  aeonForgeCandidate AeonForgeCandidate?        @relation("ExperimentCandidateSource", fields: [aeonForgeCandidateId], references: [id], onDelete: SetNull)
+  events             ExperimentCandidateEvent[]
+  labResults         CandidateLabResult[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([chemblId])
+  @@index([tenantId, status])
+}
+
+model ExperimentCandidateEvent {
+  id          String                     @id @default(cuid())
+  candidateId String
+  actorUserId String
+  fromStatus  ExperimentCandidateStatus?
+  toStatus    ExperimentCandidateStatus
+  notes       String?
+  metadata    Json? // stage-specific bag: {lab, cro} at SENT_TO_LAB, etc.
+  createdAt   DateTime                   @default(now())
+
+  candidate ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  actorUser User                @relation("ExperimentCandidateEventActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@index([actorUserId])
+}
+
+model CandidateLabResult {
+  id          String   @id @default(cuid())
+  candidateId String
+  assayName   String // "IC50_SIRT1", "cell_viability_%", "GI50"
+  value       Float
+  unit        String // "µM", "%", "nM"
+  operator    String   @default("=") // "=", "<", ">" — for limit-of-detection values
+  flag        String? // "active" | "inactive" | "borderline" | "toxic"
+  assayType   String? // "biochemical" | "cellular" | "animal" | "in_silico"
+  lab         String?
+  measuredAt  DateTime
+  rawDataUri  String? // link to ELN / raw file
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  candidate ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, assayName])
+  @@index([candidateId, measuredAt])
 }
