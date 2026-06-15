@@ -56,6 +56,7 @@ const envSchema = z.object({
   ENABLE_FEDERATED_LEARNING: z.enum(["true", "false"]).optional(),
   ENABLE_CAUSAL_SIDECAR: z.enum(["true", "false"]).optional(),
   ENABLE_NEO4J_BACKEND: z.enum(["true", "false"]).optional(),
+  ENABLE_SCREENING_SIDECAR: z.enum(["true", "false"]).optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>
@@ -133,6 +134,7 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
     ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
     ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
+    ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
   }
 }
 
@@ -290,6 +292,7 @@ const fallbackEnv: ParsedEnvironment = {
   ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
   ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
   ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
+  ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
 }
 
 export const env = parsedEnv.success ? parsedEnv.data : fallbackEnv

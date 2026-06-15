@@ -50,6 +50,7 @@ describe("probeSidecars", () => {
       "causal",
       "dp-accountant",
       "mechanistic",
+      "screening",
       "vc-signer",
     ])
     for (const entry of result) {

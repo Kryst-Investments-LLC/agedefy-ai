@@ -349,4 +349,100 @@ export const mechanisticSidecar = {
     }),
 }
 
+// ---------- screening-sidecar ----------
+
+export interface ScreenRequest {
+  smiles: string
+  include_pains?: boolean
+}
+
+export interface ScreenDescriptors {
+  molecular_weight: number
+  exact_molecular_weight: number
+  mol_log_p: number
+  hbd: number
+  hba: number
+  tpsa: number
+  rotatable_bonds: number
+  aromatic_rings: number
+  rings: number
+  heavy_atom_count: number
+  stereocenters: number
+  frac_csp3: number
+  qed: number
+  sa_score: number | null
+}
+
+export interface ScreenFilterResult {
+  pass: boolean
+  details: Record<string, boolean>
+  violations?: number
+  alerts?: string[]
+  checked?: boolean
+}
+
+export interface ScreenAdmetFlag {
+  likely?: boolean
+  flag?: boolean
+  basis: string
+}
+
+export interface ScreenResult {
+  smiles: string
+  canonical_smiles: string | null
+  inchi: string | null
+  inchi_key: string | null
+  valid: boolean
+  sanitization_error: string | null
+  descriptors: ScreenDescriptors | null
+  filters: {
+    lipinski: ScreenFilterResult
+    veber: ScreenFilterResult
+    ghose: ScreenFilterResult
+    lead_like: ScreenFilterResult
+    pains: ScreenFilterResult
+  } | null
+  admet_flags: {
+    bbb_penetrant: ScreenAdmetFlag
+    oral_absorption_risk: ScreenAdmetFlag
+    pgp_substrate_risk: ScreenAdmetFlag
+    herg_liability_risk: ScreenAdmetFlag
+  } | null
+  model_version: string
+}
+
+export interface BatchScreenRequest {
+  smiles_list: string[]
+  include_pains?: boolean
+}
+
+export interface BatchScreenResult {
+  results: ScreenResult[]
+}
+
+export const screeningSidecar = {
+  url: () => process.env.SCREENING_SIDECAR_URL ?? "http://screening-sidecar:8080",
+  configured: () => Boolean(process.env.SCREENING_SIDECAR_URL),
+  health: (traceparent?: string) =>
+    request<{ status: string; version: string; rdkit_version: string }>(
+      screeningSidecar.url(),
+      "/healthz",
+      { traceparent },
+    ),
+  screen: (req: ScreenRequest, traceparent?: string) =>
+    request<ScreenResult>(screeningSidecar.url(), "/v1/screen", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 10_000,
+    }),
+  screenBatch: (req: BatchScreenRequest, traceparent?: string) =>
+    request<BatchScreenResult>(screeningSidecar.url(), "/v1/screen/batch", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      timeoutMs: 30_000,
+    }),
+}
+
 export { SidecarError, envOrThrow }
