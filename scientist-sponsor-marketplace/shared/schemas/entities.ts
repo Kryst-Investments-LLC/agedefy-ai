@@ -39,6 +39,8 @@ export const sponsorSchema = z.object({
   capitalAvailableCents: z.number().int().positive(),
   dueDiligenceLevel: z.string().min(1),
   geographyFocus: z.array(z.string().min(1)).default([]),
+  assayCapabilities: z.array(z.string().min(1)).default([]),
+  labType: z.string().nullable(),
   createdAt: isoDate,
   updatedAt: isoDate,
 })
@@ -59,6 +61,7 @@ export const discoverySchema = z.object({
   evidenceSummary: z.string().nullable(),
   evidenceLinks: z.array(z.object({ label: z.string(), url: z.string().url(), evidenceType: z.string().optional() })).default([]),
   metadata: z.record(z.string(), z.unknown()).default({}),
+  candidateId: z.string().nullable(),
   publishedAt: isoDate.nullable(),
   createdAt: isoDate,
   updatedAt: isoDate,
@@ -205,7 +208,7 @@ export const notificationCreateSchema = notificationSchema.omit({ id: true, crea
 
 export const scientistUpdateSchema = scientistCreateSchema.partial()
 export const sponsorUpdateSchema = sponsorCreateSchema.partial()
-export const discoveryUpdateSchema = discoveryCreateSchema.partial().extend({ slug: z.string().optional(), publishedAt: isoDate.nullable().optional(), status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "PRIVATE", "ARCHIVED"]).optional() })
+export const discoveryUpdateSchema = discoveryCreateSchema.partial().extend({ slug: z.string().optional(), candidateId: z.string().nullable().optional(), publishedAt: isoDate.nullable().optional(), status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "PRIVATE", "ARCHIVED"]).optional() })
 export const fundingRequestUpdateSchema = fundingRequestCreateSchema.partial().extend({ publishedAt: isoDate.nullable().optional() })
 export const matchScoreUpdateSchema = matchScoreCreateSchema.partial()
 export const dealRoomUpdateSchema = dealRoomCreateSchema.partial().extend({ ndaAcceptedAt: isoDate.nullable().optional(), lastActivityAt: isoDate.optional() })

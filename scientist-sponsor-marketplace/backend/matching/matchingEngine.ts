@@ -11,6 +11,21 @@ function overlap(left: string[], right: string[]) {
   return clamp(shared / Math.max(left.length, right.length))
 }
 
+/**
+ * Compute how well a sponsor/lab's declared assay capabilities cover the
+ * assays requested in a validation listing.
+ *
+ * Uses directional coverage: shared / requested — i.e., "what fraction of
+ * the requested assays can this lab actually run?" Returns 0 when either
+ * side is empty so it degrades gracefully for non-validation listings.
+ */
+export function computeLabCapabilityFit(requestedAssays: string[], sponsorCapabilities: string[]): number {
+  if (!requestedAssays.length || !sponsorCapabilities.length) return 0
+  const capSet = new Set(sponsorCapabilities.map((c) => c.toLowerCase()))
+  const covered = requestedAssays.filter((a) => capSet.has(a.toLowerCase())).length
+  return clamp(covered / requestedAssays.length)
+}
+
 export function computeRuleBasedScore(discovery: Discovery, sponsor: Sponsor, fundingRequest?: FundingRequest | null): MatchScoreBreakdown {
   const requestedBudget = fundingRequest?.requestedAmountCents ?? discovery.fundingGoalCents
   const categoryFit = overlap([discovery.category], sponsor.preferredCategories)
@@ -50,7 +65,7 @@ export function rankDiscoveriesForSponsor(input: {
   sponsor: Sponsor
   fundingRequests: FundingRequest[]
 }): RankedMatch[] {
-  const weights = {
+  const baseWeights = {
     categoryFit: 0.2,
     budgetFit: 0.2,
     impactFit: 0.2,
@@ -64,18 +79,37 @@ export function rankDiscoveriesForSponsor(input: {
     .map((discovery) => {
       const fundingRequest = input.fundingRequests.find((item) => item.discoveryId === discovery.id)
       const ruleScore = computeRuleBasedScore(discovery, input.sponsor, fundingRequest)
-      const aiSignal = computeTextSimilarityScore(discovery, input.sponsor)
-      const weighted = { ...ruleScore, aiSignal }
+
+      const isValidationListing = discovery.metadata.validationListing === true
+      const requestedAssays = Array.isArray(discovery.metadata.requestedAssays)
+        ? (discovery.metadata.requestedAssays as unknown[]).filter((a): a is string => typeof a === "string")
+        : []
+      const labCapabilityFit = isValidationListing
+        ? computeLabCapabilityFit(requestedAssays, input.sponsor.assayCapabilities ?? [])
+        : computeTextSimilarityScore(discovery, input.sponsor)
+
+      const weighted = { ...ruleScore, aiSignal: labCapabilityFit }
+
+      // When this is a validation listing with declared assay needs, boost the
+      // aiSignal weight and trim metadataFit to keep weights summing to 1.
+      const weights = isValidationListing && requestedAssays.length > 0
+        ? { ...baseWeights, aiSignal: 0.15, metadataFit: 0.03 }
+        : baseWeights
+
       const overallScore = computeWeightedAverage(weights, weighted)
       const ruleBasedScore = computeWeightedAverage({ ...weights, aiSignal: 0 }, weighted)
+
+      const rationalePrefix = isValidationListing
+        ? `Validation listing — lab capability ${Math.round(labCapabilityFit * 100)}%, `
+        : ""
 
       return {
         discovery,
         score: weighted,
         overallScore,
         ruleBasedScore,
-        aiAugmentedScore: aiSignal,
-        rationale: `Category ${Math.round(weighted.categoryFit * 100)}%, budget ${Math.round(weighted.budgetFit * 100)}%, impact ${Math.round(weighted.impactFit * 100)}%.`,
+        aiAugmentedScore: labCapabilityFit,
+        rationale: `${rationalePrefix}category ${Math.round(weighted.categoryFit * 100)}%, budget ${Math.round(weighted.budgetFit * 100)}%, impact ${Math.round(weighted.impactFit * 100)}%.`,
       }
     })
     .sort((left, right) => right.overallScore - left.overallScore)

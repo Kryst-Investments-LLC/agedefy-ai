@@ -1,3 +1,8 @@
+import { Prisma } from "@prisma/client"
+
+import { db } from "@/lib/db"
+import { buildLabPackage, generateSubmissionToken } from "@/lib/lab-package"
+import { toJsonValue } from "@/scientist-sponsor-marketplace/backend/models/json"
 import { billingService } from "@/scientist-sponsor-marketplace/backend/services/billingService"
 import { dealRoomService } from "@/scientist-sponsor-marketplace/backend/services/dealRoomService"
 import { postDealRoomMessage } from "@/scientist-sponsor-marketplace/backend/services/messageThreadService"
@@ -6,6 +11,76 @@ import { transactionService } from "@/scientist-sponsor-marketplace/backend/serv
 import { logMarketplaceAuditEvent } from "@/scientist-sponsor-marketplace/backend/services/auditService"
 import { approveAndReleaseMarketplaceTransaction, markMarketplaceMilestoneComplete, rejectMarketplaceTransactionReview } from "@/scientist-sponsor-marketplace/backend/services/paymentLifecycleService"
 import type { MarketplaceRole } from "@/scientist-sponsor-marketplace/shared/types/entities"
+
+async function createLabSubmissionForDeal(opts: {
+  candidateId: string
+  scientistUserId: string
+  sponsorId: string
+  dealRoomId: string
+}): Promise<{ submissionId: string; token: string } | null> {
+  const [candidate, sponsor] = await Promise.all([
+    db.experimentCandidate.findUnique({ where: { id: opts.candidateId } }),
+    db.marketplaceSponsor.findUnique({ where: { id: opts.sponsorId }, include: { user: true } }),
+  ])
+
+  if (!candidate) return null
+
+  const labName = (sponsor as any)?.organizationName ?? "Marketplace Sponsor"
+  const labContact = (sponsor as any)?.user?.email ?? null
+
+  const requestedAssays = Array.isArray((candidate as any).metadata?.requestedAssays)
+    ? ((candidate as any).metadata.requestedAssays as unknown[]).filter((a): a is string => typeof a === "string").map((name) => ({ assayName: name, replicates: 3 }))
+    : [{ assayName: "standard_validation", replicates: 3 }]
+
+  const { token, tokenHash } = generateSubmissionToken()
+
+  const submission = await db.labSubmission.create({
+    data: {
+      candidateId: opts.candidateId,
+      userId: opts.scientistUserId,
+      labName,
+      labContact,
+      tokenHash,
+      requestedAssays: toJsonValue(requestedAssays) as Prisma.InputJsonValue,
+      packageJson: toJsonValue({ submission_ref: "pending" }) as Prisma.InputJsonValue,
+    },
+  })
+
+  const pkg = buildLabPackage({
+    submissionId: submission.id,
+    candidate: {
+      id: candidate.id,
+      displayName: (candidate as any).displayName,
+      kind: (candidate as any).kind,
+      smiles: (candidate as any).smiles ?? null,
+      chemblId: (candidate as any).chemblId ?? null,
+      targetName: (candidate as any).targetName ?? null,
+      targetChemblId: (candidate as any).targetChemblId ?? null,
+      hypothesisNote: (candidate as any).hypothesisNote ?? null,
+      screenJson: (candidate as any).screenJson as Record<string, unknown> | null,
+      dockJson: (candidate as any).dockJson as Record<string, unknown> | null,
+    },
+    requestedAssays,
+    labName,
+    labContact,
+    deadlineAt: null,
+    ingestBaseUrl: process.env.NEXTAUTH_URL ?? "",
+  })
+
+  await db.labSubmission.update({
+    where: { id: submission.id },
+    data: { packageJson: toJsonValue(pkg) as Prisma.InputJsonValue },
+  })
+
+  if ((candidate as any).status === "SCREENED") {
+    await db.experimentCandidate.update({
+      where: { id: opts.candidateId },
+      data: { status: "SENT_TO_LAB" },
+    })
+  }
+
+  return { submissionId: submission.id, token }
+}
 
 export const dealWorkflow = {
   async negotiate(input: { dealRoomId: string; termsPatch: Record<string, unknown>; actorRole: MarketplaceRole; actorUserId?: string | null }) {
@@ -152,6 +227,33 @@ export const dealWorkflow = {
       messageType: "PAYMENT",
     })
 
+    // If this deal is tied to a validation listing, auto-create a LabSubmission
+    // so the scientist can hand off the candidate to the sponsor/lab immediately.
+    const discovery = await db.marketplaceDiscovery.findUnique({ where: { id: input.discoveryId } })
+    const candidateId = typeof (discovery?.metadata as Record<string, unknown>)?.candidateId === "string"
+      ? ((discovery!.metadata as Record<string, unknown>).candidateId as string)
+      : null
+
+    let labSubmissionRef: { submissionId: string; token: string } | null = null
+    if (candidateId) {
+      labSubmissionRef = await createLabSubmissionForDeal({
+        candidateId,
+        scientistUserId: input.scientistUserId,
+        sponsorId: input.sponsorId,
+        dealRoomId: input.dealRoomId,
+      })
+
+      if (labSubmissionRef) {
+        await postDealRoomMessage({
+          dealRoomId: input.dealRoomId,
+          senderUserId: null,
+          senderRole: "admin",
+          body: `Lab submission created (ref: ${labSubmissionRef.submissionId}). Provide token to the lab: ${labSubmissionRef.token}`,
+          messageType: "SYSTEM",
+        })
+      }
+    }
+
     await notifyMarketplaceUser({
       recipientUserId: input.scientistUserId,
       recipientRole: "scientist",
@@ -159,13 +261,13 @@ export const dealWorkflow = {
       discoveryId: input.discoveryId,
       type: "payment-authorized",
       title: "Project funding authorized",
-      body: `A sponsor has authorized ${input.amountCents / 100} ${input.currency} for your project.`,
+      body: `A sponsor has authorized ${input.amountCents / 100} ${input.currency} for your project.${labSubmissionRef ? " Lab submission created — check deal room for ingest token." : ""}`,
       actionUrl: `/scientist-sponsor-marketplace?dealRoom=${input.dealRoomId}`,
       channels: ["in-app", "email"],
       status: "DELIVERED",
     })
 
-    return transaction
+    return { ...transaction, labSubmissionId: labSubmissionRef?.submissionId ?? null }
   },
 
   async markMilestoneComplete(input: {

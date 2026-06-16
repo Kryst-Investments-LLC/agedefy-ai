@@ -63,6 +63,8 @@ export function normalizeSponsor(record: any): Sponsor {
     capitalAvailableCents: record.capitalAvailableCents,
     dueDiligenceLevel: record.dueDiligenceLevel,
     geographyFocus: asStringArray(record.geographyFocus),
+    assayCapabilities: asStringArray(record.assayCapabilities),
+    labType: record.labType ?? null,
     createdAt: toIso(record.createdAt) ?? new Date().toISOString(),
     updatedAt: toIso(record.updatedAt) ?? new Date().toISOString(),
   }
@@ -89,6 +91,7 @@ export function normalizeDiscovery(record: any): Discovery {
       evidenceType: typeof item.evidenceType === "string" ? item.evidenceType : undefined,
     })),
     metadata: asRecord(record.metadata),
+    candidateId: record.candidateId ?? null,
     publishedAt: toIso(record.publishedAt),
     createdAt: toIso(record.createdAt) ?? new Date().toISOString(),
     updatedAt: toIso(record.updatedAt) ?? new Date().toISOString(),

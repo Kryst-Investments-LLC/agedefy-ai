@@ -33,6 +33,8 @@ export interface Sponsor {
   capitalAvailableCents: number
   dueDiligenceLevel: string
   geographyFocus: string[]
+  assayCapabilities: string[]
+  labType: string | null
   createdAt: string
   updatedAt: string
 }
@@ -53,6 +55,7 @@ export interface Discovery {
   evidenceSummary: string | null
   evidenceLinks: Array<{ label: string; url: string; evidenceType?: string }>
   metadata: Record<string, unknown>
+  candidateId: string | null
   publishedAt: string | null
   createdAt: string
   updatedAt: string

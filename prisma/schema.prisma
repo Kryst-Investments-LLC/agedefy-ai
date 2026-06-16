@@ -1584,6 +1584,8 @@ model MarketplaceSponsor {
   capitalAvailableCents Int      @default(1000000)
   dueDiligenceLevel     String   @default("standard")
   geographyFocus        Json
+  assayCapabilities     Json     @default("[]")
+  labType               String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -1614,6 +1616,7 @@ model MarketplaceDiscovery {
   evidenceSummary       String?
   evidenceLinks         Json
   metadata              Json
+  candidateId           String?
   publishedAt           DateTime?
   createdAt             DateTime                   @default(now())
   updatedAt             DateTime                   @updatedAt
@@ -1627,6 +1630,7 @@ model MarketplaceDiscovery {
 
   @@index([category, status])
   @@index([scientistId, createdAt])
+  @@index([candidateId])
 }
 
 model MarketplaceFundingRequest {
