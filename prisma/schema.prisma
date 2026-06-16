@@ -172,6 +172,7 @@ model User {
   experimentCandidateEvents   ExperimentCandidateEvent[]      @relation("ExperimentCandidateEventActor")
   externalScreeningAdapters   ExternalScreeningAdapter[]      @relation("ExternalScreeningAdapterUser")
   labSubmissions              LabSubmission[]                 @relation("LabSubmissionUser")
+  feedbackRuns                CandidateFeedbackRun[]          @relation("FeedbackRunUser")
   // Translational research foundation back-relations.
   omicsSamples                OmicsSample[]
   polygenicScores             PolygenicScore[]
@@ -2927,6 +2928,11 @@ model ExperimentCandidate {
   hypothesisNote String?
   notes          String?
 
+  // ── Active-learning scores (populated at FED_BACK) ─────────
+  feedbackScore    Float? // 0–1: aggregate goodness from lab results
+  uncertaintyScore Float? // 0–1: confidence in feedbackScore
+  acquisitionScore Float? // 0–1: priority for next experimental round
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2935,6 +2941,7 @@ model ExperimentCandidate {
   events             ExperimentCandidateEvent[]
   labResults         CandidateLabResult[]
   labSubmissions     LabSubmission[]            @relation("LabSubmissionCandidate")
+  feedbackRuns       CandidateFeedbackRun[]     @relation("FeedbackRunCandidate")
 
   @@index([userId, status])
   @@index([userId, createdAt])
@@ -3020,6 +3027,27 @@ model LabSubmission {
 
   @@index([candidateId])
   @@index([userId, status])
+}
+
+// ─── Active-learning feedback runs ────────────────────────────────────────────
+model CandidateFeedbackRun {
+  id               String   @id @default(cuid())
+  candidateId      String
+  userId           String
+  feedbackScore    Float
+  uncertaintyScore Float
+  activityScore    Float
+  selectivityScore Float
+  toxicityScore    Float
+  nResults         Int
+  rationale        String
+  createdAt        DateTime @default(now())
+
+  candidate ExperimentCandidate @relation("FeedbackRunCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  user      User                @relation("FeedbackRunUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([userId])
 }
 
 // ─── External screening adapters ───────────────────────────────────────────────
