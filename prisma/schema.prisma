@@ -171,6 +171,7 @@ model User {
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
   experimentCandidateEvents   ExperimentCandidateEvent[]      @relation("ExperimentCandidateEventActor")
   externalScreeningAdapters   ExternalScreeningAdapter[]      @relation("ExternalScreeningAdapterUser")
+  labSubmissions              LabSubmission[]                 @relation("LabSubmissionUser")
   // Translational research foundation back-relations.
   omicsSamples                OmicsSample[]
   polygenicScores             PolygenicScore[]
@@ -2929,6 +2930,7 @@ model ExperimentCandidate {
   aeonForgeCandidate AeonForgeCandidate?        @relation("ExperimentCandidateSource", fields: [aeonForgeCandidateId], references: [id], onDelete: SetNull)
   events             ExperimentCandidateEvent[]
   labResults         CandidateLabResult[]
+  labSubmissions     LabSubmission[]            @relation("LabSubmissionCandidate")
 
   @@index([userId, status])
   @@index([userId, createdAt])
@@ -2954,24 +2956,66 @@ model ExperimentCandidateEvent {
 }
 
 model CandidateLabResult {
-  id          String   @id @default(cuid())
-  candidateId String
-  assayName   String // "IC50_SIRT1", "cell_viability_%", "GI50"
-  value       Float
-  unit        String // "µM", "%", "nM"
-  operator    String   @default("=") // "=", "<", ">" — for limit-of-detection values
-  flag        String? // "active" | "inactive" | "borderline" | "toxic"
-  assayType   String? // "biochemical" | "cellular" | "animal" | "in_silico"
-  lab         String?
-  measuredAt  DateTime
-  rawDataUri  String? // link to ELN / raw file
-  notes       String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  candidateId  String
+  submissionId String?  // set when the result arrived via a LabSubmission ingest
+  assayName    String // "IC50_SIRT1", "cell_viability_%", "GI50"
+  value        Float
+  unit         String // "µM", "%", "nM"
+  operator     String   @default("=") // "=", "<", ">" — for limit-of-detection values
+  flag         String? // "active" | "inactive" | "borderline" | "toxic"
+  assayType    String? // "biochemical" | "cellular" | "animal" | "in_silico"
+  lab          String?
+  measuredAt   DateTime
+  rawDataUri   String? // link to ELN / raw file
+  notes        String?
+  createdAt    DateTime @default(now())
 
-  candidate ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate   ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  submission  LabSubmission?      @relation("LabSubmissionResults", fields: [submissionId], references: [id], onDelete: SetNull)
 
   @@index([candidateId, assayName])
   @@index([candidateId, measuredAt])
+  @@index([submissionId])
+}
+
+// ─── Lab handoff & result ingest ───────────────────────────────────────────────
+// A LabSubmission snapshots a candidate at the moment it leaves the platform
+// for physical lab work. The lab returns results via a token-authenticated
+// ingest endpoint; results are linked back to ExperimentCandidate.
+
+enum LabSubmissionStatus {
+  PENDING   // awaiting results
+  PARTIAL   // some results received
+  COMPLETE  // researcher or lab marked done
+  VOID      // cancelled
+}
+
+model LabSubmission {
+  id          String              @id @default(cuid())
+  candidateId String
+  userId      String
+  labName     String
+  labContact  String?             // email or contact name
+  // SHA-256 of the one-time submission token.
+  // The plaintext token is returned once at creation and never stored.
+  tokenHash   String              @unique
+  status      LabSubmissionStatus @default(PENDING)
+  // Immutable snapshot of the candidate package at export time (no token).
+  packageJson Json
+  // Researcher-specified assay requests, stored as an array of objects.
+  requestedAssays Json
+  deadlineAt  DateTime?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  candidate   ExperimentCandidate @relation("LabSubmissionCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  user        User                @relation("LabSubmissionUser", fields: [userId], references: [id], onDelete: Cascade)
+  labResults  CandidateLabResult[] @relation("LabSubmissionResults")
+
+  @@index([candidateId])
+  @@index([userId, status])
 }
 
 // ─── External screening adapters ───────────────────────────────────────────────
