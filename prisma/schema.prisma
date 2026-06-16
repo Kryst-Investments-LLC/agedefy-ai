@@ -173,6 +173,7 @@ model User {
   externalScreeningAdapters   ExternalScreeningAdapter[]      @relation("ExternalScreeningAdapterUser")
   labSubmissions              LabSubmission[]                 @relation("LabSubmissionUser")
   feedbackRuns                CandidateFeedbackRun[]          @relation("FeedbackRunUser")
+  pilotMetricsSnapshots       PilotMetricsSnapshot[]          @relation("PilotMetricsSnapshotUser")
   // Translational research foundation back-relations.
   omicsSamples                OmicsSample[]
   polygenicScores             PolygenicScore[]
@@ -3048,6 +3049,41 @@ model CandidateFeedbackRun {
 
   @@index([candidateId])
   @@index([userId])
+}
+
+// ─── Pilot metrics snapshots ──────────────────────────────────────────────────
+model PilotMetricsSnapshot {
+  id         String   @id @default(cuid())
+  userId     String
+  windowDays Int      @default(90)
+  computedAt DateTime @default(now())
+
+  // hit-rate uplift
+  alHitRate       Float
+  baselineHitRate Float
+  hitRateUplift   Float
+  alN             Int
+  baselineN       Int
+
+  // cost
+  totalSpendCents Int
+  validatedHits   Int
+  costPerHitCents Int?
+
+  // cycle time (seconds)
+  medianCycleTimeSec Float?
+  p75CycleTimeSec    Float?
+  stageTimes         Json // { proposedToScreened, screenedToSent, sentToLogged, loggedToFed } median secs
+
+  // classification accuracy
+  screenPositives   Int
+  screenNegatives   Int
+  falsePositiveRate Float?
+  falseNegativeRate Float?
+
+  user User @relation("PilotMetricsSnapshotUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, computedAt])
 }
 
 // ─── External screening adapters ───────────────────────────────────────────────
