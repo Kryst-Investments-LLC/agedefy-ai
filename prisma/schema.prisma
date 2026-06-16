@@ -170,6 +170,7 @@ model User {
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
   experimentCandidateEvents   ExperimentCandidateEvent[]      @relation("ExperimentCandidateEventActor")
+  externalScreeningAdapters   ExternalScreeningAdapter[]      @relation("ExternalScreeningAdapterUser")
   // Translational research foundation back-relations.
   omicsSamples                OmicsSample[]
   polygenicScores             PolygenicScore[]
@@ -2971,4 +2972,51 @@ model CandidateLabResult {
 
   @@index([candidateId, assayName])
   @@index([candidateId, measuredAt])
+}
+
+// ─── External screening adapters ───────────────────────────────────────────────
+// Expert users can register their own ADMET/screening HTTP endpoints and route
+// candidates through them instead of (or alongside) the built-in sidecar.
+
+model ExternalScreeningAdapter {
+  id          String   @id @default(cuid())
+  userId      String
+  tenantId    String   @default("default")
+  name        String
+  endpointUrl String
+  authHeader  String   @default("Authorization")
+  authScheme  String   @default("Bearer")
+  // Token sent to the external endpoint in the auth header.
+  // TODO: encrypt with SCREENING_ADAPTER_ENC_KEY before storing in production.
+  secret      String
+  timeoutMs   Int      @default(15000)
+  enabled     Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User                   @relation("ExternalScreeningAdapterUser", fields: [userId], references: [id], onDelete: Cascade)
+  runs ExternalScreeningRun[]
+
+  @@index([userId])
+  @@index([tenantId])
+}
+
+model ExternalScreeningRun {
+  id           String   @id @default(cuid())
+  adapterId    String
+  candidateId  String?
+  smiles       String
+  durationMs   Int?
+  statusCode   Int?
+  success      Boolean
+  rawResponse  Json?
+  normalized   Json?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  adapter ExternalScreeningAdapter @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+
+  @@index([adapterId, createdAt])
+  @@index([candidateId])
 }
