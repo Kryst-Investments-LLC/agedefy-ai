@@ -17,15 +17,40 @@ export type PubMedArticleSummary = {
   publishedDate: string
 }
 
-export async function searchPubMed(query: string, maxResults: number): Promise<PubMedSearchResult> {
+export type StudyType = 'RCT' | 'meta-analysis' | 'observational'
+
+export interface PubMedFilters {
+  minYear?: number
+  studyType?: StudyType
+}
+
+const STUDY_TYPE_MESH: Record<StudyType, string> = {
+  'RCT': 'randomized controlled trial[pt]',
+  'meta-analysis': 'meta-analysis[pt]',
+  'observational': 'observational study[pt]',
+}
+
+export async function searchPubMed(
+  query: string,
+  maxResults: number,
+  filters: PubMedFilters = {},
+): Promise<PubMedSearchResult> {
   return executeWithCircuitBreaker({
     dependency: CB_DEPENDENCY,
     execute: async () => {
+      let term = query
+      if (filters.minYear) {
+        term += ` AND ${filters.minYear}:${new Date().getFullYear()}[dp]`
+      }
+      if (filters.studyType) {
+        term += ` AND ${STUDY_TYPE_MESH[filters.studyType]}`
+      }
+
       const params = new URLSearchParams({
         db: "pubmed",
         retmode: "json",
         retmax: String(maxResults),
-        term: query,
+        term,
       })
 
       if (env.PUBMED_EMAIL) {

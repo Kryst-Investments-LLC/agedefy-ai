@@ -12,9 +12,16 @@ export type ClinicalTrialStudy = {
   url: string
 }
 
+export interface ClinicalTrialsFilters {
+  phase?: string[]
+  recruitingStatus?: string
+  location?: string
+}
+
 export async function searchClinicalTrials(
   query: string,
   maxResults: number,
+  filters: ClinicalTrialsFilters = {},
 ): Promise<ClinicalTrialStudy[]> {
   return executeWithCircuitBreaker({
     dependency: CB_DEPENDENCY,
@@ -24,6 +31,16 @@ export async function searchClinicalTrials(
         pageSize: String(Math.min(maxResults, 50)),
         format: "json",
       })
+
+      if (filters.phase && filters.phase.length > 0) {
+        params.set("filter.phase", filters.phase.join(","))
+      }
+      if (filters.recruitingStatus) {
+        params.set("filter.overallStatus", filters.recruitingStatus)
+      }
+      if (filters.location) {
+        params.set("query.locn", filters.location)
+      }
 
       const response = await fetch(`${CT_GOV_BASE}/studies?${params.toString()}`, {
         next: { revalidate: 600 },
