@@ -3,7 +3,7 @@ import { executeWithCircuitBreaker } from "@/lib/circuit-breaker"
 const CT_GOV_BASE = "https://clinicaltrials.gov/api/v2"
 const CB_DEPENDENCY = "clinicaltrials-api"
 
-type ClinicalTrialStudy = {
+export type ClinicalTrialStudy = {
   nctId: string
   title: string
   status: string

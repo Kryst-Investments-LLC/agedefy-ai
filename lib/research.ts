@@ -4,12 +4,12 @@ import { executeWithCircuitBreaker } from "@/lib/circuit-breaker"
 const EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 const CB_DEPENDENCY = "pubmed-api"
 
-type PubMedSearchResult = {
+export type PubMedSearchResult = {
   pmids: string[]
   count: number
 }
 
-type PubMedArticleSummary = {
+export type PubMedArticleSummary = {
   pmid: string
   title: string
   authors: string
