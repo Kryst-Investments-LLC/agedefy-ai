@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { enqueueOrchestrationJob } from "@/lib/jobs/queue"
 import { logAudit } from "@/lib/audit"
+import { logger } from "@/lib/logger"
 import { searchPubMed, fetchPubMedSummaries, fetchPubMedAbstract } from "@/lib/research"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { researchIngestSchema } from "@/lib/validators/enterprise"
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       const searchResult = await searchPubMed(query, maxResults)
 
       if (searchResult.pmids.length === 0) {
+        logger.info("retrieval.empty_result", { source: "pubmed", query, userId: session.user.id })
         return { status: 200, body: { message: "No results found", count: 0 } }
       }
 

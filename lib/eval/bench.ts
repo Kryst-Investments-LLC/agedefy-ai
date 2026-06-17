@@ -92,6 +92,49 @@ export function expectedCalibrationError(
   return ece
 }
 
+// ── Ranked retrieval metrics ────────────────────────────────────────
+
+/**
+ * Fraction of relevant items found in the top-k retrieved results.
+ * Returns 1 when the relevant set is empty (nothing to miss).
+ */
+export function recallAtK(retrieved: string[], relevant: string[], k: number): number {
+  if (relevant.length === 0) return 1
+  const topK = retrieved.slice(0, k)
+  const relevantSet = new Set(relevant)
+  const hits = new Set(topK.filter((id) => relevantSet.has(id))).size
+  return hits / relevant.length
+}
+
+/**
+ * Fraction of top-k results that are relevant.
+ */
+export function precisionAtK(retrieved: string[], relevant: string[], k: number): number {
+  if (k === 0) return 0
+  const topK = retrieved.slice(0, k)
+  const relevantSet = new Set(relevant)
+  return topK.filter((id) => relevantSet.has(id)).length / k
+}
+
+/**
+ * Normalised Discounted Cumulative Gain at k.
+ * gradedRelevance maps id → grade (higher = more relevant, e.g. 2/1/0).
+ * Returns 0 when no relevant items exist in the ideal ranking.
+ */
+export function ndcg(
+  retrieved: string[],
+  gradedRelevance: Record<string, number>,
+  k: number,
+): number {
+  const topK = retrieved.slice(0, k)
+  const dcg = topK.reduce((sum, id, i) => sum + (gradedRelevance[id] ?? 0) / Math.log2(i + 2), 0)
+  const idealScores = Object.values(gradedRelevance)
+    .sort((a, b) => b - a)
+    .slice(0, k)
+  const idcg = idealScores.reduce((sum, rel, i) => sum + rel / Math.log2(i + 2), 0)
+  return idcg === 0 ? 0 : dcg / idcg
+}
+
 export function precisionRecall(
   predicted: (0 | 1)[],
   actual: (0 | 1)[],

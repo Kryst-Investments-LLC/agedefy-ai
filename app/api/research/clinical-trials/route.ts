@@ -5,6 +5,7 @@ import { z } from "zod"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
+import { logger } from "@/lib/logger"
 import { createEvidenceDraft, estimateReviewConfidence } from "@/lib/biomedical-intelligence"
 import { searchClinicalTrials } from "@/lib/clinical-trials"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       const trials = await searchClinicalTrials(query, maxResults)
 
       if (trials.length === 0) {
+        logger.info("retrieval.empty_result", { source: "clinicaltrials", query, userId: session.user.id })
         return { status: 200, body: { message: "No clinical trials found", count: 0 } }
       }
 
