@@ -2635,6 +2635,7 @@ enum KgEdgeType {
   DRUG_INDICATION
   DRUG_CONTRAINDICATION
   PATHWAY_MEMBER
+  POPULATION_ASSOCIATION // observational RWE edge from the flywheel — association, NOT mechanism
 }
 
 enum KgEvidenceGrade {
