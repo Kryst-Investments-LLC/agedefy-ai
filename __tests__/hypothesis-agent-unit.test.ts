@@ -29,9 +29,11 @@ const makeMockCallAI = (overrides: Partial<{
 
 const fanOutMock = vi.fn()
 const searchVocabularyMock = vi.fn()
+const fetchExternalCandidatesMock = vi.fn()
 
 vi.mock('@/lib/research/fan-out', () => ({ fanOut: fanOutMock }))
 vi.mock('@/lib/research/vocabulary-search', () => ({ searchVocabulary: searchVocabularyMock }))
+vi.mock('@/lib/research/external-candidates', () => ({ fetchExternalCandidates: fetchExternalCandidatesMock }))
 vi.mock('@/lib/circuit-breaker', () => ({
   executeWithCircuitBreaker: async ({ execute }: { execute: () => Promise<unknown> }) => execute(),
 }))
@@ -58,6 +60,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   fanOutMock.mockResolvedValue({ pubmed: [PUBMED_PAPER], clinicalTrials: [], vocabulary: [], errors: [] })
   searchVocabularyMock.mockReturnValue([VOCAB_COMPOUND])
+  fetchExternalCandidatesMock.mockResolvedValue([])
 })
 
 afterEach(() => { vi.resetModules() })
@@ -277,5 +280,93 @@ describe('structural isolation — forbidden imports', () => {
     const source = readFileSync(resolve('lib/agents/hypothesis-agent.ts'), 'utf-8')
     const importLines = source.split('\n').filter(l => l.trimStart().startsWith('import'))
     expect(importLines.join('\n')).not.toMatch(/aeonforge/)
+  })
+})
+
+// ─── External candidate sourcing (Open Targets) ───────────────────────────────
+
+describe('external candidate sourcing (Open Targets)', () => {
+  const EXT = {
+    name: 'TORKINIB',
+    chemblId: 'CHEMBL2103840',
+    source: 'open-targets' as const,
+    provenance: {
+      sourceName: 'Open Targets',
+      sourceUrl: 'https://platform.opentargets.org/drug/CHEMBL2103840',
+      matchedTarget: 'MTOR',
+      retrievedAt: new Date().toISOString(),
+    },
+  }
+
+  it('surfaces a compound that is NOT in the curated vocabulary (ceiling broken)', async () => {
+    searchVocabularyMock.mockReturnValue([])
+    fanOutMock.mockResolvedValue({ pubmed: [], clinicalTrials: [], vocabulary: [], errors: [] })
+    fetchExternalCandidatesMock.mockResolvedValue([EXT])
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    const ext = result.candidates.find(c => c.compoundId === 'CHEMBL2103840')
+    expect(ext).toBeDefined()
+    expect(ext?.compoundName).toBe('TORKINIB')
+  })
+
+  it('external candidate carries source, provenance, and the external-source caveat', async () => {
+    searchVocabularyMock.mockReturnValue([])
+    fetchExternalCandidatesMock.mockResolvedValue([EXT])
+    const { generateHypotheses, EXTERNAL_SOURCE_CAVEAT } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    const ext = result.candidates.find(c => c.source === 'open-targets')
+    expect(ext).toBeDefined()
+    expect(ext?.provenance?.sourceName).toBe('Open Targets')
+    expect(ext?.provenance?.sourceUrl).toContain('CHEMBL2103840')
+    expect(ext?.externalSourceCaveat).toBe(EXTERNAL_SOURCE_CAVEAT)
+  })
+
+  it('external candidate still carries all immutable safety labels', async () => {
+    searchVocabularyMock.mockReturnValue([])
+    fetchExternalCandidatesMock.mockResolvedValue([EXT])
+    const { generateHypotheses, CANDIDATE_LABEL, VALIDATION_NOTE, LLM_CAVEAT } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    const ext = result.candidates.find(c => c.source === 'open-targets')!
+    expect(ext.label).toBe(CANDIDATE_LABEL)
+    expect(ext.validationNote).toBe(VALIDATION_NOTE)
+    expect(ext.llmCaveat).toBe(LLM_CAVEAT)
+    expect(ext.disclaimer.length).toBeGreaterThan(20)
+  })
+
+  it('de-dupes an external candidate that overlaps curated vocabulary (curated wins)', async () => {
+    // Vocabulary returns rapamycin; Open Targets returns "Sirolimus" (a rapamycin alias).
+    searchVocabularyMock.mockReturnValue([VOCAB_COMPOUND])
+    fetchExternalCandidatesMock.mockResolvedValue([
+      {
+        name: 'Sirolimus',
+        chemblId: 'CHEMBL413',
+        source: 'open-targets' as const,
+        provenance: { sourceName: 'Open Targets', sourceUrl: 'x', matchedTarget: 'MTOR', retrievedAt: new Date().toISOString() },
+      },
+    ])
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    expect(result.candidates.filter(c => c.compoundId === 'rapamycin')).toHaveLength(1)
+    expect(result.candidates.filter(c => c.compoundId === 'CHEMBL413')).toHaveLength(0)
+    expect(result.candidates.find(c => c.compoundId === 'rapamycin')?.source).toBe('vocabulary')
+  })
+
+  it('vocabulary-only candidates do not carry external provenance or caveat', async () => {
+    searchVocabularyMock.mockReturnValue([VOCAB_COMPOUND])
+    fetchExternalCandidatesMock.mockResolvedValue([])
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    const vocab = result.candidates.find(c => c.source === 'vocabulary')!
+    expect(vocab.externalSourceCaveat).toBeUndefined()
+    expect(vocab.provenance).toBeUndefined()
+  })
+
+  it('degrades to vocabulary-only when Open Targets returns nothing', async () => {
+    searchVocabularyMock.mockReturnValue([VOCAB_COMPOUND])
+    fetchExternalCandidatesMock.mockResolvedValue([])
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    expect(result.candidates.length).toBeGreaterThan(0)
+    expect(result.candidates.every(c => c.source === 'vocabulary')).toBe(true)
   })
 })

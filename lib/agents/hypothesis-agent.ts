@@ -25,6 +25,7 @@ import { NOT_MEDICAL_ADVICE_DISCLAIMER } from '@/lib/ai/health-guardrail-rules'
 import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
 import { logger } from '@/lib/logger'
 import { fanOut } from '@/lib/research/fan-out'
+import { fetchExternalCandidates, type ExternalProvenance } from '@/lib/research/external-candidates'
 import { decomposeQuery } from '@/lib/research/query-decomposer'
 import { searchVocabulary } from '@/lib/research/vocabulary-search'
 import { COMPOUNDS } from '@/lib/research/vocabulary-data'
@@ -45,6 +46,11 @@ export const RESULT_LABEL = 'AI-GENERATED RESEARCH HYPOTHESES' as const
 
 export const SCIENCE_NOTE =
   'The scientist validates via lab work. The software only proposes and prioritizes.' as const
+
+export const EXTERNAL_SOURCE_CAVEAT =
+  'Externally sourced (Open Targets) — not in curated vocabulary; verify compound identity before any lab work.' as const
+
+export type CandidateSource = 'vocabulary' | 'open-targets'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +80,11 @@ export interface HypothesisCandidate {
   evidenceScore: number
   finalScore: number
   critique: FiveLensCritique
+  source: CandidateSource
+  /** Present only for externally-sourced candidates (e.g. Open Targets). */
+  provenance?: ExternalProvenance
+  /** Present only for externally-sourced candidates. */
+  externalSourceCaveat?: typeof EXTERNAL_SOURCE_CAVEAT
   label: typeof CANDIDATE_LABEL
   disclaimer: string
   validationNote: typeof VALIDATION_NOTE
@@ -99,6 +110,8 @@ export type AICallFn = (systemPrompt: string, userPrompt: string) => Promise<str
 interface CandidateInfo {
   id: string
   name: string
+  source: CandidateSource
+  provenance?: ExternalProvenance
 }
 
 // ─── Fallbacks ────────────────────────────────────────────────────────────────
@@ -179,20 +192,22 @@ function extractYear(dateStr: string): number | null {
 }
 
 async function gatherCandidates(target: string, maxCandidates: number): Promise<CandidateInfo[]> {
-  const [vocabResults, fanOutResult] = await Promise.allSettled([
+  const [vocabResults, fanOutResult, externalResults] = await Promise.allSettled([
     Promise.resolve(searchVocabulary(target, maxCandidates * 2)),
     fanOut(target, { maxPubMed: 15, maxClinicalTrials: 0, maxVocabulary: 0 }),
+    fetchExternalCandidates(target, maxCandidates),
   ])
 
   const seen = new Set<string>()
   const candidates: CandidateInfo[] = []
 
-  // Vocabulary: take compounds that scored > 0 for the target query
+  // Curated vocabulary compounds first (preferred): take compounds that scored
+  // > 0 for the target query.
   if (vocabResults.status === 'fulfilled') {
     for (const entry of vocabResults.value) {
       if (entry.type === 'compound' && !seen.has(entry.id)) {
         seen.add(entry.id)
-        candidates.push({ id: entry.id, name: entry.name })
+        candidates.push({ id: entry.id, name: entry.name, source: 'vocabulary' })
         if (candidates.length >= maxCandidates) return candidates
       }
     }
@@ -207,9 +222,30 @@ async function gatherCandidates(target: string, maxCandidates: number): Promise<
       const vocab = COMPOUNDS.find(c => c.id === compoundId)
       if (vocab) {
         seen.add(compoundId)
-        candidates.push({ id: vocab.id, name: vocab.name })
-        if (candidates.length >= maxCandidates) break
+        candidates.push({ id: vocab.id, name: vocab.name, source: 'vocabulary' })
+        if (candidates.length >= maxCandidates) return candidates
       }
+    }
+  }
+
+  // External candidates (Open Targets) — breaks the closed-vocabulary ceiling.
+  // De-duped by name/alias against the curated vocabulary (curated wins).
+  if (externalResults.status === 'fulfilled' && candidates.length < maxCandidates) {
+    const vocabNames = new Set<string>()
+    for (const c of COMPOUNDS) {
+      vocabNames.add(c.name.toLowerCase())
+      for (const a of c.aliases) vocabNames.add(a.toLowerCase())
+    }
+    for (const ext of externalResults.value) {
+      if (vocabNames.has(ext.name.toLowerCase()) || seen.has(ext.chemblId)) continue
+      seen.add(ext.chemblId)
+      candidates.push({
+        id: ext.chemblId,
+        name: ext.name,
+        source: 'open-targets',
+        provenance: ext.provenance,
+      })
+      if (candidates.length >= maxCandidates) break
     }
   }
 
@@ -418,6 +454,9 @@ export async function generateHypotheses(
       evidenceScore,
       finalScore,
       critique,
+      source: c.source,
+      provenance: c.provenance,
+      externalSourceCaveat: c.source === 'open-targets' ? EXTERNAL_SOURCE_CAVEAT : undefined,
       label: CANDIDATE_LABEL,
       disclaimer: NOT_MEDICAL_ADVICE_DISCLAIMER,
       validationNote: VALIDATION_NOTE,
