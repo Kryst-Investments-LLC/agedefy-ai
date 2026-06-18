@@ -4,10 +4,14 @@ import {
   computeClassificationMetrics,
   computeCostMetrics,
   computeCycleTimeMetrics,
+  computeFepEconomics,
   computeHitRateUplift,
   CYCLE_TIME_MIN_N,
+  FEP_EDGE_COST_CENTS_DEFAULT,
+  FEP_TRIAGE_THRESHOLD,
   QED_HIT_THRESHOLD,
   type CandidateRow,
+  type FepTriageCandidateRow,
   type LinkedTransactionRow,
 } from "@/lib/active-learning/pilot-metrics"
 
@@ -227,6 +231,102 @@ describe("computeClassificationMetrics", () => {
   })
 })
 
+// ─── computeFepEconomics ──────────────────────────────────────────────────────
+
+function makeTriaged(overrides: Partial<FepTriageCandidateRow> = {}): FepTriageCandidateRow {
+  return {
+    id: "triage-1",
+    fepGateScore: 0.7,
+    labResults: [{ flag: "active" }],
+    ...overrides,
+  }
+}
+
+describe("computeFepEconomics", () => {
+  it("returns triaged=0 zeros when input is empty", () => {
+    const out = computeFepEconomics([], FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triaged).toBe(0)
+    expect(out.fepCostSavingsPct).toBeNull()
+    expect(out.counterfactualFepCostCents).toBe(0)
+    expect(out.triageFilteredFepCostCents).toBe(0)
+  })
+
+  it("filters out null fepGateScore rows gracefully", () => {
+    const nullRow = makeTriaged({ fepGateScore: null })
+    const out = computeFepEconomics([nullRow], FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triaged).toBe(0)
+  })
+
+  it(`counts recommended when fepGateScore >= ${FEP_TRIAGE_THRESHOLD}`, () => {
+    const above = makeTriaged({ id: "a", fepGateScore: FEP_TRIAGE_THRESHOLD })
+    const below = makeTriaged({ id: "b", fepGateScore: FEP_TRIAGE_THRESHOLD - 0.01 })
+    const out = computeFepEconomics([above, below], FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triaged).toBe(2)
+    expect(out.triageRecommended).toBe(1)
+    expect(out.triageRejectedCount).toBe(1)
+  })
+
+  it("computes counterfactual cost as triaged × edgeCost", () => {
+    const rows = [
+      makeTriaged({ id: "a", fepGateScore: 0.8 }),
+      makeTriaged({ id: "b", fepGateScore: 0.3 }),
+      makeTriaged({ id: "c", fepGateScore: 0.7 }),
+    ]
+    const out = computeFepEconomics(rows, 10_000)
+    expect(out.counterfactualFepCostCents).toBe(30_000)
+    expect(out.triageFilteredFepCostCents).toBe(20_000) // 2 recommended
+  })
+
+  it("computes fepCostSavingsPct as (rejected / triaged) × 100", () => {
+    const rows = [
+      makeTriaged({ id: "a", fepGateScore: 0.8 }),  // recommended
+      makeTriaged({ id: "b", fepGateScore: 0.2 }),  // rejected
+      makeTriaged({ id: "c", fepGateScore: 0.1 }),  // rejected
+      makeTriaged({ id: "d", fepGateScore: 0.7 }),  // recommended
+    ]
+    const out = computeFepEconomics(rows, 10_000)
+    // 2 rejected out of 4 → 50% savings
+    expect(out.fepCostSavingsPct).toBeCloseTo(50, 5)
+  })
+
+  it("returns null hit rates when cohort is below CYCLE_TIME_MIN_N", () => {
+    const rows = [
+      makeTriaged({ id: "a", fepGateScore: 0.8 }),
+      makeTriaged({ id: "b", fepGateScore: 0.7 }),
+    ]
+    const out = computeFepEconomics(rows, FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triageHitRate).toBeNull()   // recommended cohort = 2 < 3
+  })
+
+  it("computes triage hit rate when recommended cohort ≥ CYCLE_TIME_MIN_N", () => {
+    const hits = Array.from({ length: 3 }, (_, i) =>
+      makeTriaged({ id: `h${i}`, fepGateScore: 0.8, labResults: [{ flag: "active" }] })
+    )
+    const out = computeFepEconomics(hits, FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triageHitRate).toBe(1.0)  // 3/3 are hits
+  })
+
+  it("computes triageUplift = triageHitRate - triageRejectedHitRate", () => {
+    // 3 recommended, all hits (rate 1.0)
+    const recommended = Array.from({ length: 3 }, (_, i) =>
+      makeTriaged({ id: `r${i}`, fepGateScore: 0.9, labResults: [{ flag: "active" }] })
+    )
+    // 3 rejected, no hits (rate 0.0)
+    const rejected = Array.from({ length: 3 }, (_, i) =>
+      makeTriaged({ id: `x${i}`, fepGateScore: 0.2, labResults: [{ flag: "inactive" }] })
+    )
+    const out = computeFepEconomics([...recommended, ...rejected], FEP_EDGE_COST_CENTS_DEFAULT)
+    expect(out.triageHitRate).toBe(1.0)
+    expect(out.triageRejectedHitRate).toBe(0.0)
+    expect(out.triageUplift).toBeCloseTo(1.0, 5)
+  })
+
+  it("echoes fepEdgeCostCents in the output", () => {
+    const out = computeFepEconomics([makeTriaged()], 25_000)
+    expect(out.fepEdgeCostCents).toBe(25_000)
+  })
+})
+
 // ─── assemblePilotMetrics ─────────────────────────────────────────────────────
 
 describe("assemblePilotMetrics", () => {
@@ -240,12 +340,27 @@ describe("assemblePilotMetrics", () => {
     expect(out.insufficientData).toBe(false)
   })
 
-  it("returns all four sub-metrics", () => {
+  it("returns all five sub-metrics including fepEconomics", () => {
     const out = assemblePilotMetrics([makeCandidate()], [makeCandidate()], [])
     expect(out.hitRateUplift).toBeDefined()
     expect(out.cost).toBeDefined()
     expect(out.cycleTime).toBeDefined()
     expect(out.classification).toBeDefined()
+    expect(out.fepEconomics).toBeDefined()
+  })
+
+  it("passes triagedCandidates and fepEdgeCostCents through to fepEconomics", () => {
+    const triaged = [makeTriaged({ id: "t1", fepGateScore: 0.8 })]
+    const out = assemblePilotMetrics([], [], [], triaged, 20_000)
+    expect(out.fepEconomics.triaged).toBe(1)
+    expect(out.fepEconomics.fepEdgeCostCents).toBe(20_000)
+    expect(out.fepEconomics.counterfactualFepCostCents).toBe(20_000)
+  })
+
+  it("defaults triagedCandidates=[] and fepEdgeCostCents=default when omitted", () => {
+    const out = assemblePilotMetrics([], [], [])
+    expect(out.fepEconomics.triaged).toBe(0)
+    expect(out.fepEconomics.fepEdgeCostCents).toBe(FEP_EDGE_COST_CENTS_DEFAULT)
   })
 
   it("sets computedAt to a valid ISO timestamp", () => {
