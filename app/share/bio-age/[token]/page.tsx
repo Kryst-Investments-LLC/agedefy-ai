@@ -86,7 +86,7 @@ export default async function SharedBioAgePage({ params }: PageProps) {
 
   let hallmarks: Record<string, number> = {}
   try {
-    hallmarks = JSON.parse(snapshot.hallmarkScores) as Record<string, number>
+    hallmarks = (snapshot.hallmarkScores as Record<string, number>) ?? {}
   } catch {
     // invalid JSON — leave empty
   }

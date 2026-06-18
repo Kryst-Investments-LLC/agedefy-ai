@@ -64,7 +64,7 @@ export async function POST(
   if (parsed.data.decision === 'APPROVED') {
     let payloadData: Record<string, unknown>
     try {
-      payloadData = JSON.parse(contribution.payload)
+      payloadData = contribution.payload as Record<string, unknown>
     } catch {
       return NextResponse.json({ error: 'Corrupt contribution payload' }, { status: 500 })
     }

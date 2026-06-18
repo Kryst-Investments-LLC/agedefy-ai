@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   let scopes: ScopesBlob = {}
   try {
-    scopes = JSON.parse(conn.scopes || '{}') as ScopesBlob
+    scopes = (conn.scopes ?? {}) as ScopesBlob
   } catch {
     return NextResponse.json({ error: 'Corrupt connection state' }, { status: 500 })
   }

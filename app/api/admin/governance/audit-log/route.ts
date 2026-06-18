@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       compoundName: e.compoundName,
       riskCategory: e.riskCategory,
       decision: e.decision,
-      policySnapshot: safeJsonParse<unknown>(e.policySnapshot, null),
+      policySnapshot: e.policySnapshot,
       adherenceRate: e.adherenceRate,
       reason: e.reason,
       createdAt: e.createdAt,

@@ -90,5 +90,5 @@ export async function getNeoantigens(tumorProfileId: string): Promise<Neoantigen
     select: { neoantigensJson: true },
   })
   if (!profile?.neoantigensJson) return []
-  return safeJsonParse<NeoantigenCandidate[]>(profile.neoantigensJson, [])
+  return (profile.neoantigensJson as unknown as NeoantigenCandidate[]) ?? []
 }

@@ -186,7 +186,7 @@ async function checkNotificationGating(
   const recentlyNotifiedNames = new Set<string>()
   for (const n of recentNotifications) {
     try {
-      const names = JSON.parse(n.biomarkerNames) as string[]
+      const names = n.biomarkerNames as string[]
       for (const name of names) recentlyNotifiedNames.add(name)
     } catch { /* skip malformed */ }
   }

@@ -110,6 +110,6 @@ export async function getPgxRecommendationsForUser(
     select: { variantsJson: true },
   })
   if (!profile) return []
-  const variants = safeJsonParse<PgxVariant[]>(profile.variantsJson, [])
+  const variants = (profile.variantsJson as unknown as PgxVariant[]) ?? []
   return lookupCpicGuidance(drug, variants)
 }

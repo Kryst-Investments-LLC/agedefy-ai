@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
         ? await db.marketplaceTransaction.findMany({
             where: {
               discoveryId: { in: linkedDiscoveries.map((d) => d.id) },
-              status: { in: ["AUTHORIZED", "PAID"] },
+              status: { in: ["AUTHORIZED", "SETTLED"] },
             },
             select: { discoveryId: true, amountCents: true },
           })

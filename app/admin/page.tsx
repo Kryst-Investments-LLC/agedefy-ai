@@ -249,7 +249,7 @@ export default async function AdminPage() {
             entityId: log.entityId,
             actorEmail: log.actorEmail,
             createdAt: log.createdAt.toISOString(),
-            details: log.details,
+            details: log.details != null ? JSON.stringify(log.details) : null,
           }))}
         />
       </main>

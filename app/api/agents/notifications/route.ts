@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       title: n.title,
       body: n.body,
       severity: n.severity,
-      biomarkerNames: safeJsonParse<string[]>(n.biomarkerNames, []),
+      biomarkerNames: (n.biomarkerNames as string[]) ?? [],
       sessionId: n.sessionId,
       readAt: n.readAt,
       dismissedAt: n.dismissedAt,

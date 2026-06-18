@@ -57,7 +57,7 @@ export async function runTwinSimulation(
   if (!twin) throw new Error(`PhysiologicalTwin ${inputs.twinId} not found`)
 
   const inputsHash = hashInputs(inputs)
-  const output = await strategy(inputs, twin.parameterJson)
+  const output = await strategy(inputs, JSON.stringify(twin.parameterJson))
 
   const row = await db.twinSimulationRun.create({
     data: {

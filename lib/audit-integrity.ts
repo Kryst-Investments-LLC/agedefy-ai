@@ -86,7 +86,7 @@ export async function verifyAuditChain(tenantId?: string): Promise<{
       action: entry.action,
       entityType: entry.entityType,
       entityId: entry.entityId,
-      details: entry.details,
+      details: entry.details != null ? JSON.stringify(entry.details) : null,
       prevHash: entry.prevHash,
     })
 

@@ -147,7 +147,7 @@ export async function POST(
 
       await tx.labSubmission.update({
         where: { id: submission.id },
-        data: { packageJson: pkg as Prisma.InputJsonValue },
+        data: { packageJson: pkg as unknown as Prisma.InputJsonValue },
       })
 
       // Auto-advance SCREENED → SENT_TO_LAB

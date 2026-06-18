@@ -104,7 +104,7 @@ export async function evaluateTrial(trialId: string): Promise<BayesianStopDecisi
     include: { periods: { orderBy: { orderIndex: "asc" } } },
   })
   if (!trial) return null
-  const cfg = safeJsonParse<BayesianStopConfig | null>(trial.bayesianStopJson, null)
+  const cfg = trial.bayesianStopJson as unknown as BayesianStopConfig | null
   if (!cfg) return null
 
   // Pair consecutive periods (A then B then A then B ...) and compute
@@ -113,9 +113,9 @@ export async function evaluateTrial(trialId: string): Promise<BayesianStopDecisi
   for (let i = 0; i + 1 < trial.periods.length; i += 2) {
     const a = trial.periods[i]
     const b = trial.periods[i + 1]
-    const aObs = safeJsonParse<PeriodObservation[]>(a.observations, [])
+    const aObs = ((a.observations as unknown as PeriodObservation[]) ?? [])
       .filter((o) => o.analyte === trial.primaryEndpoint)
-    const bObs = safeJsonParse<PeriodObservation[]>(b.observations, [])
+    const bObs = ((b.observations as unknown as PeriodObservation[]) ?? [])
       .filter((o) => o.analyte === trial.primaryEndpoint)
     if (aObs.length === 0 || bObs.length === 0) continue
     const aMean = aObs.reduce((s, o) => s + o.value, 0) / aObs.length

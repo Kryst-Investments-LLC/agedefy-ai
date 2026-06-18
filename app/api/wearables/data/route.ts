@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   const parsed = records.map((r) => {
     let payload: Record<string, unknown> = {}
     try {
-      payload = JSON.parse(r.payload)
+      payload = r.payload as Record<string, unknown>
     } catch {
       // leave empty
     }

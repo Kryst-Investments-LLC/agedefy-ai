@@ -8,7 +8,7 @@ import { requireGdprConsent } from '@/lib/consent'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { screeningSidecar, SidecarError } from '@/lib/sidecars'
+import { screeningSidecar, SidecarError, type DockingBox } from '@/lib/sidecars'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
 /**
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await screeningSidecar.dock(
-      { smiles, receptor_pdbqt, box, exhaustiveness, n_poses },
+      { smiles, receptor_pdbqt, box: box as DockingBox, exhaustiveness, n_poses },
       traceparent,
     )
 

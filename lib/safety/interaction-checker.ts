@@ -176,12 +176,16 @@ function normalise(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
-function parseJsonArray(raw: string | null | undefined): string[] {
+function parseJsonArray(raw: unknown): string[] {
   if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : []
-  } catch {
-    return []
+  if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === 'string')
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : []
+    } catch {
+      return []
+    }
   }
+  return []
 }

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       escape(log.entityType),
       escape(log.entityId),
       escape(log.actorEmail),
-      escape(log.details),
+      escape(log.details != null ? JSON.stringify(log.details) : null),
       escape(log.createdAt.toISOString()),
     ].join(",")
   })
