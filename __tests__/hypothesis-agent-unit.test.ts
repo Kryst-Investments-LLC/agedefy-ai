@@ -30,13 +30,21 @@ const makeMockCallAI = (overrides: Partial<{
 const fanOutMock = vi.fn()
 const searchVocabularyMock = vi.fn()
 const fetchExternalCandidatesMock = vi.fn()
+const synthesizeMechanismMock = vi.fn()
 
 vi.mock('@/lib/research/fan-out', () => ({ fanOut: fanOutMock }))
 vi.mock('@/lib/research/vocabulary-search', () => ({ searchVocabulary: searchVocabularyMock }))
 vi.mock('@/lib/research/external-candidates', () => ({ fetchExternalCandidates: fetchExternalCandidatesMock }))
+vi.mock('@/lib/research/mechanism-synthesis', () => ({ synthesizeMechanism: synthesizeMechanismMock }))
 vi.mock('@/lib/circuit-breaker', () => ({
   executeWithCircuitBreaker: async ({ execute }: { execute: () => Promise<unknown> }) => execute(),
 }))
+
+const STUB_MECHANISM = {
+  verifiedClaims: [{ claimText: 'Rapamycin inhibits mTOR kinase', pmid: '19587680', matchRate: 0.7, citationNote: '7/10 key terms found in abstract' }],
+  unverifiedInferences: [],
+  disclaimer: '"Verified" means token-overlap ≥ 35% — not experimental confirmation. Not medical advice.',
+}
 
 const PUBMED_PAPER = {
   pmid: '19587680',
@@ -61,6 +69,7 @@ beforeEach(() => {
   fanOutMock.mockResolvedValue({ pubmed: [PUBMED_PAPER], clinicalTrials: [], vocabulary: [], errors: [] })
   searchVocabularyMock.mockReturnValue([VOCAB_COMPOUND])
   fetchExternalCandidatesMock.mockResolvedValue([])
+  synthesizeMechanismMock.mockResolvedValue(STUB_MECHANISM)
 })
 
 afterEach(() => { vi.resetModules() })
@@ -260,6 +269,55 @@ describe('output safety — no forbidden content', () => {
     expect(result.label).not.toMatch(/\bcure[sd]?\b/i)
     expect(result.scienceNote).not.toMatch(/\bcure[sd]?\b/i)
     expect(result.label).toContain('RESEARCH HYPOTHESES')
+  })
+})
+
+// ─── Mechanism integration ────────────────────────────────────────────────────
+
+describe('mechanism synthesis integration', () => {
+  it('each candidate carries a mechanism field', async () => {
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    for (const c of result.candidates) {
+      expect(c.mechanism).toBeDefined()
+      expect(c.mechanism?.disclaimer).toBeDefined()
+    }
+  })
+
+  it('mechanism has verifiedClaims and unverifiedInferences arrays', async () => {
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    for (const c of result.candidates) {
+      expect(c.mechanism?.verifiedClaims).toBeInstanceOf(Array)
+      expect(c.mechanism?.unverifiedInferences).toBeInstanceOf(Array)
+    }
+  })
+
+  it('mechanism disclaimer states the weak-verification caveat', async () => {
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    for (const c of result.candidates) {
+      expect(c.mechanism?.disclaimer).toContain('Not medical advice')
+    }
+  })
+
+  it('immutable safety labels still hold when mechanism is present', async () => {
+    const { generateHypotheses, CANDIDATE_LABEL, VALIDATION_NOTE, LLM_CAVEAT } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    for (const c of result.candidates) {
+      expect(c.label).toBe(CANDIDATE_LABEL)
+      expect(c.validationNote).toBe(VALIDATION_NOTE)
+      expect(c.llmCaveat).toBe(LLM_CAVEAT)
+    }
+  })
+
+  it('mechanism is undefined (not null) when synthesis fails', async () => {
+    synthesizeMechanismMock.mockRejectedValue(new Error('synthesis failed'))
+    const { generateHypotheses } = await import('@/lib/agents/hypothesis-agent')
+    const result = await generateHypotheses('mTOR signaling', {}, makeMockCallAI())
+    for (const c of result.candidates) {
+      expect(c.mechanism).toBeUndefined()
+    }
   })
 })
 

@@ -26,6 +26,7 @@ import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
 import { logger } from '@/lib/logger'
 import { fanOut } from '@/lib/research/fan-out'
 import { fetchExternalCandidates, type ExternalProvenance } from '@/lib/research/external-candidates'
+import { synthesizeMechanism, type MechanisticRationale } from '@/lib/research/mechanism-synthesis'
 import { decomposeQuery } from '@/lib/research/query-decomposer'
 import { searchVocabulary } from '@/lib/research/vocabulary-search'
 import { COMPOUNDS } from '@/lib/research/vocabulary-data'
@@ -85,6 +86,8 @@ export interface HypothesisCandidate {
   provenance?: ExternalProvenance
   /** Present only for externally-sourced candidates. */
   externalSourceCaveat?: typeof EXTERNAL_SOURCE_CAVEAT
+  /** Provenance-led mechanistic rationale: verified claims + quarantined inferences. */
+  mechanism?: MechanisticRationale
   label: typeof CANDIDATE_LABEL
   disclaimer: string
   validationNote: typeof VALIDATION_NOTE
@@ -427,21 +430,30 @@ export async function generateHypotheses(
     }
   }
 
-  // Evidence gathering and critique generation run in parallel across candidates.
+  // Evidence gathering runs first; critique and mechanism synthesis run in parallel after.
   const evidenceResults = await Promise.allSettled(
     candidateInfos.map(c => gatherEvidence(c, target)),
   )
 
-  const critiqueResults = await Promise.allSettled(
-    candidateInfos.map((c, i) => {
-      const studies = evidenceResults[i].status === 'fulfilled' ? evidenceResults[i].value : []
-      return generateCritique(c, target, studies, callAI)
-    }),
-  )
+  const [critiqueResults, mechanismResults] = await Promise.all([
+    Promise.allSettled(
+      candidateInfos.map((c, i) => {
+        const studies = evidenceResults[i].status === 'fulfilled' ? evidenceResults[i].value : []
+        return generateCritique(c, target, studies, callAI)
+      }),
+    ),
+    Promise.allSettled(
+      candidateInfos.map((c, i) => {
+        const studies = evidenceResults[i].status === 'fulfilled' ? evidenceResults[i].value : []
+        return synthesizeMechanism(c.name, target, studies, callAI)
+      }),
+    ),
+  ])
 
   const candidates: HypothesisCandidate[] = candidateInfos.map((c, i) => {
     const studies = evidenceResults[i].status === 'fulfilled' ? evidenceResults[i].value : []
     const critique = critiqueResults[i].status === 'fulfilled' ? critiqueResults[i].value : CRITIQUE_FALLBACK
+    const mechanism = mechanismResults[i].status === 'fulfilled' ? mechanismResults[i].value : undefined
     const evidenceScore = computeEvidenceScore(studies)
     const finalScore = evidenceScore * (1 - 0.3 * critique.skepticSeverity)
 
@@ -454,6 +466,7 @@ export async function generateHypotheses(
       evidenceScore,
       finalScore,
       critique,
+      mechanism,
       source: c.source,
       provenance: c.provenance,
       externalSourceCaveat: c.source === 'open-targets' ? EXTERNAL_SOURCE_CAVEAT : undefined,
