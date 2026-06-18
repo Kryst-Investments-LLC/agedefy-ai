@@ -556,4 +556,73 @@ export const openmmSidecar = {
     }),
 }
 
+// ---------- fep-sidecar (Schrödinger FEP+ wrapper) ----------
+//
+// The sidecar owns all Schrödinger API communication, license token management,
+// ligand/receptor preparation (LigPrep + Protein Preparation Wizard), job
+// submission, polling, and result extraction.  We only define the HTTP contract
+// between Next.js and the sidecar process.
+//
+// Perturbation mode is always "relative" (ΔΔG = G_candidate − G_reference).
+// This is the standard FEP+ lead-optimisation workflow.
+
+export type FepBackend = "schrodinger-fep+" | "openfe" | "perses"
+
+export interface FepRequest {
+  /** SMILES of the reference ligand (anchor of the perturbation). */
+  smiles_reference: string
+  /** SMILES of the candidate ligand being evaluated relative to the reference. */
+  smiles_candidate: string
+  /** Base64-encoded PDB receptor (all-atom prepared structure). */
+  receptor_pdb: string
+  /** Base64-encoded PDBQT of the best docked pose for smiles_candidate (from /v1/dock). */
+  docked_pose_pdbqt: string
+  /** Alchemical lambda windows per leg. FEP+ default is 12; range 8–24. */
+  lambda_windows?: number
+  /** MD sampling per lambda window in nanoseconds. FEP+ default is 5. */
+  sampling_ns_per_window?: number
+  /** Simulation temperature in Kelvin. Default 300 K. */
+  temperature_K?: number
+}
+
+export interface FepResult {
+  /** ΔΔG = ΔG_candidate − ΔG_reference (kcal/mol). Negative means candidate binds tighter. */
+  ddg_kcal_mol: number
+  /** Standard error of the mean on ddg_kcal_mol (kcal/mol). */
+  ddg_sem_kcal_mol: number
+  /** Absolute ΔG estimate for the candidate from FEP+ (kcal/mol). */
+  dg_candidate_kcal_mol: number
+  /** Absolute ΔG estimate for the reference from FEP+ (kcal/mol). */
+  dg_reference_kcal_mol: number
+  /** True when hysteresis < 1.0 kcal/mol (Schrödinger convergence criterion). */
+  convergence_flag: boolean
+  /** Cycle-closure hysteresis in kcal/mol. Null for single-edge perturbations. */
+  hysteresis_kcal_mol: number | null
+  lambda_windows_used: number
+  sampling_ns_per_window: number
+  backend_used: FepBackend
+  /** Schrödinger internal job ID for provenance; null for open-source backends. */
+  schrodinger_job_id: string | null
+  model_version: string
+}
+
+export const fepSidecar = {
+  url: () => process.env.FEP_SIDECAR_URL ?? "http://fep-sidecar:8080",
+  configured: () => Boolean(process.env.FEP_SIDECAR_URL),
+  health: (traceparent?: string) =>
+    request<{ status: string; version: string; backend: FepBackend }>(
+      fepSidecar.url(),
+      "/healthz",
+      { traceparent },
+    ),
+  perturb: (req: FepRequest, traceparent?: string) =>
+    request<FepResult>(fepSidecar.url(), "/v1/perturb", {
+      method: "POST",
+      body: JSON.stringify(req),
+      traceparent,
+      // A single relative FEP edge takes 30–90 min on GPU; cap at 2 h.
+      timeoutMs: 7_200_000,
+    }),
+}
+
 export { SidecarError, envOrThrow }

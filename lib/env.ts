@@ -58,6 +58,8 @@ const envSchema = z.object({
   ENABLE_NEO4J_BACKEND: z.enum(["true", "false"]).optional(),
   ENABLE_SCREENING_SIDECAR: z.enum(["true", "false"]).optional(),
   ENABLE_OPENMM_SIDECAR: z.enum(["true", "false"]).optional(),
+  ENABLE_FEP_SIDECAR: z.enum(["true", "false"]).optional(),
+  FEP_SIDECAR_URL: z.string().optional(),
 })
 
 type ParsedEnvironment = z.infer<typeof envSchema>
@@ -137,6 +139,8 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
     ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
     ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+    ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
+    FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
   }
 }
 
@@ -296,6 +300,8 @@ const fallbackEnv: ParsedEnvironment = {
   ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
   ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
   ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+  ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
+  FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
 }
 
 export const env = parsedEnv.success ? parsedEnv.data : fallbackEnv
