@@ -2934,6 +2934,11 @@ model ExperimentCandidate {
   uncertaintyScore Float? // 0–1: confidence in feedbackScore
   acquisitionScore Float? // 0–1: priority for next experimental round
 
+  // ── FEP triage gate (populated by POST /fep-triage) ────────
+  fepGateScore  Float?  // 0–1: composite worthiness of an FEP run
+  fepGateReason String? // human-readable triage rationale
+  fepJson       Json?   // FepResult snapshot (populated after a real FEP run)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
