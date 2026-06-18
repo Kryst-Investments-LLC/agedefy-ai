@@ -21,8 +21,13 @@
 
 import { KgEdgeType, KgEvidenceGrade } from "@prisma/client"
 
+import { canonicalNodeIdentity } from "@/lib/knowledge-graph/node-identity"
+
 /** Source tag stamped on every materialised RWE edge. */
 export const RWE_SOURCE = "biozephyra-rwe"
+
+/** Prefix the aggregator stamps on compound-branch cohort buckets. */
+export const BIOMARKER_BUCKET_PREFIX = "biomarker:"
 
 /** Minimum sample size to publish an edge at all. Below this → suppressed. */
 export const RWE_MIN_SAMPLE_SIZE = 20
@@ -145,4 +150,110 @@ export function deriveRweEdge(effect: PopulationEffect): RweEdgeInput | null {
       note: "Observational population association from the Biozephyra outcomes flywheel. Not a validated mechanistic or clinical claim.",
     },
   }
+}
+
+// ─── Planning layer (pure) ────────────────────────────────────────────────────
+// Maps AggregateOutcome compound-branch rows → RweEdgeInput plans, resolving
+// canonical node identities. Pure so the DB wrapper stays a thin executor.
+
+/** Minimal shape of an AggregateOutcome row the planner consumes. */
+export interface AggregateOutcomeRow {
+  compoundId: string | null
+  cohortBucket: string
+  sampleSize: number
+  meanOutcomeScore: number
+  stdDev: number | null
+  pValue: number | null
+  confidence: number | null
+  period: string
+}
+
+/** Minimal compound identity used to resolve a stable graph node identity. */
+export interface CompoundIdentity {
+  name: string
+  casNumber: string | null
+  pubChemCid: string | null
+}
+
+export interface RweMaterializationPlan {
+  edges: RweEdgeInput[]
+  /** Compound-branch rows examined. */
+  scanned: number
+  /** Rows dropped because they fell below the publish floor. */
+  suppressed: number
+  /** Rows dropped because no compound identity could be resolved. */
+  skippedNoCompound: number
+}
+
+/** Extract the biomarker label from an aggregator cohort bucket, or null. */
+export function biomarkerFromBucket(cohortBucket: string): string | null {
+  if (!cohortBucket.startsWith(BIOMARKER_BUCKET_PREFIX)) return null
+  const name = cohortBucket.slice(BIOMARKER_BUCKET_PREFIX.length).trim()
+  return name === "" ? null : name
+}
+
+/**
+ * Plan the RWE edges to materialise from a set of aggregate rows.
+ *
+ * Only compound-branch rows (cohortBucket = "biomarker:<name>") with a
+ * resolvable compound are considered; everything else is skipped or suppressed
+ * and reported in the counters. No DB access — the caller executes the plan.
+ */
+export function planRweMaterialization(input: {
+  tenantId: string
+  aggregates: AggregateOutcomeRow[]
+  compoundsById: Map<string, CompoundIdentity>
+}): RweMaterializationPlan {
+  const edges: RweEdgeInput[] = []
+  let scanned = 0
+  let suppressed = 0
+  let skippedNoCompound = 0
+
+  for (const row of input.aggregates) {
+    const biomarker = biomarkerFromBucket(row.cohortBucket)
+    if (biomarker === null) continue // not a compound-branch row
+    scanned++
+
+    const compound = row.compoundId ? input.compoundsById.get(row.compoundId) : undefined
+    if (!compound) {
+      skippedNoCompound++
+      continue
+    }
+
+    const subjectExternalId = canonicalNodeIdentity({
+      tenantId: input.tenantId,
+      kind: "compound",
+      canonicalName: compound.name,
+      externalIds: { cas: compound.casNumber, pubchem: compound.pubChemCid },
+    })
+    const objectExternalId = canonicalNodeIdentity({
+      tenantId: input.tenantId,
+      kind: "biomarker",
+      canonicalName: biomarker,
+    })
+
+    const edge = deriveRweEdge({
+      subjectKind: "compound",
+      subjectExternalId,
+      subjectLabel: compound.name,
+      objectKind: "biomarker",
+      objectExternalId,
+      objectLabel: biomarker,
+      sampleSize: row.sampleSize,
+      effectSize: row.meanOutcomeScore,
+      effectSizeUnit: null,
+      stdDev: row.stdDev,
+      pValue: row.pValue,
+      confidence: row.confidence,
+      period: row.period,
+    })
+
+    if (!edge) {
+      suppressed++
+      continue
+    }
+    edges.push(edge)
+  }
+
+  return { edges, scanned, suppressed, skippedNoCompound }
 }
