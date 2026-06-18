@@ -23,21 +23,12 @@
 
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { KgEdgeType, KgEvidenceGrade, type Prisma } from "@prisma/client"
 
 import { authOptions } from "@/lib/auth"
-import { RWE_SOURCE } from "@/lib/flywheel/causal-edge-materializer"
-import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
-import {
-  gradeMeets,
-  RWE_QUERY_FRAMING,
-  shapeRweOutcomes,
-  type RweEdgeRow,
-} from "@/lib/knowledge-graph/rwe-query"
-
-const VALID_GRADES = new Set<string>(Object.values(KgEvidenceGrade))
+import { RWE_QUERY_FRAMING } from "@/lib/knowledge-graph/rwe-query"
+import { parseRweQueryParams, queryRweOutcomes } from "@/lib/knowledge-graph/rwe-outcomes-query"
 
 export async function GET(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 30, windowMs: 60_000 })
@@ -57,56 +48,24 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const intervention = searchParams.get("intervention")?.trim() || null
-  const biomarker = searchParams.get("biomarker")?.trim() || null
-  const minGradeParam = searchParams.get("minGrade")?.trim() || null
-  const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 50) || 50, 1), 200)
-
-  if (minGradeParam && !VALID_GRADES.has(minGradeParam)) {
-    return NextResponse.json(
-      { error: `Invalid minGrade. Use one of: ${[...VALID_GRADES].join(", ")}` },
-      { status: 400 },
-    )
-  }
-
-  // Grades at or above the requested minimum (RWE only ever reaches C_LOW).
-  const gradeFilter: KgEvidenceGrade[] | undefined = minGradeParam
-    ? Object.values(KgEvidenceGrade).filter((g) => gradeMeets(g, minGradeParam as KgEvidenceGrade))
-    : undefined
-
-  const where: Prisma.KgEdgeWhereInput = {
-    edgeType: KgEdgeType.POPULATION_ASSOCIATION,
-    source: RWE_SOURCE,
-    ...(gradeFilter ? { evidenceGrade: { in: gradeFilter } } : {}),
-    ...(intervention ? { fromNode: { label: { contains: intervention, mode: "insensitive" } } } : {}),
-    ...(biomarker ? { toNode: { label: { contains: biomarker, mode: "insensitive" } } } : {}),
+  const parsed = parseRweQueryParams(searchParams)
+  if (parsed.error || !parsed.params) {
+    return NextResponse.json({ error: parsed.error ?? "Invalid query" }, { status: 400 })
   }
 
   try {
-    const rows = await db.kgEdge.findMany({
-      where,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: {
-        evidenceGrade: true,
-        source: true,
-        effectSize: true,
-        effectSizeUnit: true,
-        confidence: true,
-        attributes: true,
-        fromNode: { select: { label: true, kind: true, externalId: true } },
-        toNode: { select: { label: true, kind: true, externalId: true } },
-      },
-    })
-
-    const { outcomes, suppressedBelowFloor } = shapeRweOutcomes(rows as RweEdgeRow[])
-
+    const result = await queryRweOutcomes(parsed.params)
     return NextResponse.json({
-      outcomes,
-      count: outcomes.length,
-      suppressedBelowFloor,
+      outcomes: result.outcomes,
+      count: result.count,
+      suppressedBelowFloor: result.suppressedBelowFloor,
       framing: RWE_QUERY_FRAMING,
-      query: { intervention, biomarker, minGrade: minGradeParam, limit },
+      query: {
+        intervention: parsed.params.intervention,
+        biomarker: parsed.params.biomarker,
+        minGrade: parsed.params.minGrade,
+        limit: parsed.params.limit,
+      },
     })
   } catch (err) {
     logger.error("Failed to query RWE outcomes", {
