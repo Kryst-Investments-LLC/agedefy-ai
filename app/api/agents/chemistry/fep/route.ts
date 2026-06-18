@@ -8,7 +8,8 @@ import { requireGdprConsent } from '@/lib/consent'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { fepSidecar, SidecarError } from '@/lib/sidecars'
+import { signResult } from '@/lib/provenance/sign-result'
+import { fepSidecar, SidecarError, type VerifiableCredential } from '@/lib/sidecars'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
 /**
@@ -151,7 +152,27 @@ export async function POST(request: NextRequest) {
       backend_used: result.backend_used,
     })
 
-    return NextResponse.json(result)
+    // Provenance receipt — best-effort. A signer outage must not discard a
+    // completed (expensive) FEP result, so failures degrade to provenance: null.
+    let provenance: VerifiableCredential | null = null
+    try {
+      provenance = await signResult({
+        resultType: 'FepResult',
+        result: result as unknown as Record<string, unknown>,
+        inputs: { smiles_reference, smiles_candidate, lambda_windows, sampling_ns_per_window, temperature_K },
+        modelVersion: result.model_version,
+        backendUsed: result.backend_used,
+        validationStatus: 'computational_estimate',
+        traceparent,
+      })
+    } catch (signErr) {
+      logger.warn('FEP provenance signing failed (returning unsigned result)', {
+        userId: session.user.id,
+        error: signErr instanceof Error ? signErr.message : String(signErr),
+      })
+    }
+
+    return NextResponse.json({ ...result, provenance })
   } catch (err) {
     if (err instanceof SidecarError) {
       const status = err.status && err.status >= 400 && err.status < 600 ? err.status : 502

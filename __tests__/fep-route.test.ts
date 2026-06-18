@@ -7,6 +7,7 @@ const requireGdprConsentMock = vi.fn(async () => null)
 const deriveTenantMock = vi.fn(async () => ({ tenantId: "default" }))
 const perturbMock = vi.fn()
 const logAuditMock = vi.fn(async () => undefined)
+const signResultMock = vi.fn()
 
 vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
@@ -19,6 +20,7 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 vi.mock("@/lib/audit", () => ({ logAudit: logAuditMock }))
+vi.mock("@/lib/provenance/sign-result", () => ({ signResult: signResultMock }))
 vi.mock("@/lib/sidecars", () => ({
   fepSidecar: { perturb: perturbMock },
   SidecarError: class SidecarError extends Error {
@@ -96,6 +98,12 @@ beforeEach(() => {
   perturbMock.mockReset()
   logAuditMock.mockReset()
   logAuditMock.mockResolvedValue(undefined)
+  signResultMock.mockReset()
+  signResultMock.mockResolvedValue({
+    id: "urn:vc:fep-1",
+    issuer: "did:web:agedefy.ai",
+    proof: { proofValue: "z", verificationMethod: "k" },
+  })
 })
 
 afterEach(() => {
@@ -290,6 +298,30 @@ describe("POST /api/agents/chemistry/fep", () => {
         }),
       }),
     )
+  })
+
+  it("attaches a provenance receipt to the FEP result", async () => {
+    perturbMock.mockResolvedValue(FEP_RESULT)
+    const { POST } = await import("@/app/api/agents/chemistry/fep/route")
+    const res = await POST(buildRequest(validPayload()))
+    const json = (await res.json()) as Record<string, any>
+    expect(json.provenance).toEqual(
+      expect.objectContaining({ id: "urn:vc:fep-1", issuer: "did:web:agedefy.ai" }),
+    )
+    expect(signResultMock).toHaveBeenCalledWith(
+      expect.objectContaining({ resultType: "FepResult", validationStatus: "computational_estimate" }),
+    )
+  })
+
+  it("still returns 200 with provenance:null when signing fails", async () => {
+    perturbMock.mockResolvedValue(FEP_RESULT)
+    signResultMock.mockRejectedValue(new Error("vc-signer down"))
+    const { POST } = await import("@/app/api/agents/chemistry/fep/route")
+    const res = await POST(buildRequest(validPayload()))
+    expect(res.status).toBe(200)
+    const json = (await res.json()) as Record<string, any>
+    expect(json.ddg_kcal_mol).toBe(-1.42)
+    expect(json.provenance).toBeNull()
   })
 
   it("returns 200 with FepResult for ADMIN role", async () => {
