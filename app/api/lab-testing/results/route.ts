@@ -7,6 +7,8 @@ import { buildApiCanonicalEventContext } from '@/lib/events/api-context'
 import { labOrderRecordToEvent } from '@/lib/events/ingestion'
 import { PrismaTransactionalHealthEventIngestionService } from '@/lib/events/transactional-ingestion-service'
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency'
+import { triggerLoopCycle } from '@/lib/loop/loop-trigger'
+import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 import { labResultMutationSchema } from '@/lib/validators/lab-testing'
@@ -90,6 +92,12 @@ export async function POST(request: NextRequest) {
           }),
         }
       })
+
+      void triggerLoopCycle({
+        userId: session.user.id,
+        tenantId: tenantContext.tenantId,
+        reason: "LAB_RESULT",
+      }).catch((err) => logger.warn("Loop trigger failed after lab result ingest", { error: String(err) }))
 
       return { status: 201, body: updatedOrder }
     },

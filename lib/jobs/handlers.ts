@@ -5,11 +5,13 @@ import { createReviewItem, logAudit } from "@/lib/audit"
 import { createEvidenceDraft, estimateReviewConfidence } from "@/lib/biomedical-intelligence"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
+import { materializeSnapshot } from "@/lib/loop/snapshot-materializer"
 import { candidateRealityCheckService } from "@/lib/services/candidate-reality-check"
 import {
   aiGovernanceAuditJobPayloadSchema,
   chemistryRealityCheckJobPayloadSchema,
   governanceReviewJobPayloadSchema,
+  loopObserveJobPayloadSchema,
   notificationJobPayloadSchema,
   researchIngestionMaterializeJobPayloadSchema,
 } from "@/lib/validators/jobs"
@@ -243,6 +245,30 @@ async function handleChemistryRealityCheck(job: OrchestrationJob) {
   return realityCheck
 }
 
+async function handleLoopObserve(job: OrchestrationJob) {
+  const payload = loopObserveJobPayloadSchema.parse(job.payload)
+  const { cycleId, userId, tenantId } = payload
+
+  const snapshot = await materializeSnapshot(userId, tenantId)
+
+  if (!snapshot) {
+    await db.loopCycle.update({
+      where: { id: cycleId },
+      data: { status: "FAILED", failedReason: "snapshot_materialization_failed", completedAt: new Date() },
+    })
+    logger.warn("Loop OBSERVE failed: could not materialize snapshot", { cycleId, userId })
+    return { cycleId, status: "failed", reason: "snapshot_materialization_failed" }
+  }
+
+  await db.loopCycle.update({
+    where: { id: cycleId },
+    data: { status: "PLAN", snapshotId: snapshot.id },
+  })
+
+  logger.info("Loop OBSERVE complete", { cycleId, snapshotId: snapshot.id, userId })
+  return { cycleId, snapshotId: snapshot.id, status: "plan" }
+}
+
 export async function processOrchestrationJob(job: OrchestrationJob) {
   logger.info("Processing orchestration job", {
     jobId: job.id,
@@ -263,6 +289,8 @@ export async function processOrchestrationJob(job: OrchestrationJob) {
       return handleResearchIngestionMaterialization(job)
     case "chemistry.reality-check":
       return handleChemistryRealityCheck(job)
+    case "loop.observe":
+      return handleLoopObserve(job)
     default:
       throw new Error(`No orchestration handler registered for job type ${job.jobType}`)
   }

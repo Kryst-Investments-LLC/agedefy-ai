@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
 
-const ORCHESTRATION_QUEUES: OrchestrationJobQueue[] = ["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE"]
+const ORCHESTRATION_QUEUES: OrchestrationJobQueue[] = ["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE", "LOOP"]
 const BACKLOG_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]
 const TERMINAL_STATUSES: OrchestrationJobStatus[] = ["SUCCEEDED", "DEAD_LETTER", "CANCELED"]
 const RETRYABLE_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]

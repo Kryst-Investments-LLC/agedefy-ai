@@ -86,6 +86,7 @@ enum OrchestrationJobQueue {
   INGESTION
   NOTIFICATION
   GOVERNANCE
+  LOOP
 }
 
 enum OrchestrationJobStatus {
@@ -166,6 +167,8 @@ model User {
   flParticipations            FLParticipation[]               @relation("FLParticipationUser")
   medications                 Medication[]                    @relation("MedicationUser")
   agentSessions               AgentSession[]                  @relation("AgentSessionUser")
+  loopCycles                  LoopCycle[]                     @relation("LoopCycleUser")
+  physiologicalSnapshots      PhysiologicalSnapshot[]         @relation("PhysiologicalSnapshotUser")
   driftSweeps                 DriftSweep[]                    @relation("DriftSweepUser")
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
@@ -3213,4 +3216,76 @@ model ExternalScreeningRun {
 
   @@index([adapterId, createdAt])
   @@index([candidateId])
+}
+
+// ─── Self-Improving Loop Architecture ──────────────────────
+
+enum LoopCycleStatus {
+  OBSERVE
+  PLAN
+  ACT
+  REFLECT
+  COMPLETE
+  FAILED
+}
+
+enum LoopTriggerReason {
+  BIOMARKER_INGEST
+  LAB_RESULT
+  WEARABLE_SYNC
+  PROTOCOL_CHANGE
+  SCHEDULED
+  MANUAL
+}
+
+/// Persisted state for one full OBSERVE→PLAN→ACT→REFLECT cycle.
+/// Created by loop-trigger.ts whenever a new physiological signal arrives.
+model LoopCycle {
+  id             String            @id @default(cuid())
+  userId         String
+  tenantId       String            @default("default")
+  status         LoopCycleStatus   @default(OBSERVE)
+  triggeredBy    LoopTriggerReason
+  snapshotId     String?
+  agentSessionId String?
+  startedAt      DateTime          @default(now())
+  completedAt    DateTime?
+  failedReason   String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user     User                   @relation("LoopCycleUser", fields: [userId], references: [id], onDelete: Cascade)
+  snapshot PhysiologicalSnapshot? @relation("LoopCycleSnapshot", fields: [snapshotId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+  @@index([tenantId, status, createdAt])
+}
+
+/// Fused physiological state snapshot — the shared context all loop stages consume.
+/// Materialized from biomarkers, active protocol, digital twin, and risk signals.
+model PhysiologicalSnapshot {
+  id                     String    @id @default(cuid())
+  userId                 String
+  tenantId               String    @default("default")
+  materializedAt         DateTime  @default(now())
+  /// Latest value per biomarker name: { [name]: { value, unit, trend, lastUpdated } }
+  biomarkersJson         Json      @default("{}")
+  /// Aggregate risk dimensions: { overall, cardiovascular, metabolic, inflammation }
+  riskScoresJson         Json      @default("{}")
+  activeProtocolId       String?
+  protocolAdherence      Float?
+  protocolWeeksActive    Float?
+  /// Ordered list of dysregulated pathway names, most severe first
+  dysregulatedPathways   Json      @default("[]")
+  twinLastSimAt          DateTime?
+  twinPredictionAccuracy Float?
+  /// LoopCycle IDs awaiting reflection
+  pendingReflections     Json      @default("[]")
+  createdAt              DateTime  @default(now())
+
+  user       User        @relation("PhysiologicalSnapshotUser", fields: [userId], references: [id], onDelete: Cascade)
+  loopCycles LoopCycle[] @relation("LoopCycleSnapshot")
+
+  @@index([userId, materializedAt])
+  @@index([tenantId, materializedAt])
 }

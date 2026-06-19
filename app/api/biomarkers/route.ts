@@ -8,6 +8,8 @@ import { buildApiCanonicalEventContext } from "@/lib/events/api-context"
 import { biomarkerRecordToEvent } from "@/lib/events/ingestion"
 import { PrismaTransactionalHealthEventIngestionService } from "@/lib/events/transactional-ingestion-service"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
+import { triggerLoopCycle } from "@/lib/loop/loop-trigger"
+import { logger } from "@/lib/logger"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { biomarkerSchema } from "@/lib/validators/workspace"
 
@@ -65,6 +67,12 @@ export async function POST(request: Request) {
         entityId: biomarker.id,
         details: { name: biomarker.name, value: biomarker.value, unit: biomarker.unit },
       })
+
+      void triggerLoopCycle({
+        userId: session.user.id,
+        tenantId: tenantContext.tenantId,
+        reason: "BIOMARKER_INGEST",
+      }).catch((err) => logger.warn("Loop trigger failed after biomarker ingest", { error: String(err) }))
 
       return { status: 201, body: biomarker }
     },

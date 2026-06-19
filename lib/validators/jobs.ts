@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const orchestrationJobQueueSchema = z.enum(["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE"])
+export const orchestrationJobQueueSchema = z.enum(["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE", "LOOP"])
 export const orchestrationJobStatusSchema = z.enum(["QUEUED", "LEASED", "SUCCEEDED", "FAILED", "DEAD_LETTER", "CANCELED"])
 
 export const notificationJobPayloadSchema = z.object({
@@ -102,4 +102,11 @@ export const chemistryRealityCheckJobPayloadSchema = z.object({
   aeonForgeCandidateId: z.string().min(1),
   moleculeId: z.string().min(1),
   smiles: z.string().min(1),
+})
+
+export const loopObserveJobPayloadSchema = z.object({
+  cycleId: z.string().min(1),
+  userId: z.string().min(1),
+  tenantId: z.string().min(1),
+  reason: z.string().min(1),
 })

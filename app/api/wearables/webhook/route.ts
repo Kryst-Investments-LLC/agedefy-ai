@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { detectDrift } from '@/lib/agents/drift-detector'
 import { claimWebhookDelivery } from '@/lib/webhook-idempotency'
+import { triggerLoopCycle } from '@/lib/loop/loop-trigger'
 import { promoteWearableMetrics } from '@/lib/wearables/biomarker-bridge'
 import { verifyWebhookSignature } from '@/lib/wearables/terra-client'
 import { normalizeTerraPayload } from '@/lib/wearables/normalizer'
@@ -121,6 +122,15 @@ export async function POST(request: NextRequest) {
   // Promote eligible wearable metrics to biomarker records
   const allMetrics = normalized.flatMap((e) => e.metrics)
   const promotion = await promoteWearableMetrics(referenceId, allMetrics, provider)
+
+  // Trigger self-improving loop when new biomarkers arrive from wearable
+  if (promotion.promoted > 0) {
+    void triggerLoopCycle({
+      userId: referenceId,
+      tenantId: "default",
+      reason: "WEARABLE_SYNC",
+    }).catch((err) => logger.warn("Loop trigger failed after wearable sync", { error: String(err) }))
+  }
 
   // Run drift detection when new biomarkers were promoted
   let driftFindings = 0
