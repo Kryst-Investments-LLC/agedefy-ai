@@ -20,6 +20,7 @@
 
 import { createHash } from "node:crypto"
 
+import { logger } from "@/lib/logger"
 import { vcSigner, type VcIssueRequest, type VerifiableCredential } from "@/lib/sidecars"
 
 export type ValidationStatus =
@@ -98,6 +99,23 @@ export function buildResultVcRequest(input: SignResultInput): VcIssueRequest {
  */
 export async function signResult(input: SignResultInput): Promise<VerifiableCredential> {
   return vcSigner.issue(buildResultVcRequest(input), input.traceparent)
+}
+
+/**
+ * Best-effort variant: returns the receipt, or null if signing fails.
+ * A signer outage must never discard an otherwise-complete (often expensive)
+ * compute result — the result is returned unsigned with provenance: null.
+ */
+export async function signResultSafe(input: SignResultInput): Promise<VerifiableCredential | null> {
+  try {
+    return await signResult(input)
+  } catch (err) {
+    logger.warn("provenance signing failed (returning unsigned result)", {
+      resultType: input.resultType,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
 }
 
 export interface ReceiptStatus {

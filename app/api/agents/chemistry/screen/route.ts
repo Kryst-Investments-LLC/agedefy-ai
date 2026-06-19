@@ -8,6 +8,7 @@ import { requireGdprConsent } from '@/lib/consent'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { signResultSafe } from '@/lib/provenance/sign-result'
 import { screeningSidecar, SidecarError } from '@/lib/sidecars'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
@@ -90,7 +91,16 @@ export async function POST(request: NextRequest) {
       valid: result.valid,
     })
 
-    return NextResponse.json(result)
+    const provenance = await signResultSafe({
+      resultType: 'ScreeningResult',
+      result: result as unknown as Record<string, unknown>,
+      inputs: { smiles, include_pains },
+      modelVersion: result.model_version,
+      validationStatus: 'computational_estimate',
+      traceparent,
+    })
+
+    return NextResponse.json({ ...result, provenance })
   } catch (err) {
     if (err instanceof SidecarError) {
       const status = err.status && err.status >= 400 && err.status < 600 ? err.status : 502

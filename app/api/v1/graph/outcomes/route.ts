@@ -25,6 +25,7 @@ import { recordUsage } from "@/lib/api-keys/metering"
 import { logAudit } from "@/lib/audit"
 import { reportGraphQueryUsage } from "@/lib/billing/graph-usage-billing"
 import { logger } from "@/lib/logger"
+import { signResultSafe } from "@/lib/provenance/sign-result"
 import { RWE_QUERY_FRAMING } from "@/lib/knowledge-graph/rwe-query"
 import { parseRweQueryParams, queryRweOutcomes } from "@/lib/knowledge-graph/rwe-outcomes-query"
 
@@ -72,12 +73,21 @@ export async function GET(request: NextRequest) {
     // Report metered usage for billing (stub until STRIPE_GRAPH_PRICE_ID is set).
     await reportGraphQueryUsage({ keyId: ctx.key.id, units: 1 })
 
+    // Verifiable provenance receipt for the data product (best-effort).
+    const provenance = await signResultSafe({
+      resultType: "RweOutcomeQuery",
+      result: { count: result.count, suppressedBelowFloor: result.suppressedBelowFloor },
+      inputs: parsed.params as unknown as Record<string, unknown>,
+      validationStatus: "computational_estimate",
+    })
+
     return NextResponse.json({
       outcomes: result.outcomes,
       count: result.count,
       suppressedBelowFloor: result.suppressedBelowFloor,
       framing: RWE_QUERY_FRAMING,
       query: parsed.params,
+      provenance,
     })
   } catch (err) {
     await recordUsage({ keyId: ctx.key.id, endpoint: ENDPOINT, method: "GET", statusCode: 500, computeMs: Date.now() - start })

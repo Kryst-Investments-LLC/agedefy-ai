@@ -7,6 +7,7 @@ const requireGdprConsentMock = vi.fn(async () => null)
 const deriveTenantMock = vi.fn(async () => ({ tenantId: "default" }))
 const dockMock = vi.fn()
 const logAuditMock = vi.fn(async () => undefined)
+const signResultSafeMock = vi.fn(async () => null)
 
 vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
@@ -19,6 +20,7 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 vi.mock("@/lib/audit", () => ({ logAudit: logAuditMock }))
+vi.mock("@/lib/provenance/sign-result", () => ({ signResultSafe: signResultSafeMock }))
 vi.mock("@/lib/sidecars", () => ({
   screeningSidecar: { dock: dockMock },
   SidecarError: class SidecarError extends Error {
@@ -78,6 +80,8 @@ beforeEach(() => {
   dockMock.mockReset()
   logAuditMock.mockReset()
   logAuditMock.mockResolvedValue(undefined)
+  signResultSafeMock.mockReset()
+  signResultSafeMock.mockResolvedValue({ id: "urn:vc:dock-1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
 })
 
 afterEach(() => {
@@ -206,6 +210,19 @@ describe("POST /api/agents/chemistry/dock", () => {
           model_version: "screening-sidecar@1.0.0",
         }),
       }),
+    )
+  })
+
+  it("attaches a provenance receipt (computational_estimate) to the dock result", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "u1", email: "u@example.com" } })
+    dockMock.mockResolvedValue(DOCK_RESULT)
+    const { POST } = await import("@/app/api/agents/chemistry/dock/route")
+    const res = await POST(buildRequest(validPayload()))
+    const json = (await res.json()) as Record<string, unknown>
+    expect(json.binding_affinity_kcal_mol).toBe(-7.2)
+    expect(json.provenance).toMatchObject({ id: "urn:vc:dock-1" })
+    expect(signResultSafeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ resultType: "DockingResult", validationStatus: "computational_estimate" }),
     )
   })
 

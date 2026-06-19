@@ -7,6 +7,7 @@ const recordUsageMock = vi.fn(async () => undefined)
 const logAuditMock = vi.fn(async () => undefined)
 const reportGraphQueryUsageMock = vi.fn(async () => ({ reported: false, reason: "not_configured" }))
 const queryRweOutcomesMock = vi.fn()
+const signResultSafeMock = vi.fn()
 
 vi.mock("@/lib/api-keys/middleware", () => ({
   authenticateAPIKey: authenticateAPIKeyMock,
@@ -15,6 +16,7 @@ vi.mock("@/lib/api-keys/middleware", () => ({
 vi.mock("@/lib/api-keys/metering", () => ({ recordUsage: recordUsageMock }))
 vi.mock("@/lib/audit", () => ({ logAudit: logAuditMock }))
 vi.mock("@/lib/billing/graph-usage-billing", () => ({ reportGraphQueryUsage: reportGraphQueryUsageMock }))
+vi.mock("@/lib/provenance/sign-result", () => ({ signResultSafe: signResultSafeMock }))
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
@@ -64,6 +66,8 @@ beforeEach(() => {
   reportGraphQueryUsageMock.mockResolvedValue({ reported: false, reason: "not_configured" })
   queryRweOutcomesMock.mockReset()
   queryRweOutcomesMock.mockResolvedValue(QUERY_RESULT)
+  signResultSafeMock.mockReset()
+  signResultSafeMock.mockResolvedValue({ id: "urn:vc:rwe-1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
 })
 
 afterEach(() => {
@@ -136,6 +140,16 @@ describe("GET /api/v1/graph/outcomes", () => {
     const { GET } = await import("@/app/api/v1/graph/outcomes/route")
     await GET(buildRequest())
     expect(reportGraphQueryUsageMock).toHaveBeenCalledWith({ keyId: "key-1", units: 1 })
+  })
+
+  it("attaches a provenance receipt to the response", async () => {
+    const { GET } = await import("@/app/api/v1/graph/outcomes/route")
+    const res = await GET(buildRequest())
+    const json = (await res.json()) as Record<string, any>
+    expect(json.provenance).toMatchObject({ id: "urn:vc:rwe-1" })
+    expect(signResultSafeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ resultType: "RweOutcomeQuery" }),
+    )
   })
 
   it("never leaks node externalId into the response", async () => {

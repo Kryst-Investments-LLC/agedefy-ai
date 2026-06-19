@@ -7,6 +7,7 @@ const requireGdprConsentMock = vi.fn(async () => null)
 const deriveTenantMock = vi.fn(async () => ({ tenantId: "default" }))
 const screenMock = vi.fn()
 const logAuditMock = vi.fn(async () => undefined)
+const signResultSafeMock = vi.fn(async () => null)
 
 vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
@@ -19,6 +20,7 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 vi.mock("@/lib/audit", () => ({ logAudit: logAuditMock }))
+vi.mock("@/lib/provenance/sign-result", () => ({ signResultSafe: signResultSafeMock }))
 vi.mock("@/lib/sidecars", () => ({
   screeningSidecar: { screen: screenMock },
   SidecarError: class SidecarError extends Error {
@@ -91,6 +93,8 @@ beforeEach(() => {
   screenMock.mockReset()
   logAuditMock.mockReset()
   logAuditMock.mockResolvedValue(undefined)
+  signResultSafeMock.mockReset()
+  signResultSafeMock.mockResolvedValue({ id: "urn:vc:screen-1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
 })
 
 afterEach(() => {
@@ -160,6 +164,19 @@ describe("POST /api/agents/chemistry/screen", () => {
     const { POST } = await import("@/app/api/agents/chemistry/screen/route")
     const res = await POST(buildRequest({ smiles: "CC(=O)O" }))
     expect(res.status).toBe(429)
+  })
+
+  it("attaches a provenance receipt (computational_estimate) to the screen result", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "u1", email: "u@example.com" } })
+    screenMock.mockResolvedValue(ASPIRIN_RESULT)
+    const { POST } = await import("@/app/api/agents/chemistry/screen/route")
+    const res = await POST(buildRequest({ smiles: "CC(=O)Oc1ccccc1C(=O)O" }))
+    const json = (await res.json()) as Record<string, unknown>
+    expect(json.valid).toBe(true)
+    expect(json.provenance).toMatchObject({ id: "urn:vc:screen-1" })
+    expect(signResultSafeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ resultType: "ScreeningResult", validationStatus: "computational_estimate" }),
+    )
   })
 
   it("returns 200 with ScreenResult and writes audit log on success", async () => {
