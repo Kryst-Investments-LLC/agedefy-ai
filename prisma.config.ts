@@ -9,6 +9,9 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+    // Postgres-only. DATABASE_URL is set in every real environment (dev, CI,
+    // staging, prod); the placeholder only satisfies `prisma generate`, which
+    // does not connect. There is no SQLite fallback by design.
+    url: process.env.DATABASE_URL ?? "postgresql://localhost:5432/postgres",
   },
 } as any)

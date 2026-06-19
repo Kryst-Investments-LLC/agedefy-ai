@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DATABASE_URL: file:./prisma/dev.db
+      DATABASE_URL: ${{ secrets.POSTGRES_DATABASE_URL || secrets.DATABASE_URL }}
       OUTBOX_BROKER: ${{ inputs.broker || vars.OUTBOX_BROKER || 'kafka' }}
       OUTBOX_BATCH_SIZE: ${{ inputs.batch-size || vars.OUTBOX_BATCH_SIZE || '100' }}
       OUTBOX_MAX_ATTEMPTS: ${{ vars.OUTBOX_MAX_ATTEMPTS || '5' }}
@@ -58,8 +58,8 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
-      - name: Apply Prisma migrations
-        run: pnpm db:deploy
-
+      # No migrate step: this cron reads the already-migrated production
+      # database. Schema migrations are owned by the deploy pipeline
+      # (helm-release / orchestration-jobs db-init), not the dispatch job.
       - name: Dispatch outbox batch
         run: pnpm outbox:dispatch -- --batch-size "$OUTBOX_BATCH_SIZE" --max-attempts "$OUTBOX_MAX_ATTEMPTS" --retry-delay-ms "$OUTBOX_RETRY_DELAY_MS"

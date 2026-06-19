@@ -20,7 +20,7 @@ spec:
           args:
             - >-
               attempt=0;
-              until pnpm db:deploy:postgres; do
+              until pnpm db:deploy; do
                 attempt=$((attempt + 1));
                 if [ "$attempt" -ge {{ .Values.databaseInit.retries }} ]; then
                   exit 1;

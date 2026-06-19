@@ -56,8 +56,8 @@ jobs:
           test -n "$OTEL_EXPORTER_OTLP_ENDPOINT" || { echo "STAGING_OTEL_EXPORTER_OTLP_ENDPOINT secret is required"; exit 1; }
           test -n "$SMOKE_BASE_URL" || { echo "STAGING_SMOKE_BASE_URL secret is required"; exit 1; }
 
-      - name: Generate Postgres Prisma runtime client
-        run: pnpm db:generate:postgres:runtime
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Validate runtime baseline
         run: pnpm validate:runtime

@@ -1,4 +1,3 @@
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
@@ -36,7 +35,7 @@ CREATE TYPE "public"."IdempotencyExecutionStatus" AS ENUM ('PENDING', 'COMPLETED
 CREATE TYPE "public"."DependencyCircuitBreakerState" AS ENUM ('CLOSED', 'OPEN', 'HALF_OPEN');
 
 -- CreateEnum
-CREATE TYPE "public"."OrchestrationJobQueue" AS ENUM ('AI', 'INGESTION', 'NOTIFICATION', 'GOVERNANCE');
+CREATE TYPE "public"."OrchestrationJobQueue" AS ENUM ('AI', 'INGESTION', 'NOTIFICATION', 'GOVERNANCE', 'LOOP');
 
 -- CreateEnum
 CREATE TYPE "public"."OrchestrationJobStatus" AS ENUM ('QUEUED', 'LEASED', 'SUCCEEDED', 'FAILED', 'DEAD_LETTER', 'CANCELED');
@@ -156,7 +155,7 @@ CREATE TYPE "public"."NofOneStatus" AS ENUM ('DESIGN', 'ACTIVE', 'PAUSED', 'STOP
 CREATE TYPE "public"."PgxMetabolizerPhenotype" AS ENUM ('POOR', 'INTERMEDIATE', 'NORMAL', 'RAPID', 'ULTRARAPID', 'INDETERMINATE');
 
 -- CreateEnum
-CREATE TYPE "public"."KgEdgeType" AS ENUM ('INHIBITS', 'ACTIVATES', 'UPREGULATES', 'DOWNREGULATES', 'BINDS', 'SYNTHETIC_LETHAL_WITH', 'CAUSES_RESISTANCE_TO', 'CO_EXPRESSED_WITH', 'GENE_DISEASE_ASSOCIATION', 'DRUG_TARGET', 'DRUG_INDICATION', 'DRUG_CONTRAINDICATION', 'PATHWAY_MEMBER');
+CREATE TYPE "public"."KgEdgeType" AS ENUM ('INHIBITS', 'ACTIVATES', 'UPREGULATES', 'DOWNREGULATES', 'BINDS', 'SYNTHETIC_LETHAL_WITH', 'CAUSES_RESISTANCE_TO', 'CO_EXPRESSED_WITH', 'GENE_DISEASE_ASSOCIATION', 'DRUG_TARGET', 'DRUG_INDICATION', 'DRUG_CONTRAINDICATION', 'PATHWAY_MEMBER', 'POPULATION_ASSOCIATION');
 
 -- CreateEnum
 CREATE TYPE "public"."KgEvidenceGrade" AS ENUM ('A_HIGH', 'B_MODERATE', 'C_LOW', 'D_VERY_LOW');
@@ -166,6 +165,27 @@ CREATE TYPE "public"."AgentClaimEvidenceKind" AS ENUM ('MECHANISTIC_SIMULATION',
 
 -- CreateEnum
 CREATE TYPE "public"."LabResultRecStatus" AS ENUM ('RECEIVED', 'PARSED', 'RECONCILED', 'FLAGGED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "public"."ExperimentCandidateStatus" AS ENUM ('PROPOSED', 'SCREENED', 'SENT_TO_LAB', 'RESULT_LOGGED', 'FED_BACK');
+
+-- CreateEnum
+CREATE TYPE "public"."ExperimentCandidateKind" AS ENUM ('CHEMBL', 'AI');
+
+-- CreateEnum
+CREATE TYPE "public"."LabSubmissionStatus" AS ENUM ('PENDING', 'PARTIAL', 'COMPLETE', 'VOID');
+
+-- CreateEnum
+CREATE TYPE "public"."CroWorkOrderStatus" AS ENUM ('DRAFT', 'QUOTED', 'FUNDED', 'IN_PROGRESS', 'DELIVERED', 'RECONCILED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "public"."LoopCycleStatus" AS ENUM ('OBSERVE', 'PLAN', 'ACT', 'REFLECT', 'COMPLETE', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "public"."LoopTriggerReason" AS ENUM ('BIOMARKER_INGEST', 'LAB_RESULT', 'WEARABLE_SYNC', 'PROTOCOL_CHANGE', 'SCHEDULED', 'MANUAL');
+
+-- CreateEnum
+CREATE TYPE "public"."ProtocolVersionStatus" AS ENUM ('DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'APPLIED');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
@@ -378,9 +398,13 @@ CREATE TABLE "public"."Protocol" (
     "name" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'draft',
     "description" TEXT,
+    "protocolCycleLengthDays" INTEGER NOT NULL DEFAULT 28,
+    "protocolCycleStartDate" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "contraindicationScore" DOUBLE PRECISION,
+    "forkCount" INTEGER NOT NULL DEFAULT 0,
+    "forkedFromId" TEXT,
 
     CONSTRAINT "Protocol_pkey" PRIMARY KEY ("id")
 );
@@ -1233,6 +1257,8 @@ CREATE TABLE "public"."MarketplaceSponsor" (
     "capitalAvailableCents" INTEGER NOT NULL DEFAULT 1000000,
     "dueDiligenceLevel" TEXT NOT NULL DEFAULT 'standard',
     "geographyFocus" JSONB NOT NULL,
+    "assayCapabilities" JSONB NOT NULL DEFAULT '[]',
+    "labType" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -1257,6 +1283,7 @@ CREATE TABLE "public"."MarketplaceDiscovery" (
     "evidenceSummary" TEXT,
     "evidenceLinks" JSONB NOT NULL,
     "metadata" JSONB NOT NULL,
+    "candidateId" TEXT,
     "publishedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -1924,6 +1951,11 @@ CREATE TABLE "public"."TwinSimulationRun" (
     "uncertaintyKind" TEXT NOT NULL,
     "inputsHash" TEXT NOT NULL,
     "modelVersion" TEXT NOT NULL,
+    "predictionWindowDays" INTEGER NOT NULL DEFAULT 0,
+    "predictionExpiresAt" TIMESTAMP(3),
+    "pkParamsUsedJson" JSONB,
+    "outcomeTrajectoryJson" JSONB,
+    "twinAccuracyScore" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "TwinSimulationRun_pkey" PRIMARY KEY ("id")
@@ -2215,6 +2247,444 @@ CREATE TABLE "public"."EvalBenchRun" (
     CONSTRAINT "EvalBenchRun_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."ExperimentCandidate" (
+    "id" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "userId" TEXT NOT NULL,
+    "kind" "public"."ExperimentCandidateKind" NOT NULL,
+    "status" "public"."ExperimentCandidateStatus" NOT NULL DEFAULT 'PROPOSED',
+    "displayName" TEXT NOT NULL,
+    "smiles" TEXT,
+    "chemblId" TEXT,
+    "chemblScore" DOUBLE PRECISION,
+    "chemblJson" JSONB,
+    "aeonForgeCandidateId" TEXT,
+    "aiMolJson" JSONB,
+    "screenJson" JSONB,
+    "dockJson" JSONB,
+    "targetName" TEXT,
+    "targetChemblId" TEXT,
+    "hypothesisNote" TEXT,
+    "notes" TEXT,
+    "feedbackScore" DOUBLE PRECISION,
+    "uncertaintyScore" DOUBLE PRECISION,
+    "acquisitionScore" DOUBLE PRECISION,
+    "fepGateScore" DOUBLE PRECISION,
+    "fepGateReason" TEXT,
+    "fepJson" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ExperimentCandidate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ExperimentCandidateEvent" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "fromStatus" "public"."ExperimentCandidateStatus",
+    "toStatus" "public"."ExperimentCandidateStatus" NOT NULL,
+    "notes" TEXT,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ExperimentCandidateEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CandidateLabResult" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "submissionId" TEXT,
+    "assayName" TEXT NOT NULL,
+    "value" DOUBLE PRECISION NOT NULL,
+    "unit" TEXT NOT NULL,
+    "operator" TEXT NOT NULL DEFAULT '=',
+    "flag" TEXT,
+    "assayType" TEXT,
+    "lab" TEXT,
+    "measuredAt" TIMESTAMP(3) NOT NULL,
+    "rawDataUri" TEXT,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CandidateLabResult_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."LabSubmission" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "labName" TEXT NOT NULL,
+    "labContact" TEXT,
+    "tokenHash" TEXT NOT NULL,
+    "status" "public"."LabSubmissionStatus" NOT NULL DEFAULT 'PENDING',
+    "packageJson" JSONB NOT NULL,
+    "requestedAssays" JSONB NOT NULL,
+    "deadlineAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "LabSubmission_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CroPartner" (
+    "id" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "name" TEXT NOT NULL,
+    "capabilities" JSONB NOT NULL,
+    "turnaroundDays" INTEGER,
+    "pricingJson" JSONB,
+    "contactEmail" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CroPartner_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CroWorkOrder" (
+    "id" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "candidateId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "croPartnerId" TEXT NOT NULL,
+    "assayType" TEXT NOT NULL,
+    "requestedAssays" JSONB NOT NULL,
+    "milestonePlan" JSONB NOT NULL,
+    "quoteCents" INTEGER,
+    "currency" TEXT NOT NULL DEFAULT 'USD',
+    "escrowTransactionId" TEXT,
+    "submissionId" TEXT,
+    "fepGateScoreAtOrder" DOUBLE PRECISION,
+    "status" "public"."CroWorkOrderStatus" NOT NULL DEFAULT 'DRAFT',
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CroWorkOrder_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CroWorkOrderEvent" (
+    "id" TEXT NOT NULL,
+    "workOrderId" TEXT NOT NULL,
+    "fromStatus" "public"."CroWorkOrderStatus",
+    "toStatus" "public"."CroWorkOrderStatus" NOT NULL,
+    "actorUserId" TEXT,
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CroWorkOrderEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CandidateFeedbackRun" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "feedbackScore" DOUBLE PRECISION NOT NULL,
+    "uncertaintyScore" DOUBLE PRECISION NOT NULL,
+    "activityScore" DOUBLE PRECISION NOT NULL,
+    "selectivityScore" DOUBLE PRECISION NOT NULL,
+    "toxicityScore" DOUBLE PRECISION NOT NULL,
+    "nResults" INTEGER NOT NULL,
+    "rationale" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CandidateFeedbackRun_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PilotMetricsSnapshot" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "windowDays" INTEGER NOT NULL DEFAULT 90,
+    "computedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "alHitRate" DOUBLE PRECISION NOT NULL,
+    "baselineHitRate" DOUBLE PRECISION NOT NULL,
+    "hitRateUplift" DOUBLE PRECISION NOT NULL,
+    "alN" INTEGER NOT NULL,
+    "baselineN" INTEGER NOT NULL,
+    "totalSpendCents" INTEGER NOT NULL,
+    "validatedHits" INTEGER NOT NULL,
+    "costPerHitCents" INTEGER,
+    "medianCycleTimeSec" DOUBLE PRECISION,
+    "p75CycleTimeSec" DOUBLE PRECISION,
+    "stageTimes" JSONB NOT NULL,
+    "screenPositives" INTEGER NOT NULL,
+    "screenNegatives" INTEGER NOT NULL,
+    "falsePositiveRate" DOUBLE PRECISION,
+    "falseNegativeRate" DOUBLE PRECISION,
+
+    CONSTRAINT "PilotMetricsSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ExternalScreeningAdapter" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "name" TEXT NOT NULL,
+    "endpointUrl" TEXT NOT NULL,
+    "authHeader" TEXT NOT NULL DEFAULT 'Authorization',
+    "authScheme" TEXT NOT NULL DEFAULT 'Bearer',
+    "secret" TEXT NOT NULL,
+    "timeoutMs" INTEGER NOT NULL DEFAULT 15000,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ExternalScreeningAdapter_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ExternalScreeningRun" (
+    "id" TEXT NOT NULL,
+    "adapterId" TEXT NOT NULL,
+    "candidateId" TEXT,
+    "smiles" TEXT NOT NULL,
+    "durationMs" INTEGER,
+    "statusCode" INTEGER,
+    "success" BOOLEAN NOT NULL,
+    "rawResponse" JSONB,
+    "normalized" JSONB,
+    "errorMessage" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ExternalScreeningRun_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."LoopCycle" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "status" "public"."LoopCycleStatus" NOT NULL DEFAULT 'OBSERVE',
+    "triggeredBy" "public"."LoopTriggerReason" NOT NULL,
+    "snapshotId" TEXT,
+    "agentSessionId" TEXT,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "failedReason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "LoopCycle_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PhysiologicalSnapshot" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "materializedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "biomarkersJson" JSONB NOT NULL DEFAULT '{}',
+    "riskScoresJson" JSONB NOT NULL DEFAULT '{}',
+    "activeProtocolId" TEXT,
+    "protocolAdherence" DOUBLE PRECISION,
+    "protocolWeeksActive" DOUBLE PRECISION,
+    "dysregulatedPathways" JSONB NOT NULL DEFAULT '[]',
+    "twinLastSimAt" TIMESTAMP(3),
+    "twinPredictionAccuracy" DOUBLE PRECISION,
+    "pendingReflections" JSONB NOT NULL DEFAULT '[]',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PhysiologicalSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ProtocolOutcome" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "loopCycleId" TEXT NOT NULL,
+    "protocolId" TEXT,
+    "cycleStartDate" TIMESTAMP(3) NOT NULL,
+    "cycleEndDate" TIMESTAMP(3),
+    "targetBiomarkers" JSONB NOT NULL DEFAULT '[]',
+    "observedBiomarkers" JSONB NOT NULL DEFAULT '[]',
+    "twinSimulationId" TEXT,
+    "twinPredictionAccuracy" DOUBLE PRECISION,
+    "agentAccuracyScores" JSONB NOT NULL DEFAULT '[]',
+    "overallEfficacy" DOUBLE PRECISION,
+    "reflectedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProtocolOutcome_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ReflectionReport" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "loopCycleId" TEXT NOT NULL,
+    "protocolOutcomeId" TEXT,
+    "insights" JSONB NOT NULL DEFAULT '[]',
+    "agentScoreDeltas" JSONB NOT NULL DEFAULT '{}',
+    "twinAccuracyDelta" DOUBLE PRECISION,
+    "priorAdjustments" JSONB NOT NULL DEFAULT '[]',
+    "disclaimer" TEXT NOT NULL DEFAULT 'Retrospective research analysis — not medical advice.',
+    "signedVc" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ReflectionReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."UserTwinPrior" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "compoundId" TEXT NOT NULL,
+    "outcomeKey" TEXT NOT NULL,
+    "prior" DOUBLE PRECISION NOT NULL,
+    "populationDefault" DOUBLE PRECISION NOT NULL,
+    "n" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserTwinPrior_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ProtocolVersion" (
+    "id" TEXT NOT NULL,
+    "protocolId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "version" INTEGER NOT NULL,
+    "status" "public"."ProtocolVersionStatus" NOT NULL DEFAULT 'DRAFT',
+    "changes" JSONB NOT NULL DEFAULT '[]',
+    "generatedByAgentSessionId" TEXT,
+    "approvedBy" TEXT,
+    "approvedAt" TIMESTAMP(3),
+    "appliedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProtocolVersion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."UserPkProfile" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "compoundId" TEXT NOT NULL,
+    "vd" DOUBLE PRECISION NOT NULL,
+    "cl" DOUBLE PRECISION NOT NULL,
+    "ka" DOUBLE PRECISION NOT NULL,
+    "f" DOUBLE PRECISION NOT NULL DEFAULT 0.7,
+    "n" INTEGER NOT NULL,
+    "rmse" DOUBLE PRECISION NOT NULL,
+    "fittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fittedFromOutcomeIds" JSONB NOT NULL DEFAULT '[]',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserPkProfile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."FederatedNode" (
+    "id" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "name" TEXT NOT NULL,
+    "jurisdiction" TEXT NOT NULL,
+    "endpoint" TEXT,
+    "publicKey" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "FederatedNode_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."FederationConsent" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "nodeId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "scope" JSONB NOT NULL DEFAULT '[]',
+    "grantedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revokedAt" TIMESTAMP(3),
+
+    CONSTRAINT "FederationConsent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."UserPrivacyBudget" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "epsilonUsed" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "epsilonMax" DOUBLE PRECISION NOT NULL DEFAULT 4.0,
+    "queryCount" INTEGER NOT NULL DEFAULT 0,
+    "periodStart" TIMESTAMP(3) NOT NULL,
+    "periodEnd" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserPrivacyBudget_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ProtocolFork" (
+    "id" TEXT NOT NULL,
+    "sourceProtocolId" TEXT NOT NULL,
+    "forkedByUserId" TEXT NOT NULL,
+    "forkNote" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProtocolFork_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."IrbApproval" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "token" TEXT NOT NULL,
+    "institution" TEXT NOT NULL,
+    "studyId" TEXT NOT NULL,
+    "approvedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "revokedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "IrbApproval_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ClinicianCoSign" (
+    "id" TEXT NOT NULL,
+    "resourceType" TEXT NOT NULL,
+    "resourceId" TEXT NOT NULL,
+    "clinicianId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL DEFAULT 'default',
+    "signature" TEXT NOT NULL,
+    "signedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3),
+    "jurisdiction" TEXT,
+    "licenseNumber" TEXT NOT NULL,
+    "licenseVerifiedAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ClinicianCoSign_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
 
@@ -2301,6 +2771,9 @@ CREATE INDEX "Protocol_userId_updatedAt_idx" ON "public"."Protocol"("userId", "u
 
 -- CreateIndex
 CREATE INDEX "Protocol_tenantId_userId_idx" ON "public"."Protocol"("tenantId", "userId");
+
+-- CreateIndex
+CREATE INDEX "Protocol_forkCount_idx" ON "public"."Protocol"("forkCount");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "public"."Account"("provider", "providerAccountId");
@@ -2582,6 +3055,9 @@ CREATE INDEX "MarketplaceDiscovery_category_status_idx" ON "public"."Marketplace
 CREATE INDEX "MarketplaceDiscovery_scientistId_createdAt_idx" ON "public"."MarketplaceDiscovery"("scientistId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "MarketplaceDiscovery_candidateId_idx" ON "public"."MarketplaceDiscovery"("candidateId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "MarketplaceFundingRequest_discoveryId_key" ON "public"."MarketplaceFundingRequest"("discoveryId");
 
 -- CreateIndex
@@ -2831,6 +3307,9 @@ CREATE INDEX "TwinSimulationRun_userId_endpoint_createdAt_idx" ON "public"."Twin
 CREATE INDEX "TwinSimulationRun_inputsHash_idx" ON "public"."TwinSimulationRun"("inputsHash");
 
 -- CreateIndex
+CREATE INDEX "TwinSimulationRun_predictionExpiresAt_twinAccuracyScore_idx" ON "public"."TwinSimulationRun"("predictionExpiresAt", "twinAccuracyScore");
+
+-- CreateIndex
 CREATE INDEX "NofOneTrial_userId_status_idx" ON "public"."NofOneTrial"("userId", "status");
 
 -- CreateIndex
@@ -2926,6 +3405,177 @@ CREATE INDEX "JurisdictionGateDecision_tenantId_jurisdiction_decision_idx" ON "p
 -- CreateIndex
 CREATE INDEX "EvalBenchRun_benchName_ranAt_idx" ON "public"."EvalBenchRun"("benchName", "ranAt");
 
+-- CreateIndex
+CREATE INDEX "ExperimentCandidate_userId_status_idx" ON "public"."ExperimentCandidate"("userId", "status");
+
+-- CreateIndex
+CREATE INDEX "ExperimentCandidate_userId_createdAt_idx" ON "public"."ExperimentCandidate"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ExperimentCandidate_chemblId_idx" ON "public"."ExperimentCandidate"("chemblId");
+
+-- CreateIndex
+CREATE INDEX "ExperimentCandidate_tenantId_status_idx" ON "public"."ExperimentCandidate"("tenantId", "status");
+
+-- CreateIndex
+CREATE INDEX "ExperimentCandidateEvent_candidateId_createdAt_idx" ON "public"."ExperimentCandidateEvent"("candidateId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ExperimentCandidateEvent_actorUserId_idx" ON "public"."ExperimentCandidateEvent"("actorUserId");
+
+-- CreateIndex
+CREATE INDEX "CandidateLabResult_candidateId_assayName_idx" ON "public"."CandidateLabResult"("candidateId", "assayName");
+
+-- CreateIndex
+CREATE INDEX "CandidateLabResult_candidateId_measuredAt_idx" ON "public"."CandidateLabResult"("candidateId", "measuredAt");
+
+-- CreateIndex
+CREATE INDEX "CandidateLabResult_submissionId_idx" ON "public"."CandidateLabResult"("submissionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LabSubmission_tokenHash_key" ON "public"."LabSubmission"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "LabSubmission_candidateId_idx" ON "public"."LabSubmission"("candidateId");
+
+-- CreateIndex
+CREATE INDEX "LabSubmission_userId_status_idx" ON "public"."LabSubmission"("userId", "status");
+
+-- CreateIndex
+CREATE INDEX "CroPartner_tenantId_status_idx" ON "public"."CroPartner"("tenantId", "status");
+
+-- CreateIndex
+CREATE INDEX "CroWorkOrder_tenantId_status_idx" ON "public"."CroWorkOrder"("tenantId", "status");
+
+-- CreateIndex
+CREATE INDEX "CroWorkOrder_candidateId_idx" ON "public"."CroWorkOrder"("candidateId");
+
+-- CreateIndex
+CREATE INDEX "CroWorkOrder_croPartnerId_status_idx" ON "public"."CroWorkOrder"("croPartnerId", "status");
+
+-- CreateIndex
+CREATE INDEX "CroWorkOrder_userId_status_idx" ON "public"."CroWorkOrder"("userId", "status");
+
+-- CreateIndex
+CREATE INDEX "CroWorkOrderEvent_workOrderId_createdAt_idx" ON "public"."CroWorkOrderEvent"("workOrderId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "CandidateFeedbackRun_candidateId_idx" ON "public"."CandidateFeedbackRun"("candidateId");
+
+-- CreateIndex
+CREATE INDEX "CandidateFeedbackRun_userId_idx" ON "public"."CandidateFeedbackRun"("userId");
+
+-- CreateIndex
+CREATE INDEX "PilotMetricsSnapshot_userId_computedAt_idx" ON "public"."PilotMetricsSnapshot"("userId", "computedAt");
+
+-- CreateIndex
+CREATE INDEX "ExternalScreeningAdapter_userId_idx" ON "public"."ExternalScreeningAdapter"("userId");
+
+-- CreateIndex
+CREATE INDEX "ExternalScreeningAdapter_tenantId_idx" ON "public"."ExternalScreeningAdapter"("tenantId");
+
+-- CreateIndex
+CREATE INDEX "ExternalScreeningRun_adapterId_createdAt_idx" ON "public"."ExternalScreeningRun"("adapterId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ExternalScreeningRun_candidateId_idx" ON "public"."ExternalScreeningRun"("candidateId");
+
+-- CreateIndex
+CREATE INDEX "LoopCycle_userId_status_createdAt_idx" ON "public"."LoopCycle"("userId", "status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "LoopCycle_tenantId_status_createdAt_idx" ON "public"."LoopCycle"("tenantId", "status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PhysiologicalSnapshot_userId_materializedAt_idx" ON "public"."PhysiologicalSnapshot"("userId", "materializedAt");
+
+-- CreateIndex
+CREATE INDEX "PhysiologicalSnapshot_tenantId_materializedAt_idx" ON "public"."PhysiologicalSnapshot"("tenantId", "materializedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProtocolOutcome_loopCycleId_key" ON "public"."ProtocolOutcome"("loopCycleId");
+
+-- CreateIndex
+CREATE INDEX "ProtocolOutcome_userId_createdAt_idx" ON "public"."ProtocolOutcome"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ProtocolOutcome_loopCycleId_idx" ON "public"."ProtocolOutcome"("loopCycleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ReflectionReport_loopCycleId_key" ON "public"."ReflectionReport"("loopCycleId");
+
+-- CreateIndex
+CREATE INDEX "ReflectionReport_userId_createdAt_idx" ON "public"."ReflectionReport"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "UserTwinPrior_userId_idx" ON "public"."UserTwinPrior"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserTwinPrior_userId_compoundId_outcomeKey_key" ON "public"."UserTwinPrior"("userId", "compoundId", "outcomeKey");
+
+-- CreateIndex
+CREATE INDEX "ProtocolVersion_protocolId_status_idx" ON "public"."ProtocolVersion"("protocolId", "status");
+
+-- CreateIndex
+CREATE INDEX "ProtocolVersion_userId_createdAt_idx" ON "public"."ProtocolVersion"("userId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProtocolVersion_protocolId_version_key" ON "public"."ProtocolVersion"("protocolId", "version");
+
+-- CreateIndex
+CREATE INDEX "UserPkProfile_userId_idx" ON "public"."UserPkProfile"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserPkProfile_compoundId_idx" ON "public"."UserPkProfile"("compoundId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserPkProfile_userId_compoundId_key" ON "public"."UserPkProfile"("userId", "compoundId");
+
+-- CreateIndex
+CREATE INDEX "FederatedNode_tenantId_active_idx" ON "public"."FederatedNode"("tenantId", "active");
+
+-- CreateIndex
+CREATE INDEX "FederatedNode_jurisdiction_idx" ON "public"."FederatedNode"("jurisdiction");
+
+-- CreateIndex
+CREATE INDEX "FederationConsent_userId_idx" ON "public"."FederationConsent"("userId");
+
+-- CreateIndex
+CREATE INDEX "FederationConsent_nodeId_revokedAt_idx" ON "public"."FederationConsent"("nodeId", "revokedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "FederationConsent_userId_nodeId_key" ON "public"."FederationConsent"("userId", "nodeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserPrivacyBudget_userId_key" ON "public"."UserPrivacyBudget"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserPrivacyBudget_periodEnd_idx" ON "public"."UserPrivacyBudget"("periodEnd");
+
+-- CreateIndex
+CREATE INDEX "ProtocolFork_sourceProtocolId_idx" ON "public"."ProtocolFork"("sourceProtocolId");
+
+-- CreateIndex
+CREATE INDEX "ProtocolFork_forkedByUserId_idx" ON "public"."ProtocolFork"("forkedByUserId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "IrbApproval_token_key" ON "public"."IrbApproval"("token");
+
+-- CreateIndex
+CREATE INDEX "IrbApproval_userId_expiresAt_idx" ON "public"."IrbApproval"("userId", "expiresAt");
+
+-- CreateIndex
+CREATE INDEX "IrbApproval_token_idx" ON "public"."IrbApproval"("token");
+
+-- CreateIndex
+CREATE INDEX "ClinicianCoSign_resourceType_resourceId_idx" ON "public"."ClinicianCoSign"("resourceType", "resourceId");
+
+-- CreateIndex
+CREATE INDEX "ClinicianCoSign_clinicianId_idx" ON "public"."ClinicianCoSign"("clinicianId");
+
+-- CreateIndex
+CREATE INDEX "ClinicianCoSign_signedAt_idx" ON "public"."ClinicianCoSign"("signedAt");
+
 -- AddForeignKey
 ALTER TABLE "public"."User" ADD CONSTRAINT "User_defaultTenantId_fkey" FOREIGN KEY ("defaultTenantId") REFERENCES "public"."Tenant"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -2973,6 +3623,9 @@ ALTER TABLE "public"."Biomarker" ADD CONSTRAINT "Biomarker_protocolId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "public"."Protocol" ADD CONSTRAINT "Protocol_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Protocol" ADD CONSTRAINT "Protocol_forkedFromId_fkey" FOREIGN KEY ("forkedFromId") REFERENCES "public"."Protocol"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -3330,4 +3983,106 @@ ALTER TABLE "public"."TranscriptomicSignature" ADD CONSTRAINT "TranscriptomicSig
 
 -- AddForeignKey
 ALTER TABLE "public"."DrugRepurposingScore" ADD CONSTRAINT "DrugRepurposingScore_signatureId_fkey" FOREIGN KEY ("signatureId") REFERENCES "public"."TranscriptomicSignature"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExperimentCandidate" ADD CONSTRAINT "ExperimentCandidate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExperimentCandidate" ADD CONSTRAINT "ExperimentCandidate_aeonForgeCandidateId_fkey" FOREIGN KEY ("aeonForgeCandidateId") REFERENCES "public"."AeonForgeCandidate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExperimentCandidateEvent" ADD CONSTRAINT "ExperimentCandidateEvent_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "public"."ExperimentCandidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExperimentCandidateEvent" ADD CONSTRAINT "ExperimentCandidateEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CandidateLabResult" ADD CONSTRAINT "CandidateLabResult_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "public"."ExperimentCandidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CandidateLabResult" ADD CONSTRAINT "CandidateLabResult_submissionId_fkey" FOREIGN KEY ("submissionId") REFERENCES "public"."LabSubmission"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."LabSubmission" ADD CONSTRAINT "LabSubmission_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "public"."ExperimentCandidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."LabSubmission" ADD CONSTRAINT "LabSubmission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CroWorkOrder" ADD CONSTRAINT "CroWorkOrder_croPartnerId_fkey" FOREIGN KEY ("croPartnerId") REFERENCES "public"."CroPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CroWorkOrderEvent" ADD CONSTRAINT "CroWorkOrderEvent_workOrderId_fkey" FOREIGN KEY ("workOrderId") REFERENCES "public"."CroWorkOrder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CandidateFeedbackRun" ADD CONSTRAINT "CandidateFeedbackRun_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "public"."ExperimentCandidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CandidateFeedbackRun" ADD CONSTRAINT "CandidateFeedbackRun_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PilotMetricsSnapshot" ADD CONSTRAINT "PilotMetricsSnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExternalScreeningAdapter" ADD CONSTRAINT "ExternalScreeningAdapter_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExternalScreeningRun" ADD CONSTRAINT "ExternalScreeningRun_adapterId_fkey" FOREIGN KEY ("adapterId") REFERENCES "public"."ExternalScreeningAdapter"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."LoopCycle" ADD CONSTRAINT "LoopCycle_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."LoopCycle" ADD CONSTRAINT "LoopCycle_snapshotId_fkey" FOREIGN KEY ("snapshotId") REFERENCES "public"."PhysiologicalSnapshot"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PhysiologicalSnapshot" ADD CONSTRAINT "PhysiologicalSnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolOutcome" ADD CONSTRAINT "ProtocolOutcome_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolOutcome" ADD CONSTRAINT "ProtocolOutcome_protocolId_fkey" FOREIGN KEY ("protocolId") REFERENCES "public"."Protocol"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolOutcome" ADD CONSTRAINT "ProtocolOutcome_loopCycleId_fkey" FOREIGN KEY ("loopCycleId") REFERENCES "public"."LoopCycle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ReflectionReport" ADD CONSTRAINT "ReflectionReport_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ReflectionReport" ADD CONSTRAINT "ReflectionReport_loopCycleId_fkey" FOREIGN KEY ("loopCycleId") REFERENCES "public"."LoopCycle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserTwinPrior" ADD CONSTRAINT "UserTwinPrior_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolVersion" ADD CONSTRAINT "ProtocolVersion_protocolId_fkey" FOREIGN KEY ("protocolId") REFERENCES "public"."Protocol"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolVersion" ADD CONSTRAINT "ProtocolVersion_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserPkProfile" ADD CONSTRAINT "UserPkProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."FederationConsent" ADD CONSTRAINT "FederationConsent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."FederationConsent" ADD CONSTRAINT "FederationConsent_nodeId_fkey" FOREIGN KEY ("nodeId") REFERENCES "public"."FederatedNode"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserPrivacyBudget" ADD CONSTRAINT "UserPrivacyBudget_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolFork" ADD CONSTRAINT "ProtocolFork_sourceProtocolId_fkey" FOREIGN KEY ("sourceProtocolId") REFERENCES "public"."Protocol"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ProtocolFork" ADD CONSTRAINT "ProtocolFork_forkedByUserId_fkey" FOREIGN KEY ("forkedByUserId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."IrbApproval" ADD CONSTRAINT "IrbApproval_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ClinicianCoSign" ADD CONSTRAINT "ClinicianCoSign_clinicianId_fkey" FOREIGN KEY ("clinicianId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

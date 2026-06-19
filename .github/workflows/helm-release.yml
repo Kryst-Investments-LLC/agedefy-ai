@@ -66,14 +66,14 @@ jobs:
           test -n "$APP_DATABASE_SECRET_NAME" || { echo "APP_DATABASE_SECRET_NAME var is required"; exit 1; }
           test -n "$OUTBOX_SECRET_NAME" || { echo "OUTBOX_SECRET_NAME var is required"; exit 1; }
 
-      - name: Generate Postgres Prisma runtime client
-        run: pnpm db:generate:postgres:runtime
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Validate runtime baseline
         run: pnpm validate:runtime
 
       - name: Apply Postgres migrations
-        run: pnpm db:deploy:postgres
+        run: pnpm db:deploy
 
       - name: Setup Helm
         uses: azure/setup-helm@v4

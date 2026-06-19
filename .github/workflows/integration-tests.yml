@@ -62,11 +62,10 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
-      # Use `db:push` (direct schema sync), not `migrate deploy`: the committed
-      # migration history is SQLite-era and cannot apply to Postgres. The CI
-      # database is ephemeral, so a migration ledger is unnecessary here.
-      - name: Sync schema to test database
-        run: pnpm db:push
+      # Apply the same migration path production uses (single Postgres baseline
+      # under prisma/migrations), so CI exercises `migrate deploy` end-to-end.
+      - name: Apply migrations to test database
+        run: pnpm db:deploy
 
       - name: Unit + route tests
         run: pnpm test:unit
