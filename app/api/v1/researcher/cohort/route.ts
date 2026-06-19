@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   // Validate IRB token
   const irbToken = req.headers.get("x-irb-token")

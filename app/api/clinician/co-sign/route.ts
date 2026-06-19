@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   let body: z.infer<typeof postBodySchema>
   try {
@@ -133,7 +133,7 @@ export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   const { searchParams } = new URL(req.url)
   const resourceType = searchParams.get("resourceType")
