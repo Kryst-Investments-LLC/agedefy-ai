@@ -5,10 +5,12 @@
  * pathways. Returns pathways ordered by dysregulation severity so the Clinical
  * Planning Agent can prioritise which sub-agents to spawn.
  *
- * This is intentionally a deterministic lookup — not an LLM call — so it is
- * fast, auditable, and testable. An LLM fallback layer can be added on top when
- * no lookup rule fires (Tier 3 scope).
+ * Primary: deterministic lookup — fast, auditable, testable.
+ * Fallback (Tier 3): LLM pathway mapper fires only when NO lookup rules match;
+ *   results are cached by SHA-256 of the biomarker pattern to avoid redundant calls.
  */
+
+import { createHash } from "node:crypto"
 
 export interface BiomarkerReading {
   value: number
@@ -174,4 +176,138 @@ export function identifyDysregulatedPathways(
 
 function confidenceRank(c: "high" | "medium" | "low"): number {
   return c === "high" ? 2 : c === "medium" ? 1 : 0
+}
+
+/* ------------------------------------------------------------------ */
+/*  LLM fallback (fires only when no lookup rules matched)             */
+/* ------------------------------------------------------------------ */
+
+const LLM_PATHWAY_CACHE = new Map<string, PathwayState[]>()
+
+const KNOWN_PATHWAYS = [
+  "NF-kB / Inflammation",
+  "Insulin Resistance / mTOR",
+  "AMPK / Mitochondrial",
+  "NAD+ / Sirtuin",
+  "Cellular Senescence",
+  "HPA Axis / Cortisol",
+  "GH / IGF-1 Axis",
+  "Thyroid",
+  "Cardiovascular / Lipid",
+  "Renal Function",
+  "Liver / Metabolic",
+  "Sex Hormones",
+  "Epigenetic Aging",
+]
+
+function biomarkerPatternHash(biomarkers: Record<string, BiomarkerReading>): string {
+  const sorted = Object.entries(biomarkers)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, r]) => `${name.toLowerCase()}:${r.value.toFixed(2)}:${r.unit}`)
+    .join("|")
+  return createHash("sha256").update(sorted).digest("hex").slice(0, 24)
+}
+
+async function classifyWithLLM(
+  biomarkers: Record<string, BiomarkerReading>,
+): Promise<PathwayState[]> {
+  // Lazy import to avoid circular deps and keep the non-LLM path zero-cost
+  const { getAIConfig } = await import("@/lib/config/ai-config")
+  const config = getAIConfig()
+  if (!config.providers.anthropic.enabled || !config.providers.anthropic.apiKey) return []
+
+  const hash = biomarkerPatternHash(biomarkers)
+  const cached = LLM_PATHWAY_CACHE.get(hash)
+  if (cached) return cached
+
+  const biomarkerLines = Object.entries(biomarkers)
+    .map(([name, r]) => `  ${name}: ${r.value} ${r.unit}`)
+    .join("\n")
+
+  const prompt = [
+    "You are a biomedical pathway classifier. Given these biomarker readings, identify which of the listed biological pathways are dysregulated.",
+    "",
+    "Biomarkers:",
+    biomarkerLines,
+    "",
+    "Known pathways (use these names verbatim):",
+    KNOWN_PATHWAYS.map((p) => `  - ${p}`).join("\n"),
+    "",
+    'Respond ONLY with a JSON array of objects. Each object must have:',
+    '  "name": string (from the list above)',
+    '  "dysregulationScore": number between 0 and 1',
+    '  "evidenceBiomarkers": array of biomarker names that triggered this',
+    '  "confidence": "high" | "medium" | "low"',
+    "",
+    "Only include pathways that are genuinely dysregulated based on the biomarkers provided.",
+    "If nothing is dysregulated, return an empty array [].",
+    "Do not add any explanation outside the JSON array.",
+  ].join("\n")
+
+  try {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 15_000)
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.providers.anthropic.apiKey}`,
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: config.providers.anthropic.model,
+        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
+        system: "You are a biomedical pathway analysis tool. Respond only with valid JSON.",
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) return []
+
+    const data = (await response.json()) as { content?: { text?: string }[] }
+    const text = data.content?.[0]?.text?.trim()
+    if (!text) return []
+
+    // Extract JSON array from response
+    const match = text.match(/\[[\s\S]*\]/)
+    if (!match) return []
+
+    const parsed = JSON.parse(match[0]) as PathwayState[]
+    if (!Array.isArray(parsed)) return []
+
+    // Sanitize: only allow known pathway names, clamp score to 0–1
+    const sanitized: PathwayState[] = parsed
+      .filter((p) => KNOWN_PATHWAYS.includes(p.name))
+      .map((p) => ({
+        name: p.name,
+        dysregulationScore: Math.max(0, Math.min(1, Number(p.dysregulationScore) || 0)),
+        evidenceBiomarkers: Array.isArray(p.evidenceBiomarkers) ? p.evidenceBiomarkers : [],
+        confidence: (["high", "medium", "low"] as const).includes(p.confidence) ? p.confidence : "low",
+      }))
+      .sort((a, b) => b.dysregulationScore - a.dysregulationScore)
+
+    if (LLM_PATHWAY_CACHE.size > 500) LLM_PATHWAY_CACHE.clear()
+    LLM_PATHWAY_CACHE.set(hash, sanitized)
+    return sanitized
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Like `identifyDysregulatedPathways` but activates the LLM fallback when
+ * no deterministic rules match. Use this in the snapshot materializer where
+ * novel biomarkers (not in the lookup table) may still indicate dysregulation.
+ *
+ * The LLM call is async-safe and never throws — on any failure it returns
+ * the empty deterministic result unchanged.
+ */
+export async function identifyDysregulatedPathwaysWithLLMFallback(
+  biomarkers: Record<string, BiomarkerReading>,
+): Promise<PathwayState[]> {
+  const deterministic = identifyDysregulatedPathways(biomarkers)
+  if (deterministic.length > 0) return deterministic
+  return classifyWithLLM(biomarkers)
 }

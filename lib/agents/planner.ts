@@ -1,5 +1,6 @@
 import type { UserClinicalContext } from '@/lib/ai/clinical-context'
 
+import type { InvestigationPlan } from './clinical-planning-agent'
 import type { AgentPlan, AgentStep, AgentStepStatus } from './types'
 
 const GOAL_PATTERNS: Record<string, RegExp> = {
@@ -70,6 +71,52 @@ export function createPlan(goal: string, _clinicalContext: UserClinicalContext):
     steps,
     createdAt: new Date().toISOString(),
   }
+}
+
+/**
+ * Build an AgentPlan from an InvestigationPlan produced by the ClinicalPlanningAgent.
+ * The sequence and step descriptions come from the investigation plan;
+ * tool calls and verification criteria are derived from the agent class.
+ */
+export function createPlanFromInvestigation(
+  goal: string,
+  _clinicalContext: UserClinicalContext,
+  investigationPlan: InvestigationPlan,
+): AgentPlan {
+  const STEP_META: Record<string, { toolCalls: string[]; expectedOutputKeys: string[]; verificationCriteria?: string }> = {
+    perception: {
+      toolCalls: ['buildClinicalSnapshot'],
+      expectedOutputKeys: ['perception.snapshot'],
+      verificationCriteria: 'Snapshot must include biomarker summary and active medications',
+    },
+    protocol: {
+      toolCalls: ['analyzeProtocols'],
+      expectedOutputKeys: ['protocol.recommendations'],
+      verificationCriteria: 'Recommendations must reference active protocols and biomarker trends',
+    },
+    safety: {
+      toolCalls: ['checkInteractions', 'scanContraindications'],
+      expectedOutputKeys: ['safety.flags'],
+      verificationCriteria: 'All compound recommendations must be checked against user medications',
+    },
+    explainability: {
+      toolCalls: ['buildSummary'],
+      expectedOutputKeys: ['explainability.summary'],
+      verificationCriteria: 'Summary must include safety warnings if any flags were raised',
+    },
+  }
+
+  const steps: AgentStep[] = investigationPlan.agentSequence.map((seq, idx) => ({
+    index: idx,
+    agentClass: seq.agentClass,
+    description: seq.reason,
+    toolCalls: STEP_META[seq.agentClass]?.toolCalls ?? [],
+    expectedOutputKeys: STEP_META[seq.agentClass]?.expectedOutputKeys ?? [],
+    verificationCriteria: STEP_META[seq.agentClass]?.verificationCriteria,
+    status: 'pending',
+  }))
+
+  return { goal, steps, createdAt: new Date().toISOString() }
 }
 
 export function revisePlan(plan: AgentPlan, failedStepIndex: number, error: string): AgentPlan {

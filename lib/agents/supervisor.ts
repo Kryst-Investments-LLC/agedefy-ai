@@ -3,10 +3,11 @@ import { logAudit } from '@/lib/audit'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 
+import { runClinicalPlanningAgent } from './clinical-planning-agent'
 import { DiscoveryAgent } from './discovery-agent'
 import { ExplainabilityAgent } from './explainability-agent'
 import { PerceptionAgent } from './perception-agent'
-import { createPlan, revisePlan } from './planner'
+import { createPlan, revisePlan, createPlanFromInvestigation } from './planner'
 import { ProtocolAgent } from './protocol-agent'
 import { SafetyAgent } from './safety-agent'
 import { Scratchpad } from './scratchpad'
@@ -21,6 +22,33 @@ import type {
   SafetyFlag,
   TraceEmitter,
 } from './types'
+
+// ---------------------------------------------------------------------------
+// Tier 3.4 — Planning quality gate
+// ---------------------------------------------------------------------------
+function validateInvestigationPlan(
+  plan: import('./clinical-planning-agent').InvestigationPlan,
+): import('./clinical-planning-agent').InvestigationPlan | null {
+  if (!plan.agentSequence || plan.agentSequence.length === 0) return null
+
+  const hasSafety = plan.agentSequence.some((s) => s.agentClass === 'safety')
+  if (!hasSafety) return null
+
+  const perceptionIdx = plan.agentSequence.findIndex((s) => s.agentClass === 'perception')
+  const safetyIdx = plan.agentSequence.findIndex((s) => s.agentClass === 'safety')
+  if (perceptionIdx !== -1 && safetyIdx !== -1 && safetyIdx < perceptionIdx) return null
+
+  const explainIdx = plan.agentSequence.findIndex((s) => s.agentClass === 'explainability')
+  if (explainIdx !== -1 && explainIdx !== plan.agentSequence.length - 1) return null
+
+  const seen = new Set<string>()
+  for (const step of plan.agentSequence) {
+    if (seen.has(step.agentClass)) return null
+    seen.add(step.agentClass)
+  }
+
+  return plan
+}
 
 export class SupervisorAgent {
   private userId: string
@@ -50,9 +78,56 @@ export class SupervisorAgent {
     emitTrace({ kind: 'session_start', icon: '🚀', message: `Starting analysis: "${goal.slice(0, 80)}${goal.length > 80 ? '…' : ''}"` })
 
     const clinicalContext = await buildUserClinicalContext(this.userId)
-    let plan = createPlan(goal, clinicalContext)
 
-    emitTrace({ kind: 'plan_created', icon: '📋', message: `Plan created with ${plan.steps.length} steps: ${plan.steps.map((s) => s.agentClass).join(' → ')}` })
+    // Try the adaptive clinical planning agent first.
+    // Falls back to the fixed sequence on any failure — no regression.
+    let plan = createPlan(goal, clinicalContext)
+    try {
+      const snapshot = await db.physiologicalSnapshot.findFirst({
+        where: { userId: this.userId },
+        orderBy: { materializedAt: 'desc' },
+        select: {
+          dysregulatedPathways: true,
+          activeProtocolId: true,
+          protocolWeeksActive: true,
+          biomarkersJson: true,
+        },
+      })
+
+      if (snapshot) {
+        const recentReflections = await db.reflectionReport.findMany({
+          where: { userId: this.userId },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+          select: { insights: true, twinAccuracyDelta: true },
+        })
+
+        const investigationPlan = await runClinicalPlanningAgent(
+          snapshot as Parameters<typeof runClinicalPlanningAgent>[0],
+          recentReflections as Array<{ insights?: string[]; twinAccuracyDelta?: number | null }>,
+        )
+
+        const validated = validateInvestigationPlan(investigationPlan)
+        if (validated) {
+          plan = createPlanFromInvestigation(goal, clinicalContext, validated)
+          emitTrace({
+            kind: 'plan_created',
+            icon: '🧠',
+            message: `Adaptive plan: ${validated.agentSequence.map((s) => s.agentClass).join(' → ')} [pathways: ${validated.priorityPathways.slice(0, 3).join(', ') || 'none'}]`,
+          })
+        } else {
+          emitTrace({ kind: 'plan_created', icon: '📋', message: `Adaptive plan failed quality gate — using default sequence` })
+        }
+      } else {
+        emitTrace({ kind: 'plan_created', icon: '📋', message: `No snapshot found — using default sequence` })
+      }
+    } catch (planningErr) {
+      logger.warn('ClinicalPlanningAgent failed — falling back to default plan', {
+        userId: this.userId,
+        error: String(planningErr),
+      })
+      emitTrace({ kind: 'plan_created', icon: '📋', message: `Plan created with ${plan.steps.length} steps: ${plan.steps.map((s) => s.agentClass).join(' → ')}` })
+    }
 
     const scratchpad = new Scratchpad()
 
