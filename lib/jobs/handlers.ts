@@ -7,11 +7,13 @@ import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 import { materializeSnapshot } from "@/lib/loop/snapshot-materializer"
 import { writeProtocolOutcome } from "@/lib/loop/outcome-writer"
+import { sweepExpiredCycles } from "@/lib/loop/cycle-scheduler"
 import { runReflectionAgent } from "@/lib/agents/reflection-agent"
 import { candidateRealityCheckService } from "@/lib/services/candidate-reality-check"
 import {
   aiGovernanceAuditJobPayloadSchema,
   chemistryRealityCheckJobPayloadSchema,
+  cycleSweepJobPayloadSchema,
   governanceReviewJobPayloadSchema,
   loopObserveJobPayloadSchema,
   loopReflectJobPayloadSchema,
@@ -299,6 +301,14 @@ async function handleLoopObserve(job: OrchestrationJob) {
   return { cycleId, snapshotId: snapshot.id, status: "plan" }
 }
 
+async function handleCycleSweep(job: OrchestrationJob) {
+  const payload = cycleSweepJobPayloadSchema.parse(job.payload)
+  logger.info("Cycle sweep started", { jobId: job.id, triggeredBy: payload.triggeredBy })
+  const result = await sweepExpiredCycles()
+  logger.info("Cycle sweep complete", { ...result })
+  return result
+}
+
 export async function processOrchestrationJob(job: OrchestrationJob) {
   logger.info("Processing orchestration job", {
     jobId: job.id,
@@ -323,6 +333,8 @@ export async function processOrchestrationJob(job: OrchestrationJob) {
       return handleLoopObserve(job)
     case "loop.reflect":
       return handleLoopReflect(job)
+    case "loop.cycle-sweep":
+      return handleCycleSweep(job)
     default:
       throw new Error(`No orchestration handler registered for job type ${job.jobType}`)
   }

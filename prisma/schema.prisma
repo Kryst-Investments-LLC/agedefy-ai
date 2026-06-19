@@ -172,6 +172,7 @@ model User {
   protocolOutcomes            ProtocolOutcome[]               @relation("ProtocolOutcomeUser")
   reflectionReports           ReflectionReport[]              @relation("ReflectionReportUser")
   userTwinPriors              UserTwinPrior[]                 @relation("UserTwinPriorUser")
+  protocolVersions            ProtocolVersion[]               @relation("ProtocolVersionUser")
   driftSweeps                 DriftSweep[]                    @relation("DriftSweepUser")
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
@@ -392,22 +393,27 @@ model Biomarker {
 }
 
 model Protocol {
-  id                    String                @id @default(cuid())
-  tenantId              String                @default("default")
-  userId                String
-  name                  String
-  status                String                @default("draft")
-  description           String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outcomes              InterventionOutcome[]
-  contraindicationScore Float? // Aggregate safety/contraindication score
-  biomarkerMeasurements Biomarker[]
-  labResults            LabResult[]
-  adverseEventReports   AdverseEventReport[]
-  aggregateOutcomes     AggregateOutcome[]    @relation("AggregateOutcomeProtocol")
-  protocolOutcomes      ProtocolOutcome[]     @relation("ProtocolOutcomeProtocol")
+  id                       String                @id @default(cuid())
+  tenantId                 String                @default("default")
+  userId                   String
+  name                     String
+  status                   String                @default("draft")
+  description              String?
+  /// Tier 4: cycle length in days (default 28-day cycle)
+  protocolCycleLengthDays  Int                   @default(28)
+  /// Tier 4: when the current cycle started (null until protocol is activated)
+  protocolCycleStartDate   DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  user                     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outcomes                 InterventionOutcome[]
+  contraindicationScore    Float?
+  biomarkerMeasurements    Biomarker[]
+  labResults               LabResult[]
+  adverseEventReports      AdverseEventReport[]
+  aggregateOutcomes        AggregateOutcome[]    @relation("AggregateOutcomeProtocol")
+  protocolOutcomes         ProtocolOutcome[]     @relation("ProtocolOutcomeProtocol")
+  versions                 ProtocolVersion[]     @relation("ProtocolVersions")
 
   @@index([userId, updatedAt])
   @@index([tenantId, userId])
@@ -3375,4 +3381,43 @@ model UserTwinPrior {
 
   @@unique([userId, compoundId, outcomeKey])
   @@index([userId])
+}
+
+// ─── Tier 4: Protocol version system ─────────────────────────────────────────
+
+enum ProtocolVersionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  APPLIED
+}
+
+/// Immutable audit trail for every autonomous protocol change drafted by the
+/// planning loop. Status progresses DRAFT → PENDING_APPROVAL → APPROVED → APPLIED.
+/// The live Protocol row is NOT modified until status = APPLIED.
+model ProtocolVersion {
+  id                       String                @id @default(cuid())
+  protocolId               String
+  userId                   String
+  tenantId                 String                @default("default")
+  /// Auto-incrementing version number per protocol (1-based)
+  version                  Int
+  status                   ProtocolVersionStatus @default(DRAFT)
+  /// JSON: { field, previousValue, newValue, rationale }[]
+  changes                  Json                  @default("[]")
+  /// Which agent session generated this draft
+  generatedByAgentSessionId String?
+  approvedBy               String?
+  approvedAt               DateTime?
+  appliedAt                DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+
+  protocol Protocol @relation("ProtocolVersions", fields: [protocolId], references: [id], onDelete: Cascade)
+  user     User     @relation("ProtocolVersionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([protocolId, version])
+  @@index([protocolId, status])
+  @@index([userId, createdAt])
 }

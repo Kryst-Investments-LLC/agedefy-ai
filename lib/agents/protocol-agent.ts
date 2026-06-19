@@ -1,3 +1,6 @@
+import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+
 import { checkStackAdherence } from './adherence-checker'
 import type { AdherenceReport } from './adherence-checker'
 import { recordClaim } from './claims'
@@ -130,6 +133,11 @@ export class ProtocolAgent implements BioAgentInterface {
             protocol: protocol.name,
             recommendation: `Biomarkers ${staleBiomarkerNames.join(', ')} remain stable — consider protocol review or dosage adjustment`,
           })
+
+          // Tier 4: write a ProtocolVersion draft so the user/clinician can review
+          void writePlateauDraft(protocol.id, context.userId, context.tenantId, staleBiomarkerNames, context.sessionId).catch((err) =>
+            logger.warn('Failed to write ProtocolVersion draft for plateau', { protocolId: protocol.id, error: String(err) })
+          )
         }
       }
     }
@@ -276,4 +284,50 @@ export class ProtocolAgent implements BioAgentInterface {
       durationMs: Date.now() - start,
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Tier 4.1: ProtocolVersion draft writer
+// Writes a DRAFT ProtocolVersion when plateau is detected.
+// Does NOT modify the live Protocol row — requires explicit approval.
+// ---------------------------------------------------------------------------
+
+async function writePlateauDraft(
+  protocolId: string,
+  userId: string,
+  tenantId: string,
+  staleBiomarkers: string[],
+  agentSessionId: string,
+): Promise<void> {
+  // Get the next version number for this protocol
+  const latestVersion = await db.protocolVersion.findFirst({
+    where: { protocolId },
+    orderBy: { version: 'desc' },
+    select: { version: true },
+  })
+
+  const nextVersion = (latestVersion?.version ?? 0) + 1
+
+  await db.protocolVersion.create({
+    data: {
+      protocolId,
+      userId,
+      tenantId,
+      version: nextVersion,
+      status: 'DRAFT',
+      changes: [
+        {
+          field: 'protocol_review',
+          previousValue: 'active',
+          newValue: 'pending_review',
+          rationale: `Plateau detected in biomarkers: ${staleBiomarkers.join(', ')}. Protocol review or dosage adjustment recommended. AI-generated hypothesis — requires expert validation. Not medical advice.`,
+        },
+      ],
+      generatedByAgentSessionId: agentSessionId,
+    },
+  })
+
+  logger.info('ProtocolVersion draft created for plateau', {
+    protocolId, userId, version: nextVersion, staleBiomarkers,
+  })
 }

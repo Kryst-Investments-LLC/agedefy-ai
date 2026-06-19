@@ -116,3 +116,7 @@ export const loopReflectJobPayloadSchema = z.object({
   userId: z.string().min(1),
   tenantId: z.string().min(1),
 })
+
+export const cycleSweepJobPayloadSchema = z.object({
+  triggeredBy: z.enum(["cron", "manual"]).default("cron"),
+})

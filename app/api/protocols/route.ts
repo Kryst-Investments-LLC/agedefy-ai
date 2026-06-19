@@ -8,6 +8,8 @@ import { buildApiCanonicalEventContext } from "@/lib/events/api-context"
 import { protocolRecordToEvent } from "@/lib/events/ingestion"
 import { PrismaTransactionalHealthEventIngestionService } from "@/lib/events/transactional-ingestion-service"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
+import { scheduleNextReflection } from "@/lib/loop/cycle-scheduler"
+import { logger } from "@/lib/logger"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { protocolSchema } from "@/lib/validators/workspace"
 
@@ -62,6 +64,13 @@ export async function POST(request: Request) {
         entityId: protocol.id,
         details: { name: protocol.name, status: protocol.status },
       })
+
+      // Tier 4.2: schedule the first cycle reflection if protocol is active
+      void scheduleNextReflection(protocol.id).catch((err) =>
+        logger.warn("scheduleNextReflection failed after protocol create", {
+          protocolId: protocol.id, error: String(err),
+        })
+      )
 
       return { status: 201, body: protocol }
     },
