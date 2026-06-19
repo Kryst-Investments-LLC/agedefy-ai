@@ -3036,6 +3036,82 @@ model LabSubmission {
   @@index([userId, status])
 }
 
+// ─── CRO orchestration ─────────────────────────────────────────────────────────
+// A CroWorkOrder is the commercial/escrow layer that routes a FEP-triaged
+// candidate to a partner CRO for physical validation. Lifecycle:
+//   DRAFT → QUOTED → FUNDED → IN_PROGRESS → DELIVERED → RECONCILED  (or CANCELLED)
+// Milestone release is gated on reconciled CandidateLabResult rows; the work
+// order references its candidate/sponsor by id (scalar) and links to the
+// LabSubmission used to physically dispatch the package.
+
+enum CroWorkOrderStatus {
+  DRAFT // created from a triaged candidate; not yet quoted
+  QUOTED // CRO returned a price/quote
+  FUNDED // sponsor funded escrow
+  IN_PROGRESS // lab work underway
+  DELIVERED // results delivered; awaiting reconciliation
+  RECONCILED // results reconciled into CandidateLabResult; loop closed
+  CANCELLED // terminated before completion
+}
+
+model CroPartner {
+  id             String         @id @default(cuid())
+  tenantId       String         @default("default")
+  name           String
+  capabilities   Json // ["biochemical","cellular","animal", assay codes…]
+  turnaroundDays Int?
+  pricingJson    Json? // tiered pricing reference
+  contactEmail   String?
+  status         String         @default("active") // active | paused | offboarded
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  workOrders     CroWorkOrder[]
+
+  @@index([tenantId, status])
+}
+
+model CroWorkOrder {
+  id                  String             @id @default(cuid())
+  tenantId            String             @default("default")
+  candidateId         String // ExperimentCandidate id (scalar — no back-relation)
+  userId              String // sponsoring researcher id (scalar)
+  croPartnerId        String
+  assayType           String // "biochemical" | "cellular" | "animal"
+  requestedAssays     Json // array of assay request objects
+  milestonePlan       Json // [{name, amountCents, status}]
+  quoteCents          Int?
+  currency            String             @default("USD")
+  escrowTransactionId String? // MarketplaceTransaction escrow id, once funded
+  submissionId        String? // LabSubmission id, once dispatched
+  fepGateScoreAtOrder Float? // triage score that justified the order (provenance)
+  status              CroWorkOrderStatus @default(DRAFT)
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  croPartner   CroPartner          @relation(fields: [croPartnerId], references: [id], onDelete: Restrict)
+  statusEvents CroWorkOrderEvent[]
+
+  @@index([tenantId, status])
+  @@index([candidateId])
+  @@index([croPartnerId, status])
+  @@index([userId, status])
+}
+
+model CroWorkOrderEvent {
+  id          String             @id @default(cuid())
+  workOrderId String
+  fromStatus  CroWorkOrderStatus?
+  toStatus    CroWorkOrderStatus
+  actorUserId String?
+  note        String?
+  createdAt   DateTime           @default(now())
+
+  workOrder CroWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId, createdAt])
+}
+
 // ─── Active-learning feedback runs ────────────────────────────────────────────
 model CandidateFeedbackRun {
   id               String   @id @default(cuid())
