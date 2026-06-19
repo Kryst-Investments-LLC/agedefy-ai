@@ -77,7 +77,7 @@ function buildOps(
   let y = TOP_Y
 
   text.push({
-    text: "AgeDefy Causal Effect Estimate Receipt",
+    text: "Biozephyra Causal Effect Estimate Receipt",
     font: "F2",
     size: 16,
     x: MARGIN_X,
@@ -162,7 +162,7 @@ function buildOps(
   })
 
   text.push({
-    text: `Generated ${asciiOnly(generatedAt)} - AgeDefy platform - VC issuer ${asciiOnly(String(vc.issuer ?? "-"))}`,
+    text: `Generated ${asciiOnly(generatedAt)} - Biozephyra platform - VC issuer ${asciiOnly(String(vc.issuer ?? "-"))}`,
     font: "F1",
     size: 8,
     x: MARGIN_X,

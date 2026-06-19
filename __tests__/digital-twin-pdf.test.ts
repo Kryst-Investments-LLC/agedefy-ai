@@ -7,9 +7,9 @@ import { renderDigitalTwinForecastPDF } from "@/lib/wallet/digital-twin-pdf"
 function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCredential {
   const base: VerifiableCredential = {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
-    type: ["VerifiableCredential", "AgeDefyRecommendationReceipt", "DigitalTwinForecastReceipt"],
+    type: ["VerifiableCredential", "BiozephyraRecommendationReceipt", "DigitalTwinForecastReceipt"],
     id: "urn:vc:test-1",
-    issuer: "did:web:vc.agedefy.ai",
+    issuer: "did:web:vc.biozephyra.ai",
     issuanceDate: "2025-01-01T00:00:00Z",
     credentialSubject: {
       id: "user-123",
@@ -35,7 +35,7 @@ function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCrede
         ],
       },
     },
-    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.agedefy.ai#key-1" },
+    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.biozephyra.ai#key-1" },
   }
   return { ...base, ...overrides }
 }
@@ -82,7 +82,7 @@ describe("renderDigitalTwinForecastPDF", () => {
     const txt = new TextDecoder().decode(bytes)
     expect(txt).not.toContain("ILLUSTRATIVE")
     expect(txt).not.toContain("CALIBRATED (partial)")
-    expect(txt).toContain("AgeDefy Digital-Twin Forecast Receipt")
+    expect(txt).toContain("Biozephyra Digital-Twin Forecast Receipt")
   })
 
   it("renders the red illustrative banner when backend is fallback-exponential", () => {

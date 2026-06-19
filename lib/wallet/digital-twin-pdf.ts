@@ -168,7 +168,7 @@ function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[]
   let y = TOP_Y
 
   // Header
-  text.push({ text: "AgeDefy Digital-Twin Forecast Receipt", font: "F2", size: 16, x: MARGIN_X, y })
+  text.push({ text: "Biozephyra Digital-Twin Forecast Receipt", font: "F2", size: 16, x: MARGIN_X, y })
   y -= 22
   text.push({
     text: `Issued ${asciiOnly(String(vc.issuanceDate ?? generatedAt))}  /  VC id ${asciiOnly(String(vc.id ?? "unknown"))}`,
@@ -297,7 +297,7 @@ function buildOps(input: DigitalTwinPdfInput): { text: TextOp[]; rects: RectOp[]
 
   // Footer
   text.push({
-    text: `Generated ${asciiOnly(generatedAt)} - AgeDefy platform - VC issuer ${asciiOnly(String(vc.issuer ?? "-"))}`,
+    text: `Generated ${asciiOnly(generatedAt)} - Biozephyra platform - VC issuer ${asciiOnly(String(vc.issuer ?? "-"))}`,
     font: "F1",
     size: 8,
     x: MARGIN_X,

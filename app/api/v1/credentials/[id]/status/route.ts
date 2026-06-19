@@ -2,11 +2,11 @@
  * GET /api/v1/credentials/[id]/status
  *
  * Public, unauthenticated revocation status check for any Verifiable Credential
- * issued by the agedefy vc-signer. Verifiers (relying parties, audit tools,
+ * issued by the biozephyra vc-signer. Verifiers (relying parties, audit tools,
  * external integrators) hit this endpoint with a credential ID and get back
  * `{ id, revoked: boolean, checkedAt }`.
  *
- * This is the agedefy-side public facade for the vc-signer sidecar's
+ * This is the biozephyra-side public facade for the vc-signer sidecar's
  * /v1/status/:id endpoint, kept on the same origin as the credentials so
  * verifiers don't need to know about internal sidecar URLs.
  *

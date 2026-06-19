@@ -23,10 +23,10 @@ vi.mock("@/lib/sidecars", () => ({
 
 const RECEIPT = {
   id: "urn:vc:fep-1",
-  issuer: "did:web:agedefy.ai",
+  issuer: "did:web:biozephyra.ai",
   proof: { proofValue: "z", verificationMethod: "k" },
   credentialSubject: {
-    id: "urn:agedefy:result:FepResult",
+    id: "urn:biozephyra:result:FepResult",
     resultType: "FepResult",
     validation_status: "computational_estimate",
     disclaimer: "Computational estimate — requires experimental lab validation. Not validated. Not medical advice.",

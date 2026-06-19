@@ -7,7 +7,7 @@ import { SidecarError } from "@/lib/sidecars"
 
 const requestSchema = z.object({
   user_id: z.string().min(1).max(128),
-  cohort: z.string().min(1).max(128).default("agedefy_federated_v1"),
+  cohort: z.string().min(1).max(128).default("biozephyra_federated_v1"),
   exposure: z.string().min(1).max(128),
   outcome: z.string().min(1).max(128),
   covariates: z.array(z.string().min(1).max(64)).max(32).optional(),

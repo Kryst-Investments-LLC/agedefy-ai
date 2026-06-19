@@ -63,7 +63,7 @@ export async function runLongevityDemo(req: DemoRequest): Promise<DemoResult> {
     {
       type: ["LongevityCausalReceipt"],
       credentialSubject: {
-        id: `did:agedefy:user:${req.user_id}`,
+        id: `did:biozephyra:user:${req.user_id}`,
         intervention: req.exposure,
         outcome: req.outcome,
         cohort: req.cohort,

@@ -68,7 +68,7 @@ describe("renderStackComparisonPDF", () => {
     )
     expect(txt).not.toContain("ILLUSTRATIVE")
     expect(txt).not.toContain("CALIBRATED (partial)")
-    expect(txt).toContain("AgeDefy Stack Comparison Report")
+    expect(txt).toContain("Biozephyra Stack Comparison Report")
   })
 
   it("renders the red illustrative banner for fallback policy", () => {

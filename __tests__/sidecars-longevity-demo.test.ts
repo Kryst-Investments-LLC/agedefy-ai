@@ -37,7 +37,7 @@ describe("sidecar clients", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(response))
 
     const result = await causalSidecar.estimate({
-      cohort_source: "agedefy_federated_v1",
+      cohort_source: "biozephyra_federated_v1",
       exposure: "rapamycin_6mg_weekly",
       outcome: "hs_crp",
     })
@@ -120,14 +120,14 @@ describe("runLongevityDemo", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           id: "urn:uuid:1",
-          issuer: "did:web:agedefy.ai",
-          proof: { proofValue: "z123", verificationMethod: "did:web:agedefy.ai#key-1" },
+          issuer: "did:web:biozephyra.ai",
+          proof: { proofValue: "z123", verificationMethod: "did:web:biozephyra.ai#key-1" },
         }),
       )
 
     const result = await runLongevityDemo({
       user_id: "u1",
-      cohort: "agedefy_federated_v1",
+      cohort: "biozephyra_federated_v1",
       exposure: "rapamycin_6mg_weekly",
       outcome: "hs_crp",
     })

@@ -66,7 +66,7 @@ describe("probeSidecars", () => {
     process.env.CAUSAL_SIDECAR_URL = "http://causal.test"
     process.env.VC_SIGNER_URL = "http://vc.test"
     causalHealthMock.mockResolvedValue({ status: "ok", version: "0.2.0" })
-    vcHealthMock.mockResolvedValue({ status: "ok", issuer: "did:web:vc.agedefy.ai" })
+    vcHealthMock.mockResolvedValue({ status: "ok", issuer: "did:web:vc.biozephyra.ai" })
 
     const { probeSidecars } = await import("@/lib/health/sidecar-health")
     const result = await probeSidecars()
@@ -77,7 +77,7 @@ describe("probeSidecars", () => {
     expect(causal.url).toBe("http://causal.test")
     expect(causal.version).toBe("0.2.0")
     expect(vc.status).toBe("ok")
-    expect(vc.version).toBe("did:web:vc.agedefy.ai")
+    expect(vc.version).toBe("did:web:vc.biozephyra.ai")
   })
 
   it("reports `degraded` with error message when a sidecar probe throws", async () => {

@@ -59,7 +59,7 @@ function buildOps(input: StackComparisonPdfInput): { text: TextOp[]; rects: Rect
   let y = TOP_Y
 
   text.push({
-    text: asciiOnly(input.title ?? "AgeDefy Stack Comparison Report"),
+    text: asciiOnly(input.title ?? "Biozephyra Stack Comparison Report"),
     font: "F2",
     size: 16,
     x: MARGIN_X,

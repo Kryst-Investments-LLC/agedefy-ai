@@ -1,5 +1,5 @@
 /**
- * sidecar-health — fan-out probe for every external sidecar that the agedefy
+ * sidecar-health — fan-out probe for every external sidecar that the biozephyra
  * runtime depends on. Each entry reports its env-driven URL, whether the URL
  * is configured (so we can distinguish "deliberately disabled" from "broken
  * deployment"), an overall reachable boolean, and the version string from

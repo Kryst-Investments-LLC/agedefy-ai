@@ -17,7 +17,7 @@
 import { signRecommendation } from "@/lib/recommendations/sign"
 import { causalSidecar, type CausalEstimator } from "@/lib/sidecars"
 
-export type CohortSource = "uk_biobank" | "all_of_us" | "agedefy_federated_v1"
+export type CohortSource = "uk_biobank" | "all_of_us" | "biozephyra_federated_v1"
 
 export interface CausalInferenceAgentInput {
   exposure: string

@@ -31,8 +31,8 @@ function buildRequest(body: unknown) {
 
 const VC = {
   id: "urn:vc:test-1",
-  issuer: "did:web:vc.agedefy.ai",
-  proof: { proofValue: "z-test", verificationMethod: "did:web:vc.agedefy.ai#k1" },
+  issuer: "did:web:vc.biozephyra.ai",
+  proof: { proofValue: "z-test", verificationMethod: "did:web:vc.biozephyra.ai#k1" },
 }
 
 beforeEach(() => {

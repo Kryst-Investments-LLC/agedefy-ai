@@ -8,7 +8,7 @@ function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCrede
     "@context": ["https://www.w3.org/2018/credentials/v1"],
     type: ["VerifiableCredential", "CausalEffectEstimate"],
     id: "urn:vc:causal-pdf-test",
-    issuer: "did:web:vc.agedefy.ai",
+    issuer: "did:web:vc.biozephyra.ai",
     issuanceDate: "2025-01-01T00:00:00Z",
     credentialSubject: {
       id: "user-1",
@@ -23,7 +23,7 @@ function buildVc(overrides: Partial<VerifiableCredential> = {}): VerifiableCrede
         model_version: "causal-sidecar@0.2.0",
       },
     },
-    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.agedefy.ai#key-1" },
+    proof: { proofValue: "z-test", verificationMethod: "did:web:vc.biozephyra.ai#key-1" },
   }
   return { ...base, ...overrides }
 }
@@ -40,7 +40,7 @@ describe("renderCausalEffectPDF", () => {
   it("includes the strong-evidence summary text and core fields", () => {
     const bytes = renderCausalEffectPDF({ vc: buildVc(), generatedAt: "2025-01-01T00:00:00Z" })
     const txt = new TextDecoder().decode(bytes)
-    expect(txt).toContain("AgeDefy Causal Effect Estimate Receipt")
+    expect(txt).toContain("Biozephyra Causal Effect Estimate Receipt")
     expect(txt).toContain("rapamycin")
     expect(txt).toContain("uk_biobank")
     expect(txt).toContain("Strong evidence")

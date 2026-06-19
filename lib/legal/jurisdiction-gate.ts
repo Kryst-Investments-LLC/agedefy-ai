@@ -17,7 +17,7 @@
  *
  * Jurisdiction-aware runtime gate.
  *
- * Reads the rules pack from `.github-private/agents/agedefy/legal-rules`
+ * Reads the rules pack from `.github-private/agents/biozephyra/legal-rules`
  * (loaded ahead of time and supplied here as `ruleSet`) and decides
  * whether a given recommendation may be surfaced to the patient.
  *

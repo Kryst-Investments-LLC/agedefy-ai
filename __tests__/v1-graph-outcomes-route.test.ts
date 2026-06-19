@@ -67,7 +67,7 @@ beforeEach(() => {
   queryRweOutcomesMock.mockReset()
   queryRweOutcomesMock.mockResolvedValue(QUERY_RESULT)
   signResultSafeMock.mockReset()
-  signResultSafeMock.mockResolvedValue({ id: "urn:vc:rwe-1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
+  signResultSafeMock.mockResolvedValue({ id: "urn:vc:rwe-1", issuer: "did:web:biozephyra.ai", proof: { proofValue: "z", verificationMethod: "k" } })
 })
 
 afterEach(() => {

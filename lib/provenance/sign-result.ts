@@ -40,7 +40,7 @@ export const VALIDATION_DISCLAIMERS: Record<ValidationStatus, string> = {
 
 export const DEFAULT_VALIDATION_STATUS: ValidationStatus = "computational_estimate"
 
-const RESULT_URN_PREFIX = "urn:agedefy:result:"
+const RESULT_URN_PREFIX = "urn:biozephyra:result:"
 
 export interface SignResultInput {
   /** Logical artifact type, e.g. "FepResult", "DockResult", "RweOutcomeQuery". */
@@ -87,7 +87,7 @@ export function buildResultCredentialSubject(input: SignResultInput): Record<str
 /** Build the VC issue request for a result receipt (pure). */
 export function buildResultVcRequest(input: SignResultInput): VcIssueRequest {
   return {
-    type: ["AgeDefyResultReceipt", input.resultType],
+    type: ["BiozephyraResultReceipt", input.resultType],
     credentialSubject: buildResultCredentialSubject(input),
     ...(input.expirationDate ? { expirationDate: input.expirationDate } : {}),
   }

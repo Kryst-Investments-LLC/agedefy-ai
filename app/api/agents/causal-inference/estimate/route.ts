@@ -40,7 +40,7 @@ interface EstimateRequestBody {
 const ALLOWED_COHORTS: ReadonlyArray<CausalInferenceAgentInput['cohort']> = [
   'uk_biobank',
   'all_of_us',
-  'agedefy_federated_v1',
+  'biozephyra_federated_v1',
 ]
 
 export async function POST(request: NextRequest) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   }
   if (!body.cohort || !ALLOWED_COHORTS.includes(body.cohort)) {
     return NextResponse.json(
-      { error: 'cohort must be one of uk_biobank, all_of_us, agedefy_federated_v1' },
+      { error: 'cohort must be one of uk_biobank, all_of_us, biozephyra_federated_v1' },
       { status: 400 },
     )
   }

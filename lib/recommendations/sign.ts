@@ -1,5 +1,5 @@
 /**
- * signRecommendation — single-call wrapper that turns any AgeDefy
+ * signRecommendation — single-call wrapper that turns any Biozephyra
  * recommendation payload into a W3C Verifiable Credential signed by the
  * platform vc-signer sidecar.
  *
@@ -18,7 +18,7 @@
  *   return NextResponse.json({ recommendation, vc })
  *
  * The VC's `credentialSubject` includes:
- *   - id: the user DID (did:web:agedefy.ai:users:<userId>)
+ *   - id: the user DID (did:web:biozephyra.ai:users:<userId>)
  *   - recommendationType: caller-supplied type tag
  *   - payload: the full recommendation object
  *   - inputs_hash: SHA-256 of the inputs (if supplied) for tamper-evidence
@@ -41,7 +41,7 @@ export interface SignRecommendationInput {
   expirationDate?: string
 }
 
-const USER_DID_PREFIX = "did:web:agedefy.ai:users:"
+const USER_DID_PREFIX = "did:web:biozephyra.ai:users:"
 
 function hashInputs(inputs: Record<string, unknown>): string {
   const stable = JSON.stringify(inputs, Object.keys(inputs).sort())
@@ -64,7 +64,7 @@ export async function signRecommendation(
 
   return vcSigner.issue(
     {
-      type: ["AgeDefyRecommendationReceipt", input.recommendationType],
+      type: ["BiozephyraRecommendationReceipt", input.recommendationType],
       credentialSubject,
       ...(input.expirationDate ? { expirationDate: input.expirationDate } : {}),
     },

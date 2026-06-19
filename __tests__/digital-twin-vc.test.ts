@@ -21,8 +21,8 @@ afterEach(() => {
 
 const ISSUED_VC = {
   "@context": ["https://www.w3.org/2018/credentials/v1"],
-  type: ["VerifiableCredential", "AgeDefyRecommendationReceipt", "DigitalTwinForecastReceipt"],
-  issuer: "did:web:vc.agedefy.ai",
+  type: ["VerifiableCredential", "BiozephyraRecommendationReceipt", "DigitalTwinForecastReceipt"],
+  issuer: "did:web:vc.biozephyra.ai",
   issuanceDate: "2026-05-12T00:00:00Z",
   credentialSubject: {} as Record<string, unknown>,
   proof: { type: "Ed25519Signature2020", proofValue: "z-mock" },
@@ -83,7 +83,7 @@ describe("runAndSignDigitalTwinAgent", () => {
     // The VC issue call must include the recommendation type tag.
     const issueCall = fetchMock.mock.calls.find((c) => String(c[0]).includes("/v1/issue"))!
     const issueBody = JSON.parse(issueCall[1]?.body as string)
-    expect(issueBody.type).toEqual(["AgeDefyRecommendationReceipt", "DigitalTwinForecastReceipt"])
+    expect(issueBody.type).toEqual(["BiozephyraRecommendationReceipt", "DigitalTwinForecastReceipt"])
 
     // Display-tier fields are baked into the receipt so verifiers don't need
     // to re-run the policy heuristic.

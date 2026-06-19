@@ -94,7 +94,7 @@ beforeEach(() => {
   logAuditMock.mockReset()
   logAuditMock.mockResolvedValue(undefined)
   signResultSafeMock.mockReset()
-  signResultSafeMock.mockResolvedValue({ id: "urn:vc:screen-1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
+  signResultSafeMock.mockResolvedValue({ id: "urn:vc:screen-1", issuer: "did:web:biozephyra.ai", proof: { proofValue: "z", verificationMethod: "k" } })
 })
 
 afterEach(() => {

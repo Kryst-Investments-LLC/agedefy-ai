@@ -101,7 +101,7 @@ beforeEach(() => {
   signResultMock.mockReset()
   signResultMock.mockResolvedValue({
     id: "urn:vc:fep-1",
-    issuer: "did:web:agedefy.ai",
+    issuer: "did:web:biozephyra.ai",
     proof: { proofValue: "z", verificationMethod: "k" },
   })
 })
@@ -306,7 +306,7 @@ describe("POST /api/agents/chemistry/fep", () => {
     const res = await POST(buildRequest(validPayload()))
     const json = (await res.json()) as Record<string, any>
     expect(json.provenance).toEqual(
-      expect.objectContaining({ id: "urn:vc:fep-1", issuer: "did:web:agedefy.ai" }),
+      expect.objectContaining({ id: "urn:vc:fep-1", issuer: "did:web:biozephyra.ai" }),
     )
     expect(signResultMock).toHaveBeenCalledWith(
       expect.objectContaining({ resultType: "FepResult", validationStatus: "computational_estimate" }),

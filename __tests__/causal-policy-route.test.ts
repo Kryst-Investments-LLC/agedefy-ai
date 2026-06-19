@@ -21,7 +21,7 @@ const CAUSAL_VC = {
   "@context": ["https://www.w3.org/2018/credentials/v1"],
   type: ["VerifiableCredential", "CausalEffectEstimate"],
   id: "urn:vc:causal-1",
-  issuer: "did:web:vc.agedefy.ai",
+  issuer: "did:web:vc.biozephyra.ai",
   issuanceDate: "2025-01-01T00:00:00Z",
   credentialSubject: {
     id: "user-1",

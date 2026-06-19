@@ -42,7 +42,7 @@ describe("signStackComparison", () => {
   it("issues a DigitalTwinComparisonReceipt VC with the compact summary payload", async () => {
     issueMock.mockResolvedValue({
       id: "urn:vc:cmp-1",
-      issuer: "did:web:vc.agedefy.ai",
+      issuer: "did:web:vc.biozephyra.ai",
       type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
       proof: { proofValue: "z" },
     })
@@ -57,9 +57,9 @@ describe("signStackComparison", () => {
 
     expect(issueMock).toHaveBeenCalledTimes(1)
     const [req] = issueMock.mock.calls[0]
-    expect(req.type).toEqual(["AgeDefyRecommendationReceipt", "DigitalTwinComparisonReceipt"])
+    expect(req.type).toEqual(["BiozephyraRecommendationReceipt", "DigitalTwinComparisonReceipt"])
     const subject = req.credentialSubject
-    expect(subject.id).toBe("did:web:agedefy.ai:users:user-1")
+    expect(subject.id).toBe("did:web:biozephyra.ai:users:user-1")
     expect(subject.recommendationType).toBe("DigitalTwinComparisonReceipt")
     const payload = subject.payload as Record<string, unknown>
     expect(payload.simulation_id_a).toBe("sim-a")
@@ -78,7 +78,7 @@ describe("signStackComparison", () => {
   it("defaults stack labels when omitted", async () => {
     issueMock.mockResolvedValue({
       id: "urn:vc:cmp-2",
-      issuer: "did:web:vc.agedefy.ai",
+      issuer: "did:web:vc.biozephyra.ai",
       type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
       proof: { proofValue: "z" },
     })
@@ -96,7 +96,7 @@ describe("signStackComparison", () => {
   it("embeds pkpd_profile and a 2-cmt model_version when policy.pkpdProfile is 2-cmt", async () => {
     issueMock.mockResolvedValue({
       id: "urn:vc:cmp-3",
-      issuer: "did:web:vc.agedefy.ai",
+      issuer: "did:web:vc.biozephyra.ai",
       type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
       proof: { proofValue: "z" },
     })
@@ -115,7 +115,7 @@ describe("signStackComparison", () => {
   it("omits model_version (and keeps pkpd_profile=1-cmt) for 1-compartment runs", async () => {
     issueMock.mockResolvedValue({
       id: "urn:vc:cmp-4",
-      issuer: "did:web:vc.agedefy.ai",
+      issuer: "did:web:vc.biozephyra.ai",
       type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
       proof: { proofValue: "z" },
     })
@@ -134,7 +134,7 @@ describe("signStackComparison", () => {
   it("prefers an explicit modelVersion over the synthetic placeholder", async () => {
     issueMock.mockResolvedValue({
       id: "urn:vc:cmp-5",
-      issuer: "did:web:vc.agedefy.ai",
+      issuer: "did:web:vc.biozephyra.ai",
       type: ["VerifiableCredential", "DigitalTwinComparisonReceipt"],
       proof: { proofValue: "z" },
     })

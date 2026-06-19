@@ -75,12 +75,12 @@ describe("buildResultCredentialSubject — fields", () => {
   })
 
   it("defaults subject id to a result URN derived from resultType", () => {
-    expect(buildResultCredentialSubject(base()).id).toBe("urn:agedefy:result:FepResult")
+    expect(buildResultCredentialSubject(base()).id).toBe("urn:biozephyra:result:FepResult")
   })
 
   it("honours an explicit subjectId", () => {
-    const s = buildResultCredentialSubject(base({ subjectId: "did:web:agedefy.ai:users:u1" }))
-    expect(s.id).toBe("did:web:agedefy.ai:users:u1")
+    const s = buildResultCredentialSubject(base({ subjectId: "did:web:biozephyra.ai:users:u1" }))
+    expect(s.id).toBe("did:web:biozephyra.ai:users:u1")
   })
 
   it("omits inputs_hash/model_version/backend_used when not supplied", () => {
@@ -94,7 +94,7 @@ describe("buildResultCredentialSubject — fields", () => {
 describe("buildResultVcRequest", () => {
   it("types the credential as a result receipt tagged with resultType", () => {
     const req = buildResultVcRequest(base())
-    expect(req.type).toEqual(["AgeDefyResultReceipt", "FepResult"])
+    expect(req.type).toEqual(["BiozephyraResultReceipt", "FepResult"])
   })
 
   it("includes expirationDate only when provided", () => {
@@ -150,14 +150,14 @@ describe("extractReceiptStatus", () => {
 describe("signResult", () => {
   beforeEach(() => {
     issueMock.mockReset()
-    issueMock.mockResolvedValue({ id: "urn:vc:1", issuer: "did:web:agedefy.ai", proof: { proofValue: "z", verificationMethod: "k" } })
+    issueMock.mockResolvedValue({ id: "urn:vc:1", issuer: "did:web:biozephyra.ai", proof: { proofValue: "z", verificationMethod: "k" } })
   })
 
   it("calls vcSigner.issue with the built request and traceparent", async () => {
     const vc = await signResult(base({ traceparent: "00-t-s-01" }))
     expect(vc.id).toBe("urn:vc:1")
     expect(issueMock).toHaveBeenCalledWith(
-      expect.objectContaining({ type: ["AgeDefyResultReceipt", "FepResult"] }),
+      expect.objectContaining({ type: ["BiozephyraResultReceipt", "FepResult"] }),
       "00-t-s-01",
     )
   })
