@@ -7,9 +7,11 @@ import {
   CroTransitionError,
   assertTransition,
   canTransition,
+  checkTransitionRequirements,
   isTerminal,
   nextStatuses,
   requiresReconciledResults,
+  type TransitionFacts,
 } from "@/lib/cro/work-order-state"
 
 const S = CroWorkOrderStatus
@@ -86,6 +88,33 @@ describe("requiresReconciledResults", () => {
     expect(requiresReconciledResults(S.RECONCILED)).toBe(true)
     expect(requiresReconciledResults(S.DELIVERED)).toBe(false)
     expect(requiresReconciledResults(S.CANCELLED)).toBe(false)
+  })
+})
+
+describe("checkTransitionRequirements", () => {
+  const none: TransitionFacts = { hasEscrow: false, hasSubmission: false, reconciledResultCount: 0 }
+
+  it("requires escrow for FUNDED", () => {
+    expect(checkTransitionRequirements(S.FUNDED, none).ok).toBe(false)
+    expect(checkTransitionRequirements(S.FUNDED, { ...none, hasEscrow: true }).ok).toBe(true)
+  })
+
+  it("requires a dispatched submission for IN_PROGRESS", () => {
+    expect(checkTransitionRequirements(S.IN_PROGRESS, none).ok).toBe(false)
+    expect(checkTransitionRequirements(S.IN_PROGRESS, { ...none, hasSubmission: true }).ok).toBe(true)
+  })
+
+  it("requires reconciled lab results for RECONCILED (integrity guard)", () => {
+    const blocked = checkTransitionRequirements(S.RECONCILED, none)
+    expect(blocked.ok).toBe(false)
+    expect(blocked.reason).toMatch(/reconciled lab result/i)
+    expect(checkTransitionRequirements(S.RECONCILED, { ...none, reconciledResultCount: 1 }).ok).toBe(true)
+  })
+
+  it("imposes no data requirement on QUOTED, DELIVERED, or CANCELLED", () => {
+    expect(checkTransitionRequirements(S.QUOTED, none).ok).toBe(true)
+    expect(checkTransitionRequirements(S.DELIVERED, none).ok).toBe(true)
+    expect(checkTransitionRequirements(S.CANCELLED, none).ok).toBe(true)
   })
 })
 
