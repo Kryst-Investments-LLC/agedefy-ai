@@ -48,6 +48,9 @@ function buildRequest(body: unknown) {
 }
 
 beforeEach(() => {
+  // Feature is gated behind ENABLE_CAUSAL_SIDECAR (defaults OFF in prod).
+  // These tests exercise the enabled-route behavior, so turn it on.
+  vi.stubEnv("ENABLE_CAUSAL_SIDECAR", "true")
   getServerSessionMock.mockReset()
   applyRateLimitMock.mockClear()
   applyRateLimitMock.mockImplementation(() => null)
@@ -58,6 +61,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.resetModules()
 })
 

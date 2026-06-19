@@ -4,17 +4,43 @@ on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
+
+    # The Prisma schema targets PostgreSQL, so tests need a real Postgres.
+    # SQLite is not a valid substitute: the schema uses Postgres-only types
+    # and the persisted-state tests (circuit-breaker, outbox, idempotency,
+    # canonical-health-events, etc.) exercise the actual datasource.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agedefy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
-      DATABASE_URL: file:./prisma/dev.db
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agedefy_test
+      POSTGRES_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agedefy_test
+      APP_ENV: test
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ci-development-secret-change-before-production
+      NEXTAUTH_SECRET: ci-development-secret-change-before-production-32c
+      MFA_ENCRYPTION_KEY: biozephyra-ci-mfa-encryption-key-material-2026
       ADMIN_EMAILS: admin@example.com
       STRIPE_SECRET_KEY: sk_test_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_placeholder
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,10 +60,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: pnpm db:generate:runtime
+        run: pnpm db:generate
 
-      - name: Apply Prisma migrations
-        run: pnpm db:deploy
+      # Use `db:push` (direct schema sync), not `migrate deploy`: the committed
+      # migration history is SQLite-era and cannot apply to Postgres. The CI
+      # database is ephemeral, so a migration ledger is unnecessary here.
+      - name: Sync schema to test database
+        run: pnpm db:push
 
-      - name: Integration Tests
+      - name: Unit + route tests
+        run: pnpm test:unit
+
+      - name: Live-server integration tests
         run: pnpm test:integration
