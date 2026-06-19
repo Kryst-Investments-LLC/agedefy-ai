@@ -17,6 +17,7 @@ import { hasGdprConsent } from '@/lib/consent'
 import { logAudit } from '@/lib/audit'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { env } from '@/lib/env'
+import { checkEpsilonBudget } from '@/lib/fl/round-aggregation'
 
 /* ------------------------------------------------------------------ */
 /*  Validation                                                        */
@@ -127,6 +128,29 @@ export async function POST(request: NextRequest) {
       { error: 'Model is not accepting training contributions' },
       { status: 409 },
     )
+  }
+
+  // Enforce the participant's cumulative DP budget for this model. The recorded
+  // per-round epsilonSpent values sum to the participant's privacy spend; a new
+  // contribution is rejected if it would push them over budget.
+  const requestedEpsilon = parsed.data.epsilonSpent ?? 0
+  if (requestedEpsilon > 0) {
+    const prior = await db.fLParticipation.aggregate({
+      where: { userId: session.user.id, modelId: parsed.data.modelId },
+      _sum: { epsilonSpent: true },
+    })
+    const budget = checkEpsilonBudget(prior._sum.epsilonSpent ?? 0, requestedEpsilon)
+    if (!budget.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Differential-privacy budget exceeded',
+          code: 'FL_DP_BUDGET_EXCEEDED',
+          reason: budget.reason,
+          remaining: budget.remaining,
+        },
+        { status: 403 },
+      )
+    }
   }
 
   // Record participation
