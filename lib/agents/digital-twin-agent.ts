@@ -16,6 +16,8 @@ import { randomUUID } from 'node:crypto'
 
 import {
   mechanisticSidecar,
+  requestCalibratedSimulation,
+  sendUserPkProfile,
   SidecarError,
   type SimulateRequest,
   type SimulateResponse,
@@ -23,6 +25,7 @@ import {
   type OutcomeTrajectory,
 } from '@/lib/sidecars'
 import { getEffectPriors, type FallbackEffect } from '@/lib/agents/twin-priors'
+import { getPkProfile } from '@/lib/agents/pk-fitter'
 
 const MIN_HORIZON_WEEKS = 4
 const MAX_HORIZON_WEEKS = 1300
@@ -222,6 +225,45 @@ export async function runDigitalTwinAgent(
   input: DigitalTwinAgentInput,
 ): Promise<DigitalTwinAgentOutput> {
   const { horizon, backend } = validate(input)
+
+  // Tier 5.2: attempt calibrated simulation when user has a fitted PK profile
+  if (mechanisticSidecar.configured() && input.userId) {
+    // Use the first intervention's compound as the primary PK profile target
+    const primaryCompoundId = input.interventions[0]?.intervention_id
+    if (primaryCompoundId) {
+      try {
+        const pkProfile = await getPkProfile(input.userId, primaryCompoundId)
+        if (pkProfile.source === "fitted") {
+          // Push profile to sidecar (fire-and-forget)
+          void sendUserPkProfile(input.userId, primaryCompoundId, {
+            vd: pkProfile.vd, cl: pkProfile.cl, ka: pkProfile.ka,
+            f: pkProfile.f, n: pkProfile.n, rmse: pkProfile.rmse,
+          }, input.traceparent)
+
+          const res = await requestCalibratedSimulation(
+            {
+              baseline: input.baseline,
+              interventions: input.interventions,
+              horizon_weeks: horizon,
+              outcomes: input.outcomes,
+              backend,
+              ...(input.randomSeed !== undefined ? { random_seed: input.randomSeed } : {}),
+              ...(input.pkpdTwoCompartment ? { pkpd_two_compartment: true } : {}),
+              userPkParams: {
+                userId: input.userId, compoundId: primaryCompoundId,
+                vd: pkProfile.vd, cl: pkProfile.cl, ka: pkProfile.ka,
+                f: pkProfile.f, n: pkProfile.n, rmse: pkProfile.rmse,
+              },
+            },
+            input.traceparent,
+          )
+          return { ...res, fallbackUsed: false }
+        }
+      } catch {
+        // fall through to standard sidecar path
+      }
+    }
+  }
 
   if (mechanisticSidecar.configured()) {
     try {

@@ -173,6 +173,7 @@ model User {
   reflectionReports           ReflectionReport[]              @relation("ReflectionReportUser")
   userTwinPriors              UserTwinPrior[]                 @relation("UserTwinPriorUser")
   protocolVersions            ProtocolVersion[]               @relation("ProtocolVersionUser")
+  pkProfiles                  UserPkProfile[]                 @relation("UserPkProfileUser")
   driftSweeps                 DriftSweep[]                    @relation("DriftSweepUser")
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
@@ -2512,11 +2513,23 @@ model TwinSimulationRun {
   uncertaintyKind String // "monte_carlo","bootstrap","conformal"
   inputsHash      String // sha256 of inputs — required for reproducible replay
   modelVersion    String
+  // ── Tier 5.3: Extended prediction logging ──
+  /// How many days ahead this prediction applies
+  predictionWindowDays Int                @default(0)
+  /// When the prediction window closes — scored after this date (createdAt + predictionWindowDays)
+  predictionExpiresAt  DateTime?
+  /// Full input assumptions: { compoundIds, doses, baselineBiomarkers, pkParamsUsed, modelVersion }
+  pkParamsUsedJson     Json?
+  /// Full output trajectories: { biomarker, predictedValues: [{ t, value }] }[]
+  outcomeTrajectoryJson Json?
+  /// Accuracy score filled in by twin-scorer.ts after predictionExpiresAt
+  twinAccuracyScore    Float?
   createdAt       DateTime          @default(now())
   twin            PhysiologicalTwin @relation(fields: [twinId], references: [id], onDelete: Cascade)
 
   @@index([userId, endpoint, createdAt])
   @@index([inputsHash])
+  @@index([predictionExpiresAt, twinAccuracyScore])
 }
 
 // ── N-of-1 / adaptive trial engine ────────────────────────────────────
@@ -3420,4 +3433,40 @@ model ProtocolVersion {
   @@unique([protocolId, version])
   @@index([protocolId, status])
   @@index([userId, createdAt])
+}
+
+// ─── Tier 5: Per-user pharmacokinetic profiles ───────────────────────────────
+
+/// Fitted 1-compartment PK parameters for a specific user × compound pair.
+/// Parameters are derived from ≥ 2 completed ProtocolOutcome records and
+/// improve the digital twin accuracy over successive cycles.
+/// Falls back to population defaults (PBPK_DEFAULTS) when no profile exists.
+model UserPkProfile {
+  id                    String   @id @default(cuid())
+  userId                String
+  tenantId              String   @default("default")
+  compoundId            String
+  /// Volume of distribution (L)
+  vd                    Float
+  /// Clearance (L/h)
+  cl                    Float
+  /// First-order absorption rate (h⁻¹)
+  ka                    Float
+  /// Oral bioavailability (0–1)
+  f                     Float    @default(0.7)
+  /// Number of ProtocolOutcome observations used to fit
+  n                     Int
+  /// Root-mean-square error of the fitted model vs observed data
+  rmse                  Float
+  fittedAt              DateTime @default(now())
+  /// JSON array of ProtocolOutcome IDs used in the fit
+  fittedFromOutcomeIds  Json     @default("[]")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation("UserPkProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, compoundId])
+  @@index([userId])
+  @@index([compoundId])
 }

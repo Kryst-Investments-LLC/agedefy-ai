@@ -349,6 +349,70 @@ export const mechanisticSidecar = {
     }),
 }
 
+// ---------- Tier 5.2: Calibrated sidecar extensions ----------
+
+export interface UserPkParamsPayload {
+  userId: string
+  compoundId: string
+  vd: number
+  cl: number
+  ka: number
+  f: number
+  n: number
+  rmse: number
+}
+
+export interface CalibratedSimRequest extends SimulateRequest {
+  /** Per-user fitted PK parameters — sent alongside the simulation request */
+  userPkParams: UserPkParamsPayload
+}
+
+/**
+ * Push a user's fitted PK profile to the mechanistic sidecar so it can use
+ * personalised parameters in subsequent simulation calls.
+ * No-ops gracefully when the sidecar is not configured.
+ */
+export async function sendUserPkProfile(
+  userId: string,
+  compoundId: string,
+  profile: Omit<UserPkParamsPayload, "userId" | "compoundId">,
+  traceparent?: string,
+): Promise<void> {
+  if (!mechanisticSidecar.configured()) return
+
+  try {
+    await request<{ ok: boolean }>(mechanisticSidecar.url(), "/v1/pk-profile", {
+      method: "POST",
+      body: JSON.stringify({ userId, compoundId, ...profile }),
+      traceparent,
+      timeoutMs: 10_000,
+    })
+  } catch {
+    // Non-fatal: the sidecar will fall back to population parameters
+  }
+}
+
+/**
+ * Request a simulation with the user's fitted PK parameters injected.
+ * Falls back to the standard in-process 1-cmt model when the sidecar is
+ * unavailable — the caller must check `fallbackUsed` on the result.
+ */
+export async function requestCalibratedSimulation(
+  params: CalibratedSimRequest,
+  traceparent?: string,
+): Promise<SimulateResponse> {
+  if (!mechanisticSidecar.configured()) {
+    throw new SidecarError("Mechanistic sidecar not configured — use in-process fallback")
+  }
+
+  return request<SimulateResponse>(mechanisticSidecar.url(), "/v1/simulate-calibrated", {
+    method: "POST",
+    body: JSON.stringify(params),
+    traceparent,
+    timeoutMs: 30_000,
+  })
+}
+
 // ---------- screening-sidecar ----------
 
 export interface ScreenRequest {
