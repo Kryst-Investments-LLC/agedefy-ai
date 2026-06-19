@@ -6,12 +6,15 @@ import { createEvidenceDraft, estimateReviewConfidence } from "@/lib/biomedical-
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 import { materializeSnapshot } from "@/lib/loop/snapshot-materializer"
+import { writeProtocolOutcome } from "@/lib/loop/outcome-writer"
+import { runReflectionAgent } from "@/lib/agents/reflection-agent"
 import { candidateRealityCheckService } from "@/lib/services/candidate-reality-check"
 import {
   aiGovernanceAuditJobPayloadSchema,
   chemistryRealityCheckJobPayloadSchema,
   governanceReviewJobPayloadSchema,
   loopObserveJobPayloadSchema,
+  loopReflectJobPayloadSchema,
   notificationJobPayloadSchema,
   researchIngestionMaterializeJobPayloadSchema,
 } from "@/lib/validators/jobs"
@@ -245,6 +248,33 @@ async function handleChemistryRealityCheck(job: OrchestrationJob) {
   return realityCheck
 }
 
+async function handleLoopReflect(job: OrchestrationJob) {
+  const payload = loopReflectJobPayloadSchema.parse(job.payload)
+  const { cycleId, userId, tenantId } = payload
+
+  // Write the outcome record before reflecting (idempotent)
+  await writeProtocolOutcome(cycleId)
+
+  const report = await runReflectionAgent({ loopCycleId: cycleId, userId, tenantId })
+
+  if (!report) {
+    await db.loopCycle.update({
+      where: { id: cycleId },
+      data: { status: "FAILED", failedReason: "reflection_agent_failed", completedAt: new Date() },
+    })
+    logger.warn("Loop REFLECT failed: reflection agent returned null", { cycleId, userId })
+    return { cycleId, status: "failed", reason: "reflection_agent_failed" }
+  }
+
+  await db.loopCycle.update({
+    where: { id: cycleId },
+    data: { status: "COMPLETE", completedAt: new Date() },
+  })
+
+  logger.info("Loop REFLECT complete", { cycleId, reportId: report.reportId, userId })
+  return { cycleId, reportId: report.reportId, status: "complete" }
+}
+
 async function handleLoopObserve(job: OrchestrationJob) {
   const payload = loopObserveJobPayloadSchema.parse(job.payload)
   const { cycleId, userId, tenantId } = payload
@@ -291,6 +321,8 @@ export async function processOrchestrationJob(job: OrchestrationJob) {
       return handleChemistryRealityCheck(job)
     case "loop.observe":
       return handleLoopObserve(job)
+    case "loop.reflect":
+      return handleLoopReflect(job)
     default:
       throw new Error(`No orchestration handler registered for job type ${job.jobType}`)
   }

@@ -110,3 +110,9 @@ export const loopObserveJobPayloadSchema = z.object({
   tenantId: z.string().min(1),
   reason: z.string().min(1),
 })
+
+export const loopReflectJobPayloadSchema = z.object({
+  cycleId: z.string().min(1),
+  userId: z.string().min(1),
+  tenantId: z.string().min(1),
+})

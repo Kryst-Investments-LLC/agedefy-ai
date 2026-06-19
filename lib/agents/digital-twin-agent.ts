@@ -22,6 +22,7 @@ import {
   type SimInterventionInput,
   type OutcomeTrajectory,
 } from '@/lib/sidecars'
+import { getEffectPriors, type FallbackEffect } from '@/lib/agents/twin-priors'
 
 const MIN_HORIZON_WEEKS = 4
 const MAX_HORIZON_WEEKS = 1300
@@ -42,6 +43,8 @@ export interface DigitalTwinAgentInput {
    */
   pkpdTwoCompartment?: boolean
   traceparent?: string
+  /** When provided, personalised priors from UserTwinPrior are used in the fallback. */
+  userId?: string
 }
 
 export interface DigitalTwinAgentOutput extends SimulateResponse {
@@ -61,49 +64,22 @@ export class DigitalTwinValidationError extends Error {
 // ---------------------------------------------------------------------------
 // Effect priors for the fallback simulator
 // ---------------------------------------------------------------------------
-// Each intervention -> outcome mapping declares:
-//   target_delta_pct : steady-state percentage change (negative = lowers)
-//   half_life_weeks  : weeks to reach 50% of steady-state effect
-// These are intentionally conservative literature-anchored estimates used
-// only for the deterministic fallback; real simulation lives in the sidecar.
+// Population-average priors live in lib/agents/twin-priors.ts and are fetched
+// (with per-user personalisation) by runDigitalTwinAgent before calling
+// runFallback. This avoids making runFallback async.
 //
 // Anyone reading the trajectory MUST check `backend_used` and treat
 // `fallback-exponential` as illustrative, not clinical.
 
-interface FallbackEffect {
-  targetDeltaPct: number
-  halfLifeWeeks: number
-}
+type MergedPriors = Record<string, Record<string, FallbackEffect>>
 
-const FALLBACK_EFFECTS: Record<string, Record<string, FallbackEffect>> = {
-  rapamycin: {
-    hs_crp: { targetDeltaPct: -0.25, halfLifeWeeks: 8 },
-    hba1c: { targetDeltaPct: -0.05, halfLifeWeeks: 12 },
-    apob: { targetDeltaPct: -0.08, halfLifeWeeks: 10 },
-  },
-  metformin: {
-    hba1c: { targetDeltaPct: -0.1, halfLifeWeeks: 6 },
-    glucose: { targetDeltaPct: -0.12, halfLifeWeeks: 4 },
-    hs_crp: { targetDeltaPct: -0.08, halfLifeWeeks: 12 },
-  },
-  nmn: {
-    nad_plus: { targetDeltaPct: 0.4, halfLifeWeeks: 4 },
-    hrv: { targetDeltaPct: 0.05, halfLifeWeeks: 12 },
-  },
-  statin: {
-    ldl: { targetDeltaPct: -0.4, halfLifeWeeks: 4 },
-    apob: { targetDeltaPct: -0.3, halfLifeWeeks: 6 },
-    total_cholesterol: { targetDeltaPct: -0.25, halfLifeWeeks: 4 },
-  },
-  berberine: {
-    hba1c: { targetDeltaPct: -0.07, halfLifeWeeks: 8 },
-    ldl: { targetDeltaPct: -0.1, halfLifeWeeks: 8 },
-  },
-}
-
-function effectFor(interventionId: string, outcome: string): FallbackEffect | undefined {
+function effectFrom(
+  priors: MergedPriors,
+  interventionId: string,
+  outcome: string,
+): FallbackEffect | undefined {
   const key = interventionId.toLowerCase().split('_')[0]
-  return FALLBACK_EFFECTS[key]?.[outcome.toLowerCase()]
+  return priors[key]?.[outcome.toLowerCase()]
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +146,7 @@ function runFallback(
   interventions: SimInterventionInput[],
   outcomes: string[],
   horizon: number,
+  priors: MergedPriors,
 ): Record<string, OutcomeTrajectory> {
   const result: Record<string, OutcomeTrajectory> = {}
   const CI_BAND = 0.15
@@ -190,7 +167,7 @@ function runFallback(
       for (const iv of interventions) {
         if (week < iv.start_week) continue
         if (iv.stop_week !== undefined && week >= iv.stop_week) continue
-        const effect = effectFor(iv.intervention_id, outcome)
+        const effect = effectFrom(priors, iv.intervention_id, outcome)
         if (!effect) {
           lowConfidence = true
           continue
@@ -275,11 +252,21 @@ export async function runDigitalTwinAgent(
     }
   }
 
+  // Pre-fetch personalised priors for every intervention (parallel)
+  const priorsEntries = await Promise.all(
+    input.interventions.map(async (iv) => {
+      const p = await getEffectPriors(input.userId, iv.intervention_id)
+      return [iv.intervention_id.toLowerCase().split('_')[0], p] as const
+    }),
+  )
+  const mergedPriors: MergedPriors = Object.fromEntries(priorsEntries)
+
   const trajectories = runFallback(
     input.baseline,
     input.interventions,
     input.outcomes,
     horizon,
+    mergedPriors,
   )
 
   return {

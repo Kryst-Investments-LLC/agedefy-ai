@@ -169,6 +169,9 @@ model User {
   agentSessions               AgentSession[]                  @relation("AgentSessionUser")
   loopCycles                  LoopCycle[]                     @relation("LoopCycleUser")
   physiologicalSnapshots      PhysiologicalSnapshot[]         @relation("PhysiologicalSnapshotUser")
+  protocolOutcomes            ProtocolOutcome[]               @relation("ProtocolOutcomeUser")
+  reflectionReports           ReflectionReport[]              @relation("ReflectionReportUser")
+  userTwinPriors              UserTwinPrior[]                 @relation("UserTwinPriorUser")
   driftSweeps                 DriftSweep[]                    @relation("DriftSweepUser")
   driftNotifications          DriftNotification[]             @relation("DriftNotificationUser")
   experimentCandidates        ExperimentCandidate[]           @relation("ExperimentCandidateUser")
@@ -404,6 +407,7 @@ model Protocol {
   labResults            LabResult[]
   adverseEventReports   AdverseEventReport[]
   aggregateOutcomes     AggregateOutcome[]    @relation("AggregateOutcomeProtocol")
+  protocolOutcomes      ProtocolOutcome[]     @relation("ProtocolOutcomeProtocol")
 
   @@index([userId, updatedAt])
   @@index([tenantId, userId])
@@ -3254,8 +3258,10 @@ model LoopCycle {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
-  user     User                   @relation("LoopCycleUser", fields: [userId], references: [id], onDelete: Cascade)
-  snapshot PhysiologicalSnapshot? @relation("LoopCycleSnapshot", fields: [snapshotId], references: [id], onDelete: SetNull)
+  user             User                   @relation("LoopCycleUser", fields: [userId], references: [id], onDelete: Cascade)
+  snapshot         PhysiologicalSnapshot? @relation("LoopCycleSnapshot", fields: [snapshotId], references: [id], onDelete: SetNull)
+  protocolOutcome  ProtocolOutcome?       @relation("LoopCycleOutcome")
+  reflectionReport ReflectionReport?      @relation("LoopCycleReflection")
 
   @@index([userId, status, createdAt])
   @@index([tenantId, status, createdAt])
@@ -3288,4 +3294,85 @@ model PhysiologicalSnapshot {
 
   @@index([userId, materializedAt])
   @@index([tenantId, materializedAt])
+}
+
+// ─── Tier 2: REFLECT Loop ──────────────────────────────────
+
+/// Per-cycle record comparing predicted vs observed biomarker movements.
+/// Written at the end of each loop cycle before reflection runs.
+model ProtocolOutcome {
+  id                     String    @id @default(cuid())
+  userId                 String
+  tenantId               String    @default("default")
+  loopCycleId            String    @unique
+  protocolId             String?
+  cycleStartDate         DateTime
+  cycleEndDate           DateTime?
+  /// JSON: { name, predictedDelta, predictedDirection }[]
+  targetBiomarkers       Json      @default("[]")
+  /// JSON: { name, observedDelta, observedDirection, confidence }[]
+  observedBiomarkers     Json      @default("[]")
+  twinSimulationId       String?
+  twinPredictionAccuracy Float?
+  /// JSON: { agentName, claimsMade, claimsValidated, score }[]
+  agentAccuracyScores    Json      @default("[]")
+  overallEfficacy        Float?
+  reflectedAt            DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  user     User      @relation("ProtocolOutcomeUser", fields: [userId], references: [id], onDelete: Cascade)
+  protocol Protocol? @relation("ProtocolOutcomeProtocol", fields: [protocolId], references: [id], onDelete: SetNull)
+  cycle    LoopCycle @relation("LoopCycleOutcome", fields: [loopCycleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([loopCycleId])
+}
+
+/// LLM-generated retrospective analysis of a completed loop cycle.
+/// Persisted with a W3C VC receipt; labeled research analysis, not medical advice.
+model ReflectionReport {
+  id                String   @id @default(cuid())
+  userId            String
+  tenantId          String   @default("default")
+  loopCycleId       String   @unique
+  protocolOutcomeId String?
+  /// JSON: string[]
+  insights          Json     @default("[]")
+  /// JSON: Record<string, number> — agentName → accuracy score delta
+  agentScoreDeltas  Json     @default("{}")
+  twinAccuracyDelta Float?
+  /// JSON: { compoundId, outcomeKey, observedDeltaPct, recommendedPriorAdjustment }[]
+  priorAdjustments  Json     @default("[]")
+  disclaimer        String   @default("Retrospective research analysis — not medical advice.")
+  signedVc          Json?
+  createdAt         DateTime @default(now())
+
+  user  User      @relation("ReflectionReportUser", fields: [userId], references: [id], onDelete: Cascade)
+  cycle LoopCycle @relation("LoopCycleReflection", fields: [loopCycleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+/// Per-user, per-compound Bayesian priors for the digital twin fallback simulator.
+/// Personalises the deterministic fallback when the mechanistic sidecar is unavailable.
+model UserTwinPrior {
+  id                String   @id @default(cuid())
+  userId            String
+  tenantId          String   @default("default")
+  compoundId        String
+  outcomeKey        String
+  /// Personalized prior: target delta percentage
+  prior             Float
+  /// Population default — stored at creation for bounding calculations
+  populationDefault Float
+  /// Number of observed cycles that contributed to this prior
+  n                 Int      @default(0)
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  user User @relation("UserTwinPriorUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, compoundId, outcomeKey])
+  @@index([userId])
 }
