@@ -402,7 +402,7 @@ export async function requestCalibratedSimulation(
   traceparent?: string,
 ): Promise<SimulateResponse> {
   if (!mechanisticSidecar.configured()) {
-    throw new SidecarError("Mechanistic sidecar not configured — use in-process fallback")
+    throw new SidecarError("Mechanistic sidecar not configured — use in-process fallback", 503, null)
   }
 
   return request<SimulateResponse>(mechanisticSidecar.url(), "/v1/simulate-calibrated", {

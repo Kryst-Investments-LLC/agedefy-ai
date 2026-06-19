@@ -128,7 +128,7 @@ export async function writeProtocolOutcome(
         protocolId,
         cycleStartDate: cycleStart,
         cycleEndDate: new Date(),
-        observedBiomarkers,
+        observedBiomarkers: observedBiomarkers as unknown as import("@prisma/client").Prisma.InputJsonValue,
       },
       select: { id: true },
     })

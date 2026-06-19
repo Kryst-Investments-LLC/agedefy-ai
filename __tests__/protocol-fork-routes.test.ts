@@ -49,7 +49,7 @@ describe('Protocol Fork routes (M2)', () => {
         method: 'POST', body: JSON.stringify({}),
         headers: { 'content-type': 'application/json' },
       })
-      const res = await forkPost(req, { params: { id: 'prot1' } })
+      const res = await forkPost(req, { params: Promise.resolve({ id: 'prot1' }) })
       expect(res.status).toBe(401)
     })
 
@@ -60,7 +60,7 @@ describe('Protocol Fork routes (M2)', () => {
         method: 'POST', body: JSON.stringify({}),
         headers: { 'content-type': 'application/json' },
       })
-      const res = await forkPost(req, { params: { id: 'prot1' } })
+      const res = await forkPost(req, { params: Promise.resolve({ id: 'prot1' }) })
       expect(res.status).toBe(404)
     })
 
@@ -74,7 +74,7 @@ describe('Protocol Fork routes (M2)', () => {
         method: 'POST', body: JSON.stringify({}),
         headers: { 'content-type': 'application/json' },
       })
-      const res = await forkPost(req, { params: { id: 'prot1' } })
+      const res = await forkPost(req, { params: Promise.resolve({ id: 'prot1' }) })
       expect(res.status).toBe(422)
     })
 
@@ -92,7 +92,7 @@ describe('Protocol Fork routes (M2)', () => {
         body: JSON.stringify({ forkNote: 'interesting' }),
         headers: { 'content-type': 'application/json' },
       })
-      const res = await forkPost(req, { params: { id: 'prot1' } })
+      const res = await forkPost(req, { params: Promise.resolve({ id: 'prot1' }) })
 
       expect(res.status).toBe(200)
       const body = await res.json()

@@ -226,8 +226,8 @@ export async function runReflectionAgent(
     }
 
     const outcome = cycle.protocolOutcome
-    const targets = (outcome?.targetBiomarkers ?? []) as TargetBiomarker[]
-    const observed = (outcome?.observedBiomarkers ?? []) as ObservedBiomarker[]
+    const targets = (outcome?.targetBiomarkers ?? []) as unknown as TargetBiomarker[]
+    const observed = (outcome?.observedBiomarkers ?? []) as unknown as ObservedBiomarker[]
 
     const { directionHits, total, priorAdjustments } = computeAccuracyMetrics(targets, observed)
     const directionAccuracy = total > 0 ? directionHits / total : 0
@@ -258,7 +258,7 @@ export async function runReflectionAgent(
         insights,
         agentScoreDeltas: {},
         twinAccuracyDelta,
-        priorAdjustments,
+        priorAdjustments: priorAdjustments as unknown as import("@prisma/client").Prisma.InputJsonValue,
         disclaimer: REFLECTION_DISCLAIMER,
         signedVc: signedVc ? (signedVc as unknown as import("@prisma/client").Prisma.InputJsonValue) : undefined,
       },

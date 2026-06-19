@@ -89,7 +89,7 @@ async function runWithWebGpu(
   const encoded = Array.from(input.text.slice(0, 512)).map((c) => c.charCodeAt(0))
   const inputTensor = new ort.Tensor("int64", BigInt64Array.from(encoded.map(BigInt)), [1, encoded.length])
 
-  const feeds: Record<string, ort.Tensor> = { [session.inputNames[0]]: inputTensor }
+  const feeds: Record<string, unknown> = { [session.inputNames[0]]: inputTensor }
   const output = await session.run(feeds)
 
   const logits = output[session.outputNames[0]].data as Float32Array
@@ -120,7 +120,7 @@ async function runWithOnnxWasm(
   const encoded = Array.from(input.text.slice(0, 512)).map((c) => c.charCodeAt(0))
   const inputTensor = new ort.Tensor("int64", BigInt64Array.from(encoded.map(BigInt)), [1, encoded.length])
 
-  const feeds: Record<string, ort.Tensor> = { [session.inputNames[0]]: inputTensor }
+  const feeds: Record<string, unknown> = { [session.inputNames[0]]: inputTensor }
   const output = await session.run(feeds)
 
   const logits = output[session.outputNames[0]].data as Float32Array

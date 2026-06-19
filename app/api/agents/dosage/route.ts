@@ -22,7 +22,7 @@ import { logger } from "@/lib/logger"
 import { signResultSafe } from "@/lib/provenance/sign-result"
 import { requireAuthWithRole } from "@/lib/middleware/auth-role"
 
-import { runDosageOptimizer, DOSAGE_DISCLAIMER } from "@/lib/agents/dosage-optimizer"
+import { runDosageOptimizer, DOSAGE_DISCLAIMER, type BiomarkerDelta } from "@/lib/agents/dosage-optimizer"
 
 const biomarkerDeltaSchema = z.object({
   biomarkerName: z.string().min(1),
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   let body: z.infer<typeof bodySchema>
   try {
@@ -60,15 +60,14 @@ export async function POST(req: Request) {
       currentDose: body.currentDose,
       currentUnit: body.currentUnit,
       dosingIntervalHours: body.dosingIntervalHours,
-      observedBiomarkerResponse: body.observedBiomarkerResponse,
+      observedBiomarkerResponse: body.observedBiomarkerResponse as BiomarkerDelta[],
     })
 
     const signedVc = await signResultSafe({
       resultType: "DosageSuggestion",
       subjectId: body.userId,
-      payload: suggestion,
+      result: suggestion as unknown as Record<string, unknown>,
       validationStatus: "ai_generated_hypothesis",
-      agentId: "dosage-optimizer",
     })
 
     await logAudit({

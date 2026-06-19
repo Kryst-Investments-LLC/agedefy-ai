@@ -164,11 +164,14 @@ export async function fitPkProfile(
   try {
     const { db } = await import("@/lib/db")
 
-    // Load completed outcomes for this user × compound pair
+    // Load the user's completed outcomes. NOTE: the current schema has no
+    // compound linkage on Protocol/ProtocolOutcome, so we cannot filter
+    // outcomes by compound here; compoundId scopes only the stored
+    // UserPkProfile (keyed by userId + compoundId). Per-compound outcome
+    // filtering needs a Protocol→compound relation first.
     const outcomes = await db.protocolOutcome.findMany({
       where: {
         userId,
-        protocol: { activeCompoundId: compoundId },
       },
       select: {
         id: true,

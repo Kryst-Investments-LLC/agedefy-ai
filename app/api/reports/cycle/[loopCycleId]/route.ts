@@ -19,8 +19,9 @@ import { generateCycleReport, CYCLE_REPORT_DISCLAIMER } from "@/lib/reports/cycl
 
 export async function GET(
   _req: Request,
-  { params }: { params: { loopCycleId: string } },
+  ctx: { params: Promise<{ loopCycleId: string }> },
 ) {
+  const params = await ctx.params
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 

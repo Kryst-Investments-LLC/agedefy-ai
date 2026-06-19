@@ -24,12 +24,13 @@ const fitBodySchema = z.object({
 
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } },
+  ctx: { params: Promise<{ userId: string }> },
 ) {
+  const params = await ctx.params
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   const { searchParams } = new URL(req.url)
   const compoundId = searchParams.get("compound")
@@ -69,12 +70,13 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { userId: string } },
+  ctx: { params: Promise<{ userId: string }> },
 ) {
+  const params = await ctx.params
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   let body: z.infer<typeof fitBodySchema>
   try {

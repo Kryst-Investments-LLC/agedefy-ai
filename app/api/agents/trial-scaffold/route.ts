@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { signResultSafe } from "@/lib/provenance/sign-result"
 
-import { runTrialScaffolder, TRIAL_SCAFFOLD_DISCLAIMER } from "@/lib/agents/trial-scaffolder"
+import { runTrialScaffolder, TRIAL_SCAFFOLD_DISCLAIMER, type TrialScaffoldInput } from "@/lib/agents/trial-scaffolder"
 
 const bodySchema = z.object({
   hypothesis:               z.string().min(20).max(2000),
@@ -42,14 +42,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const scaffold = await runTrialScaffolder(body)
+    const scaffold = await runTrialScaffolder(body as TrialScaffoldInput)
 
     const signedVc = await signResultSafe({
       resultType: "TrialScaffold",
       subjectId:  session!.user.id,
-      payload:    scaffold,
+      result:     scaffold as unknown as Record<string, unknown>,
       validationStatus: "ai_generated_hypothesis",
-      agentId:    "trial-scaffolder",
     })
 
     await logAudit({

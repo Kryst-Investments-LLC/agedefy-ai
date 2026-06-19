@@ -24,8 +24,9 @@ const patchSchema = z.object({
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
+  const params = await ctx.params
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -53,8 +54,9 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
+  const params = await ctx.params
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 

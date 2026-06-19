@@ -108,6 +108,10 @@ describe('canonical event ingestion helpers', () => {
         createdAt: new Date('2026-03-01T00:00:00.000Z'),
         updatedAt: new Date('2026-03-02T00:00:00.000Z'),
         contraindicationScore: null,
+        protocolCycleLengthDays: 28,
+        protocolCycleStartDate: new Date('2026-03-01T00:00:00.000Z'),
+        forkCount: 0,
+        forkedFromId: null,
       },
       context
     )

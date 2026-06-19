@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
-  if (authError) return authError
+  if (authError instanceof NextResponse) return authError
 
   let body: z.infer<typeof bodySchema>
   try {

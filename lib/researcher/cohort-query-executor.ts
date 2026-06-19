@@ -37,14 +37,15 @@ function buildBiomarkerWhere(filters: FilterNode[]): WhereClause {
     if (f.field.startsWith("biomarkers.")) {
       const parts = f.field.split(".")
       const biomarkerName = parts[1]
-      // Map to Prisma BiomarkerRecord filter
-      const key = "numericValue"
+      // Map to the Prisma Biomarker model: numeric column is `value`, the
+      // biomarker label is `name`.
+      const key = "value"
       if (f.operator === "<")  where[key] = { lt: f.value }
       if (f.operator === "<=") where[key] = { lte: f.value }
       if (f.operator === ">")  where[key] = { gt: f.value }
       if (f.operator === ">=") where[key] = { gte: f.value }
       if (f.operator === "=")  where[key] = f.value
-      where["biomarkerType"] = { name: biomarkerName }
+      where["name"] = biomarkerName
     }
   }
 
@@ -117,12 +118,12 @@ export async function executeCohortQuery(
     const _userWhere = buildUserWhere(query.filters)
 
     // Execute: fetch matching biomarker records
-    const records = await db.biomarkerRecord.findMany({
+    const records = await db.biomarker.findMany({
       where: {
         ...biomarkerWhere,
-        user: { gdprConsentGiven: true },  // only consented users
+        user: { consentGrant: { status: "active" } },  // only consented users
       },
-      select: { numericValue: true, userId: true },
+      select: { value: true, userId: true },
       take: 10_000,  // safety cap
     })
 
@@ -141,7 +142,7 @@ export async function executeCohortQuery(
     }
 
     const values = records
-      .map((r) => r.numericValue)
+      .map((r) => r.value)
       .filter((v): v is number => v !== null)
 
     // Compute all requested aggregates

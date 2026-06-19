@@ -189,7 +189,7 @@ export async function generateCycleReport(loopCycleId: string): Promise<CycleRep
     const report: CycleReport = {
       loopCycleId,
       userId: cycle.userId,
-      cycleStartedAt: cycle.cycleStart.toISOString(),
+      cycleStartedAt: cycle.startedAt.toISOString(),
       cycleCompletedAt: cycle.completedAt?.toISOString() ?? null,
       disclaimer: CYCLE_REPORT_DISCLAIMER,
       biomarkerSummary,

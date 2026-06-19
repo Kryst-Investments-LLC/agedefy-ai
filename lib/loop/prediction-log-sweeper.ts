@@ -67,20 +67,20 @@ async function scoreSimulationRun(
     const { db } = await import("@/lib/db")
 
     // Look up latest biomarker observation for this user × endpoint
-    const biomarker = await db.biomarkerRecord.findFirst({
+    const biomarker = await db.biomarker.findFirst({
       where: {
         userId: run.userId,
-        biomarkerType: { name: run.endpoint },
+        name: run.endpoint,
       },
-      orderBy: { recordedAt: "desc" },
-      select: { numericValue: true },
+      orderBy: { measuredAt: "desc" },
+      select: { value: true },
     })
 
-    if (!biomarker?.numericValue) return null
+    if (biomarker?.value == null) return null
 
     // We use the latest biomarker value as a proxy for delta
     // (absolute value — a limitation of not having a pre-cycle baseline in this query)
-    return computeAccuracyScore(run.predictedMean, biomarker.numericValue)
+    return computeAccuracyScore(run.predictedMean, biomarker.value)
   } catch (err) {
     logger.warn("scoreSimulationRun: lookup failed", { runId: run.id, error: String(err) })
     return null

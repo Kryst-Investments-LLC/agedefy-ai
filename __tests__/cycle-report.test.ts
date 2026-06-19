@@ -32,7 +32,7 @@ import { generateCycleReport, CYCLE_REPORT_DISCLAIMER } from '@/lib/reports/cycl
 const BASE_CYCLE = {
   id: 'cycle-1',
   userId: 'user-1',
-  cycleStart: new Date('2026-05-01'),
+  startedAt: new Date('2026-05-01'),
   completedAt: new Date('2026-05-29'),
   snapshot: { biomarkersJson: '[]', activeProtocolId: 'proto-1' },
   protocolOutcome: null,

@@ -19,7 +19,7 @@ vi.mock('@/lib/db', () => ({
       findMany: mocks.simRunFindMany,
       update: mocks.simRunUpdate,
     },
-    biomarkerRecord: {
+    biomarker: {
       findFirst: mocks.biomarkerFindFirst,
     },
   },
@@ -59,7 +59,7 @@ describe('sweepExpiredPredictions', () => {
 
   it('scores and updates run when biomarker observation found', async () => {
     mocks.simRunFindMany.mockResolvedValue([BASE_RUN])
-    mocks.biomarkerFindFirst.mockResolvedValue({ numericValue: -1.4 }) // close to -1.5
+    mocks.biomarkerFindFirst.mockResolvedValue({ value: -1.4 }) // close to -1.5
     mocks.simRunUpdate.mockResolvedValue({})
     const result = await sweepExpiredPredictions()
     expect(result.scored).toBe(1)
@@ -74,7 +74,7 @@ describe('sweepExpiredPredictions', () => {
 
   it('assigns high accuracy score when observed is within 10% of predicted', async () => {
     mocks.simRunFindMany.mockResolvedValue([{ ...BASE_RUN, predictedMean: -1.0 }])
-    mocks.biomarkerFindFirst.mockResolvedValue({ numericValue: -1.0 }) // exact match
+    mocks.biomarkerFindFirst.mockResolvedValue({ value: -1.0 }) // exact match
     mocks.simRunUpdate.mockResolvedValue({})
     await sweepExpiredPredictions()
     const scoreArg = mocks.simRunUpdate.mock.calls[0][0].data.twinAccuracyScore
@@ -83,7 +83,7 @@ describe('sweepExpiredPredictions', () => {
 
   it('assigns low accuracy score when observed direction reversed', async () => {
     mocks.simRunFindMany.mockResolvedValue([{ ...BASE_RUN, predictedMean: -1.0 }])
-    mocks.biomarkerFindFirst.mockResolvedValue({ numericValue: 0.5 }) // wrong direction
+    mocks.biomarkerFindFirst.mockResolvedValue({ value: 0.5 }) // wrong direction
     mocks.simRunUpdate.mockResolvedValue({})
     await sweepExpiredPredictions()
     const scoreArg = mocks.simRunUpdate.mock.calls[0][0].data.twinAccuracyScore
@@ -92,7 +92,7 @@ describe('sweepExpiredPredictions', () => {
 
   it('counts errors when simRunUpdate throws', async () => {
     mocks.simRunFindMany.mockResolvedValue([BASE_RUN])
-    mocks.biomarkerFindFirst.mockResolvedValue({ numericValue: -1.4 })
+    mocks.biomarkerFindFirst.mockResolvedValue({ value: -1.4 })
     mocks.simRunUpdate.mockRejectedValue(new Error('db error'))
     const result = await sweepExpiredPredictions()
     expect(result.errors).toBe(1)
@@ -106,7 +106,7 @@ describe('sweepExpiredPredictions', () => {
     ])
     // run-1: biomarker found, run-2: not found
     mocks.biomarkerFindFirst
-      .mockResolvedValueOnce({ numericValue: -1.0 })
+      .mockResolvedValueOnce({ value: -1.0 })
       .mockResolvedValueOnce(null)
     mocks.simRunUpdate.mockResolvedValue({})
     const result = await sweepExpiredPredictions()
