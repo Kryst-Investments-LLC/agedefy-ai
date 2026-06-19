@@ -10,6 +10,7 @@ import {
   checkTransitionRequirements,
   type TransitionFacts,
 } from "@/lib/cro/work-order-state"
+import { summarizeValidationOutcome, type ValidationOutcomeSummary } from "@/lib/cro/validation-outcome"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 
@@ -97,15 +98,21 @@ export async function POST(
     // 2. Gather facts for the data-requirement guards.
     const nextEscrowId = parsed.data.escrowTransactionId ?? order.escrowTransactionId
     const nextSubmissionId = parsed.data.submissionId ?? order.submissionId
-    const reconciledResultCount =
+
+    // For loop closure, pull the candidate's reconciled lab-result flags so we
+    // can both gate the transition and summarise the validation outcome.
+    const reconciledResults =
       to === CroWorkOrderStatus.RECONCILED
-        ? await db.candidateLabResult.count({ where: { candidateId: order.candidateId } })
-        : 0
+        ? await db.candidateLabResult.findMany({
+            where: { candidateId: order.candidateId },
+            select: { flag: true },
+          })
+        : []
 
     const facts: TransitionFacts = {
       hasEscrow: Boolean(nextEscrowId),
       hasSubmission: Boolean(nextSubmissionId),
-      reconciledResultCount,
+      reconciledResultCount: reconciledResults.length,
     }
 
     const requirement = checkTransitionRequirements(to, facts)
@@ -113,7 +120,16 @@ export async function POST(
       return NextResponse.json({ error: "Transition requirements not met", reason: requirement.reason }, { status: 422 })
     }
 
+    // Loop closure: derive the validation outcome from real lab data.
+    const validationOutcome: ValidationOutcomeSummary | null =
+      to === CroWorkOrderStatus.RECONCILED ? summarizeValidationOutcome(reconciledResults) : null
+
     // 3. Apply.
+    // On loop closure, record the validation outcome in the event note.
+    const eventNote = validationOutcome
+      ? `validation_outcome=${JSON.stringify(validationOutcome)}${parsed.data.note ? ` | ${parsed.data.note}` : ""}`
+      : parsed.data.note ?? null
+
     const updateData: Prisma.CroWorkOrderUpdateInput = {
       status: to,
       statusEvents: {
@@ -121,7 +137,7 @@ export async function POST(
           fromStatus: order.status,
           toStatus: to,
           actorUserId: session.user.id,
-          note: parsed.data.note ?? null,
+          note: eventNote,
         },
       },
     }
@@ -139,7 +155,7 @@ export async function POST(
       actorEmail: session.user.email ?? undefined,
       action: "cro.work_order_transitioned",
       entityType: "CroWorkOrder",
-      details: { workOrderId: order.id, fromStatus: order.status, toStatus: to },
+      details: { workOrderId: order.id, fromStatus: order.status, toStatus: to, validationOutcome },
     })
 
     logger.info("CRO work order transitioned", {
@@ -149,7 +165,7 @@ export async function POST(
       userId: session.user.id,
     })
 
-    return NextResponse.json({ order: updated })
+    return NextResponse.json({ order: updated, validationOutcome })
   } catch (err) {
     logger.error("Failed to transition CRO work order", { error: err instanceof Error ? err.message : String(err), id })
     return NextResponse.json({ error: "Failed to transition work order" }, { status: 500 })

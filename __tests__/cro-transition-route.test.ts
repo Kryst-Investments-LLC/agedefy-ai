@@ -5,7 +5,7 @@ const getServerSessionMock = vi.fn()
 const logAuditMock = vi.fn(async () => undefined)
 const workOrderFindFirstMock = vi.fn()
 const workOrderUpdateMock = vi.fn()
-const labResultCountMock = vi.fn()
+const labResultFindManyMock = vi.fn()
 
 vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
@@ -16,7 +16,7 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/db", () => ({
   db: {
     croWorkOrder: { findFirst: workOrderFindFirstMock, update: workOrderUpdateMock },
-    candidateLabResult: { count: labResultCountMock },
+    candidateLabResult: { findMany: labResultFindManyMock },
   },
 }))
 
@@ -52,8 +52,8 @@ beforeEach(() => {
   workOrderFindFirstMock.mockResolvedValue(order())
   workOrderUpdateMock.mockReset()
   workOrderUpdateMock.mockResolvedValue({ id: "wo-1", status: "QUOTED", escrowTransactionId: null, submissionId: null, updatedAt: new Date() })
-  labResultCountMock.mockReset()
-  labResultCountMock.mockResolvedValue(0)
+  labResultFindManyMock.mockReset()
+  labResultFindManyMock.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -126,23 +126,39 @@ describe("POST /api/cro/work-orders/[id]/transition", () => {
 
   it("blocks DELIVERED→RECONCILED until reconciled lab results exist (integrity guard)", async () => {
     workOrderFindFirstMock.mockResolvedValue(order({ status: "DELIVERED", escrowTransactionId: "tx-1", submissionId: "sub-1" }))
-    labResultCountMock.mockResolvedValue(0)
+    labResultFindManyMock.mockResolvedValue([])
     const { POST } = await import("@/app/api/cro/work-orders/[id]/transition/route")
     const res = await POST(buildRequest({ to: "RECONCILED" }), { params })
     expect(res.status).toBe(422)
-    expect(labResultCountMock).toHaveBeenCalledWith({ where: { candidateId: "cand-1" } })
+    expect(labResultFindManyMock).toHaveBeenCalledWith({ where: { candidateId: "cand-1" }, select: { flag: true } })
   })
 
-  it("allows DELIVERED→RECONCILED once reconciled lab results exist", async () => {
+  it("closes the loop on DELIVERED→RECONCILED with a validation outcome summary", async () => {
     workOrderFindFirstMock.mockResolvedValue(order({ status: "DELIVERED", escrowTransactionId: "tx-1", submissionId: "sub-1" }))
-    labResultCountMock.mockResolvedValue(2)
+    labResultFindManyMock.mockResolvedValue([{ flag: "active" }, { flag: "active" }, { flag: "inactive" }])
     workOrderUpdateMock.mockResolvedValue({ id: "wo-1", status: "RECONCILED", escrowTransactionId: "tx-1", submissionId: "sub-1", updatedAt: new Date() })
     const { POST } = await import("@/app/api/cro/work-orders/[id]/transition/route")
     const res = await POST(buildRequest({ to: "RECONCILED" }), { params })
     expect(res.status).toBe(200)
+    const json = (await res.json()) as Record<string, any>
+    expect(json.validationOutcome).toMatchObject({ total: 3, active: 2, showedLabActivity: true })
+    expect(json.validationOutcome.hitRate).toBeCloseTo(2 / 3, 5)
+    // outcome is recorded in the status event note and the audit trail
+    expect(workOrderUpdateMock.mock.calls[0][0].data.statusEvents.create.note).toMatch(/validation_outcome=/)
     expect(logAuditMock).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "cro.work_order_transitioned" }),
+      expect.objectContaining({
+        action: "cro.work_order_transitioned",
+        details: expect.objectContaining({ validationOutcome: expect.objectContaining({ active: 2 }) }),
+      }),
     )
+  })
+
+  it("does not summarise an outcome for non-RECONCILED transitions", async () => {
+    const { POST } = await import("@/app/api/cro/work-orders/[id]/transition/route")
+    const res = await POST(buildRequest({ to: "QUOTED" }), { params })
+    const json = (await res.json()) as Record<string, any>
+    expect(json.validationOutcome).toBeNull()
+    expect(labResultFindManyMock).not.toHaveBeenCalled()
   })
 
   it("allows cancelling from a non-terminal state", async () => {
