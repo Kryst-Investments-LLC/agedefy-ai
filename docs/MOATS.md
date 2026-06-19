@@ -1,4 +1,4 @@
-# AgeDefy AI — Strategic Moats
+# Biozephyra — Strategic Moats
 
 > Defensible advantages that lift the platform from "longevity AI assistant" to
 > "indispensable substrate for longevity research and clinical translation."
@@ -39,7 +39,7 @@
   directly to `law-awareness-agent`.
 - **Why moat**: No competitor has rule-level structured compliance
   across 7 jurisdictions with daily freshness gates (we already have
-  `agedefy_legal_rules_stale` Prom alert). Clinics, telehealth networks,
+  `biozephyra_legal_rules_stale` Prom alert). Clinics, telehealth networks,
   and supplement vendors will integrate to inherit our compliance
   posture (B2B revenue + data flywheel).
 - **Research lift**: Researchers querying _"can this molecule legally be

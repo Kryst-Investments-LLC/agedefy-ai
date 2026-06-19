@@ -32,7 +32,7 @@ jobs:
           PROM_PUSHGATEWAY_URL: ${{ secrets.PROM_PUSHGATEWAY_URL }}
         run: |
           $metrics = Get-Content traces/metrics.prom -Raw
-          $url = "$($env:PROM_PUSHGATEWAY_URL.TrimEnd('/'))/metrics/job/agedefy-ai/instance/ci"
+          $url = "$($env:PROM_PUSHGATEWAY_URL.TrimEnd('/'))/metrics/job/biozephyra-ai/instance/ci"
           Invoke-RestMethod -Uri $url -Method Post -Body $metrics -ContentType 'text/plain'
 
       - name: Export JSONL traces to OTLP collector
@@ -41,7 +41,7 @@ jobs:
         env:
           OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
           OTEL_EXPORTER_OTLP_HEADERS:  ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
-          AGEDEFY_ENV: ${{ vars.AGEDEFY_ENV || 'production' }}
+          BIOZEPHYRA_ENV: ${{ vars.BIOZEPHYRA_ENV || 'production' }}
         run: |
           if (Test-Path traces/orchestrator.jsonl) {
             ./tools-v3/v3-trace-otlp-exporter.ps1

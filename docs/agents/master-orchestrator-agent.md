@@ -1,7 +1,7 @@
 # master-orchestrator-agent
 
 > **Version:** 1.0.0
-> **Role:** Top-level router and orchestrator for the AgeDefy AI platform
+> **Role:** Top-level router and orchestrator for the Biozephyra platform
 > **Owners:** @kryst-investments-llc/platform
 
 ## Description

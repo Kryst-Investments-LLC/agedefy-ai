@@ -6,7 +6,7 @@
 
 ## Description
 
-Enforces jurisdiction-specific legal rules for the AgeDefy AI platform.
+Enforces jurisdiction-specific legal rules for the Biozephyra platform.
 Detects the user's country/region/state, loads the correct legal framework,
 validates workflows, and blocks or warns about actions that violate local law.
 

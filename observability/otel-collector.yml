@@ -1,4 +1,4 @@
-# AgeDefy AI — OpenTelemetry Collector configuration.
+# Biozephyra — OpenTelemetry Collector configuration.
 #
 # Receives:
 #   - JSONL traces (one record per line, schemas/trace.schema.json) via
@@ -22,9 +22,9 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-  filelog/agedefy-traces:
+  filelog/biozephyra-traces:
     include:
-      - /var/log/agedefy/traces/*.jsonl
+      - /var/log/biozephyra/traces/*.jsonl
     start_at: end
     operators:
       - type: json_parser
@@ -38,26 +38,26 @@ receivers:
         to: resource["service.instance.id"]
       - type: move
         from: attributes.agent
-        to: attributes["agedefy.agent"]
+        to: attributes["biozephyra.agent"]
       - type: move
         from: attributes.intent
-        to: attributes["agedefy.intent"]
+        to: attributes["biozephyra.intent"]
       - type: move
         from: attributes.decision
-        to: attributes["agedefy.decision"]
+        to: attributes["biozephyra.decision"]
       - type: move
         from: attributes.jurisdiction
-        to: attributes["agedefy.jurisdiction"]
+        to: attributes["biozephyra.jurisdiction"]
 
   prometheus:
     config:
       scrape_configs:
-        - job_name: agedefy-textfile
+        - job_name: biozephyra-textfile
           scrape_interval: 30s
           static_configs:
             - targets: ['localhost:9100']
               labels:
-                platform: agedefy-ai
+                platform: biozephyra-ai
 
 processors:
   batch:
@@ -66,10 +66,10 @@ processors:
   resource:
     attributes:
       - key: service.name
-        value: agedefy-ai
+        value: biozephyra-ai
         action: upsert
       - key: deployment.environment
-        from_attribute: AGEDEFY_ENV
+        from_attribute: BIOZEPHYRA_ENV
         action: upsert
   attributes/redact-pii:
     actions:
@@ -99,7 +99,7 @@ exporters:
     endpoint: https://api.honeycomb.io
     headers:
       x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
-      x-honeycomb-dataset: agedefy-ai
+      x-honeycomb-dataset: biozephyra-ai
 
   prometheusremotewrite:
     endpoint: ${env:PROM_REMOTE_WRITE_URL}
@@ -131,7 +131,7 @@ service:
       exporters: [otlp/tempo, otlphttp/honeycomb]
 
     logs/jsonl:
-      receivers: [filelog/agedefy-traces]
+      receivers: [filelog/biozephyra-traces]
       processors: [resource, attributes/redact-pii, filter/drop-debug, batch]
       exporters: [loki, otlphttp/honeycomb]
 

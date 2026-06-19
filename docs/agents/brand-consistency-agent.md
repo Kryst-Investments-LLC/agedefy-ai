@@ -6,7 +6,7 @@
 
 ## Description
 
-Ensures tone, naming, visuals, and messaging align with the AgeDefy product brand.
+Ensures tone, naming, visuals, and messaging align with the Biozephyra product brand.
 
 
 ## Capabilities

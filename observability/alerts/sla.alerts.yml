@@ -1,58 +1,58 @@
 groups:
-  - name: agedefy-sla
+  - name: biozephyra-sla
     interval: 30s
     rules:
       - alert: AgentLatencyP99Breach
         expr: |
           histogram_quantile(0.99,
-            sum by (le, agent) (rate(agedefy_agent_latency_ms_bucket[5m]))
-          ) > on(agent) group_left() agedefy_agent_sla_p99_ms
+            sum by (le, agent) (rate(biozephyra_agent_latency_ms_bucket[5m]))
+          ) > on(agent) group_left() biozephyra_agent_sla_p99_ms
         for: 10m
         labels:
           severity: page
-          service: agedefy-ai
+          service: biozephyra-ai
         annotations:
           summary: "Agent {{ $labels.agent }} p99 latency above contract"
-          runbook_url: "https://docs.agedefy.ai/runbooks/agent-latency"
+          runbook_url: "https://docs.biozephyra.ai/runbooks/agent-latency"
 
       - alert: BlockRateSpike
         expr: |
-          rate(agedefy_agent_decisions_total{decision="block"}[5m])
-            / ignoring(decision) sum without(decision)(rate(agedefy_agent_decisions_total[5m])) > 0.10
+          rate(biozephyra_agent_decisions_total{decision="block"}[5m])
+            / ignoring(decision) sum without(decision)(rate(biozephyra_agent_decisions_total[5m])) > 0.10
         for: 15m
         labels:
           severity: ticket
-          service: agedefy-ai
+          service: biozephyra-ai
         annotations:
           summary: "{{ $labels.agent }} is blocking >10% of requests"
           description: "Investigate: legal rule update? compromised intent classifier?"
 
       - alert: LegalRulesStale
-        expr: agedefy_legal_rules_stale > 0
+        expr: biozephyra_legal_rules_stale > 0
         for: 1h
         labels:
           severity: ticket
-          service: agedefy-ai
+          service: biozephyra-ai
         annotations:
           summary: "{{ $value }} legal rules older than 365 days"
-          runbook_url: "https://docs.agedefy.ai/runbooks/legal-rules-refresh"
+          runbook_url: "https://docs.biozephyra.ai/runbooks/legal-rules-refresh"
 
       - alert: OTLPExportDLQGrowing
         expr: rate(otlp_dlq_records_total[10m]) > 1
         for: 30m
         labels:
           severity: page
-          service: agedefy-ai
+          service: biozephyra-ai
         annotations:
           summary: "OTLP exporter is dropping records to DLQ"
           description: "Collector likely down or auth invalid. Check secrets."
 
       - alert: EvalRegressionDetected
-        expr: agedefy_eval_pass_rate < 0.95
+        expr: biozephyra_eval_pass_rate < 0.95
         for: 1h
         labels:
           severity: ticket
-          service: agedefy-ai
+          service: biozephyra-ai
         annotations:
           summary: "Eval pass-rate dropped below 95%"
           description: "v3-eval-feedback workflow will open auto-rollback PR."

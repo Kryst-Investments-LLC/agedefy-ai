@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Forward AgeDefy JSONL trace records to an OTLP/HTTP collector.
+  Forward Biozephyra JSONL trace records to an OTLP/HTTP collector.
 
 .DESCRIPTION
   Reads ./traces/orchestrator.jsonl (or any file matching the
@@ -77,7 +77,7 @@ function ConvertTo-OtlpLog {
                elseif ($v -is [bool])              { @{ boolValue = $v } }
                elseif ($v -is [array])             { @{ stringValue = ($v -join ',') } }
                else                                { @{ stringValue = "$v" } }
-        $attrs += @{ key = "agedefy.$k"; value = $val }
+        $attrs += @{ key = "biozephyra.$k"; value = $val }
     }
 
     $tsNano = if ($Record.ts) {
@@ -113,12 +113,12 @@ function Send-Batch {
         resourceLogs = @(@{
             resource = @{
                 attributes = @(
-                    @{ key = 'service.name';            value = @{ stringValue = 'agedefy-ai' } }
-                    @{ key = 'deployment.environment';  value = @{ stringValue = ($env:AGEDEFY_ENV ?? 'dev') } }
+                    @{ key = 'service.name';            value = @{ stringValue = 'biozephyra-ai' } }
+                    @{ key = 'deployment.environment';  value = @{ stringValue = ($env:BIOZEPHYRA_ENV ?? 'dev') } }
                 )
             }
             scopeLogs = @(@{
-                scope      = @{ name = 'agedefy.orchestrator'; version = '1.0.0' }
+                scope      = @{ name = 'biozephyra.orchestrator'; version = '1.0.0' }
                 logRecords = $logRecords
             })
         })

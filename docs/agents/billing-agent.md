@@ -7,7 +7,7 @@
 ## Description
 
 Owns Stripe checkout, customer-portal sessions, webhook reconciliation,
-and plan-tier mapping for the AgeDefy product layer.
+and plan-tier mapping for the Biozephyra product layer.
 
 
 ## Capabilities
