@@ -1,58 +1,93 @@
 /**
- * Graph Data Product — usage billing hook (STUB)
+ * Graph Data Product — usage billing.
  *
- * The graph outcomes API is metered per query (see lib/api-keys/metering.ts,
- * which records every call into APIUsageRecord). This hook is where those
- * metered units would be reported to Stripe as metered-usage records against
- * the graph product's Price.
+ * Reports each metered graph-query to Stripe Billing Meter Events
+ * (stripe.billing.meterEvents.create). The meter must be configured in the
+ * Stripe dashboard with event_name = "biozephyra_graph_query".
  *
- * It is intentionally a STUB:
- *   - It NEVER fabricates a successful charge.
- *   - When STRIPE_GRAPH_PRICE_ID / STRIPE_SECRET_KEY are not configured, it is a
- *     no-op and returns reported:false with a reason.
- *   - When they ARE configured, it currently logs intent and returns
- *     reported:false (reason "stub") — the actual Stripe usage-record call is a
- *     deliberate follow-up so that no live billing path ships untested.
+ * Required Stripe objects:
+ *   1. A Billing Meter   — event_name: "biozephyra_graph_query"
+ *   2. A Price           — recurring.meter = <meter.id>, set via STRIPE_GRAPH_PRICE_ID
+ *   3. The price must be attached to each customer's subscription before queries are
+ *      reported (done at checkout / subscription creation).
  *
- * @module lib/billing/graph-usage-billing
+ * This function is best-effort: billing failures are logged but never bubble up
+ * to the caller — a Stripe outage must not block a legitimate API query.
  */
 
+import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
+import { stripe } from "@/lib/stripe"
 
 export interface GraphUsageBillingInput {
   /** The API key the usage is attributed to. */
   keyId: string
-  /** Billable units for this request (default 1 query = 1 unit). */
+  /** Billable units for this request (1 query = 1 unit by default). */
   units?: number
 }
 
 export type GraphUsageBillingResult =
-  | { reported: false; reason: "not_configured" | "stub" }
-  | { reported: true; priceId: string; units: number }
+  | { reported: false; reason: "not_configured" | "key_not_found" | "no_stripe_customer" | "error" }
+  | { reported: true; units: number; eventId: string }
 
 /**
- * Report metered graph-query usage for billing.
+ * Report metered graph-query usage to Stripe Billing Meter Events.
  *
- * Currently a stub gated behind STRIPE_GRAPH_PRICE_ID — see module docs.
+ * Idempotent within a 1-minute window per key (identifier bucket).
+ * Never throws — returns { reported: false, reason: "error" } on Stripe failures.
  */
 export async function reportGraphQueryUsage(
   input: GraphUsageBillingInput,
 ): Promise<GraphUsageBillingResult> {
-  const priceId = env.STRIPE_GRAPH_PRICE_ID
-  const units = input.units ?? 1
-
-  if (!priceId || !env.STRIPE_SECRET_KEY) {
+  if (!env.STRIPE_GRAPH_PRICE_ID || !stripe) {
     return { reported: false, reason: "not_configured" }
   }
 
-  // TODO(billing): create a Stripe metered-usage record against `priceId` for
-  // this key's subscription item. Kept as a stub so no live billing path ships
-  // without its own test + idempotency handling.
-  logger.info("Graph usage billing (stub) — would report metered usage", {
-    keyId: input.keyId,
-    priceId,
-    units,
-  })
-  return { reported: false, reason: "stub" }
+  try {
+    // Resolve the Stripe customer ID from the API key owner
+    const row = await db.aPIKey.findUnique({
+      where: { id: input.keyId },
+      select: { user: { select: { stripeCustomerId: true } } },
+    })
+
+    if (!row) {
+      logger.warn("Graph usage billing: API key not found", { keyId: input.keyId })
+      return { reported: false, reason: "key_not_found" }
+    }
+
+    const stripeCustomerId = row.user?.stripeCustomerId
+    if (!stripeCustomerId) {
+      logger.warn("Graph usage billing: user has no Stripe customer ID", { keyId: input.keyId })
+      return { reported: false, reason: "no_stripe_customer" }
+    }
+
+    const units = input.units ?? 1
+    // 1-minute idempotency window — prevents double-billing on retries within the same minute
+    const identifier = `graph-${input.keyId}-${Math.floor(Date.now() / 60_000)}`
+
+    const event = await stripe.billing.meterEvents.create({
+      event_name: "biozephyra_graph_query",
+      payload: {
+        value: String(units),
+        stripe_customer_id: stripeCustomerId,
+      },
+      identifier,
+    })
+
+    logger.info("Graph usage reported to Stripe", {
+      keyId: input.keyId,
+      units,
+      eventId: event.identifier,
+      stripeCustomerId,
+    })
+
+    return { reported: true, units, eventId: event.identifier }
+  } catch (err) {
+    logger.warn("Graph usage billing failed — query still served", {
+      keyId: input.keyId,
+      error: String(err),
+    })
+    return { reported: false, reason: "error" }
+  }
 }

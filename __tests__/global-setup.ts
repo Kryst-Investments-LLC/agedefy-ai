@@ -41,11 +41,13 @@ async function runCommand(options: {
 
 async function isServerReady() {
   try {
-    const response = await fetch(`${TEST_SERVER_BASE_URL}/api/health`, {
-      redirect: "manual",
-    })
-    return response.ok || response.status === 404
+    // Any HTTP response (including 503 when Postgres is unavailable) means the
+    // server process is up and routing requests. Individual tests that need DB
+    // will fail with a clear DB error rather than a global setup timeout.
+    await fetch(`${TEST_SERVER_BASE_URL}/api/health`, { redirect: "manual" })
+    return true
   } catch {
+    // Network error (ECONNREFUSED) — server not yet listening
     return false
   }
 }

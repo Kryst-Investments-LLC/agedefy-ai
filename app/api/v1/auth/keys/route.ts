@@ -8,7 +8,7 @@ import { applyRateLimit } from '@/lib/rate-limit'
 
 const createKeySchema = z.object({
   name: z.string().min(1).max(100),
-  scopes: z.array(z.enum(['discover', 'simulate', 'virtual-twin'])).optional(),
+  scopes: z.array(z.enum(['discover', 'simulate', 'virtual-twin', 'graph:read'])).optional(),
   rateLimitPerMin: z.number().int().min(1).max(1000).optional(),
   sandbox: z.boolean().optional(),
   expiresInDays: z.number().int().min(1).max(365).optional(),

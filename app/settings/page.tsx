@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 
@@ -19,6 +20,22 @@ export default async function SettingsPage() {
 
         <div className="mt-8">
           <NotificationSettings />
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-3">Developer</h2>
+          <Link
+            href="/settings/api-keys"
+            className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted transition-colors"
+          >
+            <div>
+              <p className="font-medium">API Keys</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Create and manage keys for programmatic access to the research APIs.
+              </p>
+            </div>
+            <span className="text-muted-foreground ml-4">→</span>
+          </Link>
         </div>
       </main>
     </AppShell>
