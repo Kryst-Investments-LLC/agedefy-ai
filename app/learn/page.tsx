@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/lib/db"
@@ -42,8 +42,8 @@ export default async function LearnPage() {
   const topicCounts = Object.fromEntries(topics.map((t) => [t.topic, t._count]))
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-4xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Evidence-based</p>
@@ -99,5 +99,6 @@ export default async function LearnPage() {
         )}
       </main>
     </div>
+    </AppShell>
   )
 }

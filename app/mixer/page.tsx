@@ -1,10 +1,10 @@
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { CompoundMixer } from "@/components/compound-mixer"
 
 export default function MixerPage() {
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold text-white mb-2">Compound Mixer</h1>
         <p className="text-muted-foreground mb-6">
@@ -14,5 +14,6 @@ export default function MixerPage() {
         <CompoundMixer />
       </main>
     </div>
+    </AppShell>
   )
 }

@@ -1,9 +1,9 @@
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="max-w-3xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-white mb-8">Privacy Policy</h1>
 
@@ -49,5 +49,6 @@ export default function PrivacyPage() {
         </div>
       </main>
     </div>
+    </AppShell>
   )
 }

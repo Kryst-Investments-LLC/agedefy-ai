@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Button } from "@/components/ui/button"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -27,8 +27,8 @@ export default async function ResearchPage() {
     : []
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-5xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Research intelligence</p>
@@ -78,5 +78,6 @@ export default async function ResearchPage() {
         )}
       </main>
     </div>
+    </AppShell>
   )
 }

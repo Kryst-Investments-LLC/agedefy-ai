@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 
 import { AIHealthCoach } from "@/components/ai-health-coach"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { authOptions } from "@/lib/auth"
@@ -29,8 +29,8 @@ export default async function PersonalizationPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-5xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Premium feature</p>
@@ -78,6 +78,7 @@ export default async function PersonalizationPage() {
         <AIHealthCoach />
       </main>
     </div>
+    </AppShell>
   )
 }
 

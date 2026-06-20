@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { Prisma } from '@prisma/client'
 
-import { Navigation } from '@/components/navigation'
+import { AppShell } from "@/components/app-shell"
 import { DiscoveryLab } from '@/components/discovery/discovery-lab'
 import type { DiscoveryCandidateSummary } from '@/components/discovery/types'
 import { gradeCandidate } from '@/lib/aeonforge/evidence-grade'
@@ -69,8 +69,8 @@ export default async function DiscoveryPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-background">
       <main className="container mx-auto py-8">
         <DiscoveryLab
           tier={tier as 'explorer' | 'pro' | 'enterprise'}
@@ -78,5 +78,6 @@ export default async function DiscoveryPage() {
         />
       </main>
     </div>
+    </AppShell>
   )
 }

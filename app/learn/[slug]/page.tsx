@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { db } from "@/lib/db"
@@ -28,8 +28,8 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
   if (!article || !article.published) notFound()
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-3xl px-4 py-10 text-white">
         <Link href="/learn">
           <Button variant="ghost" className="text-gray-400 hover:text-white mb-6">
@@ -101,5 +101,6 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
         </div>
       </main>
     </div>
+    </AppShell>
   )
 }

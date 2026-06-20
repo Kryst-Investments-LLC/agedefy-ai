@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { db } from "@/lib/db"
 
 export default async function PathwaysPage() {
@@ -14,8 +14,8 @@ export default async function PathwaysPage() {
   const categories = [...new Set(pathways.map((p) => p.category))].sort()
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="max-w-5xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-white mb-2">Longevity Pathways</h1>
         <p className="text-gray-400 text-sm mb-8">
@@ -61,5 +61,6 @@ export default async function PathwaysPage() {
         )}
       </main>
     </div>
+    </AppShell>
   )
 }

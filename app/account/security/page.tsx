@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { MfaSetup } from "@/components/mfa-setup"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,8 +49,8 @@ export default function SecurityPage() {
   if (!session?.user) return null
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-2xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Account</p>
@@ -110,5 +110,6 @@ export default function SecurityPage() {
         )}
       </main>
     </div>
+    </AppShell>
   )
 }

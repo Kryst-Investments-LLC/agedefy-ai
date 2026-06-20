@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 
 import { BiomedicalIntelligenceWorkspace } from "@/components/biomedical-intelligence-workspace"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { authOptions } from "@/lib/auth"
 import { calibrateCohortFromOutcomes } from "@/lib/biomedical-intelligence"
 import { db } from "@/lib/db"
@@ -190,8 +190,8 @@ export default async function IntelligencePage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-7xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Biomedical intelligence</p>
@@ -214,5 +214,6 @@ export default async function IntelligencePage() {
         />
       </main>
     </div>
+    </AppShell>
   )
 }

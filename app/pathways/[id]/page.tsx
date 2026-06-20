@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { db } from "@/lib/db"
 
 type Props = {
@@ -40,8 +40,8 @@ export default async function PathwayDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="max-w-4xl mx-auto px-4 py-12">
         <Link href="/pathways" className="text-teal-400 hover:underline text-sm mb-4 inline-block">
           ← All Pathways
@@ -102,5 +102,6 @@ export default async function PathwayDetailPage({ params }: Props) {
         )}
       </main>
     </div>
+    </AppShell>
   )
 }

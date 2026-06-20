@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import type { Metadata } from 'next'
 
-import { Navigation } from '@/components/navigation'
+import { AppShell } from '@/components/app-shell'
 import { ResearcherWorkbench } from '@/components/researcher/researcher-workbench'
 import { authOptions } from '@/lib/auth'
 
@@ -20,11 +20,10 @@ export default async function ResearcherPage() {
   }
 
   return (
-    <>
-      <Navigation />
+    <AppShell>
       <main className="container mx-auto max-w-7xl px-4 py-8">
         <ResearcherWorkbench />
       </main>
-    </>
+    </AppShell>
   )
 }

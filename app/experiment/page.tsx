@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import type { Metadata } from 'next'
 
-import { Navigation } from '@/components/navigation'
+import { AppShell } from '@/components/app-shell'
 import { ExperimentBoard } from '@/components/experiment/experiment-board'
 import { authOptions } from '@/lib/auth'
 
@@ -20,11 +20,10 @@ export default async function ExperimentPage() {
   }
 
   return (
-    <>
-      <Navigation />
+    <AppShell>
       <main className="container mx-auto max-w-[1400px] px-4 py-8">
         <ExperimentBoard />
       </main>
-    </>
+    </AppShell>
   )
 }

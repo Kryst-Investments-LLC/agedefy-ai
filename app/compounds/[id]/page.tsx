@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,8 +47,8 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
   ]
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-4xl px-4 py-10 text-white">
         <Link href="/mixer">
           <Button variant="ghost" className="text-gray-400 hover:text-white mb-4">
@@ -191,5 +191,6 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
         </p>
       </main>
     </div>
+    </AppShell>
   )
 }

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { LabTestingDashboard } from "@/components/lab-testing-dashboard"
 import { authOptions } from "@/lib/auth"
 import { hasPremiumEntitlement } from "@/lib/entitlements"
@@ -14,8 +14,8 @@ export default async function LabTestingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="max-w-5xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-white mb-2">Lab Testing</h1>
         <p className="text-gray-400 text-sm mb-8">
@@ -24,5 +24,6 @@ export default async function LabTestingPage() {
         <LabTestingDashboard />
       </main>
     </div>
+    </AppShell>
   )
 }

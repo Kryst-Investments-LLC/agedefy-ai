@@ -10,7 +10,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
-import { Navigation } from '@/components/navigation'
+import { AppShell } from "@/components/app-shell"
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { env } from '@/lib/env'
@@ -76,8 +76,8 @@ export default async function AdminFLDashboardPage() {
   const budgetPercent = budgetTotal > 0 ? Math.min((budgetUsed / budgetTotal) * 100, 100) : 0
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-7xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">
@@ -294,5 +294,6 @@ export default async function AdminFLDashboardPage() {
         </section>
       </main>
     </div>
+    </AppShell>
   )
 }

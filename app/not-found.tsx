@@ -1,11 +1,11 @@
 import Link from "next/link"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Footer } from "@/components/footer"
 
 export default function NotFound() {
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
-      <Navigation />
+    <AppShell>
+      <div className="dark min-h-full bg-background text-foreground">
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
         <p className="text-sm uppercase tracking-[0.2em] text-primary">404</p>
         <h1 className="mt-4 text-5xl font-bold">Page not found</h1>
@@ -29,5 +29,6 @@ export default function NotFound() {
       </main>
       <Footer />
     </div>
+    </AppShell>
   )
 }

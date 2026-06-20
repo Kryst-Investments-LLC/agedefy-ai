@@ -6,7 +6,7 @@ import { AdminMarketplacePayoutQueue } from "@/components/admin-marketplace-payo
 import { AdminOrchestrationOverview } from "@/components/admin-orchestration-overview"
 import { AdminReviewConsole } from "@/components/admin-review-console"
 import { AdminUserManagement } from "@/components/admin-user-management"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
@@ -114,8 +114,8 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-full bg-gray-900">
       <main className="mx-auto max-w-7xl px-4 py-10 text-white">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Enterprise control</p>
@@ -254,5 +254,6 @@ export default async function AdminPage() {
         />
       </main>
     </div>
+    </AppShell>
   )
 }
