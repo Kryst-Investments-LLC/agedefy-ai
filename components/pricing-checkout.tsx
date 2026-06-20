@@ -9,7 +9,6 @@ import {
   getEnterprisePricingPlan,
   getRequiredFeatureNotice,
   getSelfServePricingPlan,
-  pricingRegionBooks,
   resolveAICreditPackPrice,
   resolveSubscriptionPrice,
   servicePricing,
@@ -26,7 +25,6 @@ type PricingCheckoutProps = {
 }
 
 const orderedPlanKeys: PricingPlanKey[] = ["core", "plus", "clinic", "enterprise"]
-const orderedRegionKeys: PricingRegionTierKey[] = ["tier1", "tier2", "tier3"]
 const orderedPackKeys = ["starter", "growth", "scale"] as const
 
 export function PricingCheckout({
@@ -37,10 +35,11 @@ export function PricingCheckout({
 }: PricingCheckoutProps) {
   const [activeCheckout, setActiveCheckout] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [regionTier, setRegionTier] = useState<PricingRegionTierKey>(initialRegionTier)
+  // Region tier is fixed to the base USD price book; it is no longer
+  // user-selectable (regional price-book display was removed).
+  const [regionTier] = useState<PricingRegionTierKey>(initialRegionTier)
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(initialBillingCycle)
 
-  const selectedRegion = pricingRegionBooks[regionTier]
   const requiredFeatureNotice = getRequiredFeatureNotice(requiredFeature)
 
   const startSubscriptionCheckout = async (planKey: "core" | "plus" | "clinic") => {
@@ -102,56 +101,32 @@ export function PricingCheckout({
       ) : null}
 
       <section className="rounded-3xl border border-gray-800 bg-gray-950 p-6 text-white">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_1fr]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Fixed regional price books</p>
-            <h2 className="mt-3 text-2xl font-semibold">Choose market tier and billing cycle</h2>
-            <p className="mt-3 text-sm text-gray-400">
-              Pricing is anchored in USD and published as fixed regional catalogs. Biozephyra does not rely on live exchange-rate conversion at checkout.
+            <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Billing cycle</p>
+            <h2 className="mt-2 text-2xl font-semibold">Choose how you pay</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              All prices are in USD. Annual plans lock in the launch discount.
             </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-200" htmlFor="pricing-region-tier">Market tier</label>
-            <select
-              id="pricing-region-tier"
-              className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
-              value={regionTier}
-              onChange={(event) => setRegionTier(event.target.value as PricingRegionTierKey)}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={billingCycle === "monthly" ? "default" : "outline"}
+              className={billingCycle === "monthly" ? "bg-teal-600 hover:bg-teal-700" : "border-gray-700 text-gray-200 hover:bg-gray-800"}
+              onClick={() => setBillingCycle("monthly")}
             >
-              {orderedRegionKeys.map((key) => {
-                const region = pricingRegionBooks[key]
-                return (
-                  <option key={key} value={key}>
-                    {region.name} · {region.label}
-                  </option>
-                )
-              })}
-            </select>
-            <p className="text-xs text-gray-400">{selectedRegion.markets.join(", ")}</p>
-          </div>
-
-          <div className="space-y-2">
-            <span className="text-sm font-medium text-gray-200">Billing cycle</span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={billingCycle === "monthly" ? "default" : "outline"}
-                className={billingCycle === "monthly" ? "bg-teal-600 hover:bg-teal-700" : "border-gray-700 text-gray-200 hover:bg-gray-800"}
-                onClick={() => setBillingCycle("monthly")}
-              >
-                Monthly
-              </Button>
-              <Button
-                type="button"
-                variant={billingCycle === "yearly" ? "default" : "outline"}
-                className={billingCycle === "yearly" ? "bg-teal-600 hover:bg-teal-700" : "border-gray-700 text-gray-200 hover:bg-gray-800"}
-                onClick={() => setBillingCycle("yearly")}
-              >
-                Annual
-              </Button>
-            </div>
-            <p className="text-xs text-gray-400">Annual pricing uses the launch discount instead of burying value inside an opaque enterprise-only quote.</p>
+              Monthly
+            </Button>
+            <Button
+              type="button"
+              variant={billingCycle === "yearly" ? "default" : "outline"}
+              className={billingCycle === "yearly" ? "bg-teal-600 hover:bg-teal-700" : "border-gray-700 text-gray-200 hover:bg-gray-800"}
+              onClick={() => setBillingCycle("yearly")}
+            >
+              Annual
+            </Button>
           </div>
         </div>
       </section>
@@ -310,10 +285,6 @@ export function PricingCheckout({
             </div>
           ))}
         </div>
-
-        <p className="mt-6 text-sm text-gray-500">
-          Current region book: {selectedRegion.name} ({selectedRegion.label}) · published in {selectedRegion.currency} with no live FX conversion at checkout.
-        </p>
       </section>
     </div>
   )
