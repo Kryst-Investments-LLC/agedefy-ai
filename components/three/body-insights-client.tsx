@@ -83,7 +83,12 @@ export function BodyInsightsClient({ biomarkers, organs }: BodyInsightsClientPro
         {biomarkers.length === 0 ? (
           <ViewerSkeleton label="No biomarkers yet — add lab results to populate your 3D view." />
         ) : tab === "body" ? (
-          <AnatomyViewer organs={organs} selected={selected} onSelect={setSelected} />
+          <AnatomyViewer
+            organs={organs}
+            selected={selected}
+            onSelect={setSelected}
+            modelUrl={process.env.NEXT_PUBLIC_ANATOMY_MODEL_URL || undefined}
+          />
         ) : (
           <Biomarker3DDashboard biomarkers={biomarkers} />
         )}

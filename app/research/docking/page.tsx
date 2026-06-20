@@ -4,7 +4,9 @@ import { redirect } from "next/navigation"
 
 import { Navigation } from "@/components/navigation"
 import { authOptions } from "@/lib/auth"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DockingExplorer } from "@/components/discovery/docking-explorer"
+import { DockingRunner } from "@/components/discovery/docking-runner"
 
 export const metadata: Metadata = {
   title: "3D Protein Docking — Biozephyra",
@@ -34,11 +36,23 @@ export default async function DockingPage() {
           </p>
         </div>
 
-        <DockingExplorer />
+        <Tabs defaultValue="explorer">
+          <TabsList>
+            <TabsTrigger value="explorer">PDB Explorer</TabsTrigger>
+            <TabsTrigger value="run">Run Docking</TabsTrigger>
+          </TabsList>
+          <TabsContent value="explorer" className="pt-4">
+            <DockingExplorer />
+          </TabsContent>
+          <TabsContent value="run" className="pt-4">
+            <DockingRunner />
+          </TabsContent>
+        </Tabs>
 
         <p className="text-[11px] text-muted-foreground">
-          Structures are fetched from RCSB PDB and PubChem. Poses shown here are
-          computational/illustrative and require experimental validation. Not medical advice.
+          Structures are fetched from RCSB PDB and PubChem. Live docking runs AutoDock
+          Vina via the screening sidecar. Poses are computational estimates and require
+          experimental validation. Not medical advice.
         </p>
       </main>
     </>

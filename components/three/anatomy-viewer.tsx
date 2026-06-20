@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 
 import {
   type OrganSummary,
@@ -15,6 +16,32 @@ interface AnatomyViewerProps {
   selected?: OrganSystem | null
   onSelect?: (organ: OrganSystem) => void
   height?: number
+  /**
+   * Optional URL to a licensed anatomical GLTF/GLB model. When supplied and it
+   * loads, it replaces the built-in stylized humanoid; meshes whose node names
+   * match an organ system are tinted by that organ's status. Falls back to the
+   * primitive body if absent or on load failure.
+   */
+  modelUrl?: string
+}
+
+/** Match a GLTF mesh/node name to an organ system for status tinting. */
+const ORGAN_NAME_PATTERNS: Array<[RegExp, OrganSystem]> = [
+  [/heart|cardio|aorta|vascul/i, "cardiovascular"],
+  [/liver|hepat/i, "liver"],
+  [/kidney|renal/i, "kidney"],
+  [/pancrea|stomach|intestine|gut|metabol/i, "metabolic"],
+  [/thyroid/i, "thyroid"],
+  [/spleen|lymph|immun/i, "immune"],
+  [/marrow|blood|vein|hemato/i, "hematology"],
+  [/adrenal|pituitary|gland|endocrin/i, "endocrine"],
+]
+
+function organForNodeName(name: string): OrganSystem | null {
+  for (const [pattern, organ] of ORGAN_NAME_PATTERNS) {
+    if (pattern.test(name)) return organ
+  }
+  return null
 }
 
 /** Approximate anatomical anchor for each organ system (body centred at origin). */
@@ -29,7 +56,7 @@ const ORGAN_POSITIONS: Record<OrganSystem, [number, number, number]> = {
   endocrine:      [-0.3, -0.18, 0.4],
 }
 
-export function AnatomyViewer({ organs, selected, onSelect, height = 460 }: AnatomyViewerProps) {
+export function AnatomyViewer({ organs, selected, onSelect, height = 460, modelUrl }: AnatomyViewerProps) {
   // Keep latest props available to the (long-lived) click handler.
   const onSelectRef = useRef(onSelect)
   const selectedRef = useRef(selected)
@@ -44,8 +71,9 @@ export function AnatomyViewer({ organs, selected, onSelect, height = 460 }: Anat
     cameraPosition: [0, 0.3, 4.6],
     background: 0x0b1020,
     autoRotate: false,
-    deps: [organKey],
+    deps: [organKey, modelUrl ?? ""],
     onInit: ({ scene, camera, renderer }) => {
+      const organBySystem = new Map(organs.map((o) => [o.organ, o]))
       // ── Stylized translucent humanoid ──────────────────────────────────
       const bodyMat = new THREE.MeshStandardMaterial({
         color: 0x3b82f6,
@@ -72,6 +100,59 @@ export function AnatomyViewer({ organs, selected, onSelect, height = 460 }: Anat
       add(new THREE.CapsuleGeometry(0.13, 1.0, 6, 12), [-0.22, -1.2, 0])
       add(new THREE.CapsuleGeometry(0.13, 1.0, 6, 12), [0.22, -1.2, 0])
       scene.add(body)
+
+      // ── Optional licensed anatomical GLTF/GLB — replaces the primitive ──
+      // When a real model loads, fit it to the scene and tint any organ-named
+      // meshes by status. The primitive stays as a fallback until then.
+      if (modelUrl) {
+        new GLTFLoader().load(
+          modelUrl,
+          (gltf) => {
+            const model = gltf.scene
+            // Fit to ~3.4 units tall, centred, feet near y = -1.7.
+            const box = new THREE.Box3().setFromObject(model)
+            const sizeVec = new THREE.Vector3()
+            const centerVec = new THREE.Vector3()
+            box.getSize(sizeVec)
+            box.getCenter(centerVec)
+            const scale = sizeVec.y > 0 ? 3.4 / sizeVec.y : 1
+            model.scale.setScalar(scale)
+            model.position.set(
+              -centerVec.x * scale,
+              -box.min.y * scale - 1.7,
+              -centerVec.z * scale,
+            )
+
+            // Tint organ-named meshes by status.
+            model.traverse((obj) => {
+              const mesh = obj as THREE.Mesh
+              if (!mesh.isMesh) return
+              const organ = organForNodeName(mesh.name)
+              const summary = organ ? organBySystem.get(organ) : null
+              const base = mesh.material as THREE.MeshStandardMaterial
+              const mat = (base?.clone?.() as THREE.MeshStandardMaterial) ??
+                new THREE.MeshStandardMaterial({ color: 0xcccccc })
+              if (summary) {
+                const c = statusColor(summary.status)
+                mat.color = new THREE.Color(c)
+                mat.emissive = new THREE.Color(c)
+                mat.emissiveIntensity = summary.status === "optimal" ? 0.2 : 0.55
+              } else {
+                mat.transparent = true
+                mat.opacity = 0.35
+              }
+              mesh.material = mat
+            })
+
+            scene.remove(body)
+            scene.add(model)
+          },
+          undefined,
+          () => {
+            // Load failed — keep the primitive humanoid. Markers stay either way.
+          },
+        )
+      }
 
       // ── Organ markers ───────────────────────────────────────────────────
       const markers: THREE.Mesh[] = []

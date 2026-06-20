@@ -16,12 +16,18 @@ interface DockingViewerProps {
   pdbId?: string
   /** Raw PDB/PDBQT text for the receptor (alternative to pdbId). */
   receptorPdb?: string
-  /** Docked ligand pose as SDF/MOL2/PDB text. */
+  /** 3Dmol format of `receptorPdb` (default "pdb"; use "pdbqt" for Vina output). */
+  receptorFormat?: string
+  /** Docked ligand pose as SDF/MOL2/PDB/PDBQT text. */
   ligandSdf?: string
+  /** 3Dmol format of `ligandSdf` (default "sdf"; use "pdbqt" for Vina poses). */
+  ligandFormat?: string
   /** Ligand SMILES — falls back to fetching a 3D conformer from PubChem. */
   ligandSmiles?: string
   /** Predicted binding affinity (kcal/mol) to display. */
   affinityKcalMol?: number
+  /** Per-pose Vina scores (kcal/mol) to list. */
+  poseScores?: number[]
   /** Header label. */
   name?: string
   height?: number
@@ -44,9 +50,12 @@ function buildPubChemSdfUrl(smiles: string): string {
 export function DockingViewer({
   pdbId,
   receptorPdb,
+  receptorFormat = "pdb",
   ligandSdf,
+  ligandFormat = "sdf",
   ligandSmiles,
   affinityKcalMol,
+  poseScores,
   name,
   height = 420,
   className,
@@ -102,7 +111,7 @@ export function DockingViewer({
         setLoading(false)
         return
       }
-      viewer.addModel(receptorText, "pdb")
+      viewer.addModel(receptorText, receptorFormat)
       applyProteinStyle(viewer, proteinStyle)
 
       // Always surface any co-crystallized ligand (HET atoms) in the receptor.
@@ -110,12 +119,13 @@ export function DockingViewer({
 
       // ── Separately-supplied docked ligand pose ────────────────────────────
       let ligandText = ligandSdf ?? null
+      let ligandFmt = ligandFormat
       if (!ligandText && ligandSmiles) {
         const res = await fetch(buildPubChemSdfUrl(ligandSmiles))
-        if (res.ok) ligandText = await res.text()
+        if (res.ok) { ligandText = await res.text(); ligandFmt = "sdf" }
       }
       if (ligandText) {
-        const ligand = viewer.addModel(ligandText, "sdf")
+        const ligand = viewer.addModel(ligandText, ligandFmt)
         ligand.setStyle({}, { stick: { radius: 0.22, colorscheme: "greenCarbon" } })
         // glow sphere around the binding site
         viewer.addStyle({ model: -1 }, { sphere: { scale: 0.25, opacity: 0.5 } })
@@ -130,7 +140,7 @@ export function DockingViewer({
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [identifier, ligandSdf, ligandSmiles])
+  }, [identifier, ligandSdf, ligandSmiles, receptorFormat, ligandFormat])
 
   useEffect(() => {
     init()
@@ -190,6 +200,16 @@ export function DockingViewer({
             </Button>
           ))}
         </div>
+        {poseScores && poseScores.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 px-3 pb-2">
+            <span className="text-[10px] text-muted-foreground">Pose scores:</span>
+            {poseScores.map((s, i) => (
+              <Badge key={i} variant="secondary" className="font-mono text-[10px]">
+                {s.toFixed(1)}
+              </Badge>
+            ))}
+          </div>
+        )}
         <p className="px-3 pb-2 text-[10px] text-muted-foreground">
           Computational docking pose — AI/physics estimate, requires experimental validation. Not medical advice.
         </p>
