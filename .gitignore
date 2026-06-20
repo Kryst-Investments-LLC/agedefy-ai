@@ -17,6 +17,9 @@ tsconfig.tsbuildinfo
 .env.local
 .env.*.local
 
+# AI-assistant local/personal files (never commit personal prefs or secrets)
+CLAUDE.local.md
+
 # OS
 .DS_Store
 Thumbs.db
