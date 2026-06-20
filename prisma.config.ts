@@ -1,4 +1,10 @@
-import "dotenv/config"
+import { config } from "dotenv"
+
+// Load .env.local first (personal/local overrides, gitignored), then .env.
+// dotenv does not overwrite already-set vars, so .env.local wins, and a real
+// shell DATABASE_URL (CI/prod) still takes precedence over both.
+config({ path: ".env.local" })
+config()
 
 import { defineConfig } from "prisma/config"
 
