@@ -16,6 +16,16 @@ export default async function HomePage() {
     db.compound.count(),
   ])
 
+  // Each landing stat is hidden until it crosses a credibility threshold, so
+  // early/low counts aren't shown publicly. The row disappears entirely when
+  // nothing qualifies. Tune these thresholds as the platform grows.
+  const LANDING_STAT_THRESHOLDS = { users: 100, biomarkers: 1000, compounds: 50 }
+  const landingStats = [
+    { value: userCount, label: "registered users", min: LANDING_STAT_THRESHOLDS.users },
+    { value: biomarkerCount, label: "biomarker readings", min: LANDING_STAT_THRESHOLDS.biomarkers },
+    { value: compoundCount, label: "compounds in graph", min: LANDING_STAT_THRESHOLDS.compounds },
+  ].filter((stat) => stat.value >= stat.min)
+
   return (
     <AppShell pageTitle="Home">
       <div className="dark min-h-full bg-background text-foreground">
@@ -44,21 +54,17 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        {/* Inline stat row */}
-        <div className="mt-12 flex flex-wrap gap-8 text-sm">
-          <div>
-            <span className="text-2xl font-bold tabular-nums">{userCount.toLocaleString()}</span>
-            <span className="ml-2 text-muted-foreground">registered users</span>
+        {/* Inline stat row — each metric is shown only once it crosses its threshold */}
+        {landingStats.length > 0 && (
+          <div className="mt-12 flex flex-wrap gap-8 text-sm">
+            {landingStats.map((stat) => (
+              <div key={stat.label}>
+                <span className="text-2xl font-bold tabular-nums">{stat.value.toLocaleString()}</span>
+                <span className="ml-2 text-muted-foreground">{stat.label}</span>
+              </div>
+            ))}
           </div>
-          <div>
-            <span className="text-2xl font-bold tabular-nums">{biomarkerCount.toLocaleString()}</span>
-            <span className="ml-2 text-muted-foreground">biomarker readings</span>
-          </div>
-          <div>
-            <span className="text-2xl font-bold tabular-nums">{compoundCount.toLocaleString()}</span>
-            <span className="ml-2 text-muted-foreground">compounds in graph</span>
-          </div>
-        </div>
+        )}
       </section>
       </div>
 
