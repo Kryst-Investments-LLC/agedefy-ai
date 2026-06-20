@@ -10,32 +10,42 @@ export async function Stats() {
     db.auditLog.count(),
   ])
 
+  // Each metric is shown only once it crosses a credibility threshold, so early
+  // /low counts aren't displayed publicly. The whole section is hidden until at
+  // least one metric qualifies. Tune thresholds as the platform grows.
   const stats = [
     {
       icon: Users,
       value: userCount,
       label: "Registered users",
       description: "Authenticated accounts in the database",
+      min: 100,
     },
     {
       icon: BookOpen,
       value: researchEntryCount,
       label: "Research entries",
       description: "Articles ingested from PubMed",
+      min: 100,
     },
     {
       icon: Activity,
       value: biomarkerCount,
       label: "Biomarker readings",
       description: "Real measurements stored by users",
+      min: 1000,
     },
     {
       icon: Shield,
       value: auditLogCount,
       label: "Audit events",
       description: "Governance events logged to date",
+      min: 1000,
     },
-  ]
+  ].filter((stat) => stat.value >= stat.min)
+
+  // Nothing meaningful to show yet — hide the entire section.
+  if (stats.length === 0) return null
 
   return (
     <section className="py-20 bg-gray-800/50">
