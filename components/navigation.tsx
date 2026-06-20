@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GlobalSearch } from "@/components/global-search"
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+// Language switcher hidden for launch — the platform ships English-only for now.
 import {
   Menu,
   X,
@@ -107,7 +107,6 @@ export function Navigation() {
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <GlobalSearch />
-            <LanguageSwitcher />
             <Link href="/pricing">
               <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />

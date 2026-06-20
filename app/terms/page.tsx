@@ -32,7 +32,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mt-8 mb-3">4. Subscriptions & Billing</h2>
-            <p>Subscription access is processed through Stripe and may include trial periods, fixed regional price books, and capped AI allowances with optional paid top-ups. Telemedicine consults, lab panels, and marketplace transaction fees are billed separately from the subscription. Cancellation can be done through your account&apos;s billing portal. Refunds are handled per our billing provider&apos;s policies.</p>
+            <p>Subscription access is processed through Stripe and may include trial periods and capped AI allowances with optional paid top-ups. Telemedicine consults, lab panels, and marketplace transaction fees are billed separately from the subscription. Cancellation can be done through your account&apos;s billing portal. Refunds are handled per our billing provider&apos;s policies.</p>
           </section>
 
           <section>

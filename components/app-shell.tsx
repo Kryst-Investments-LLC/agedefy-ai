@@ -3,7 +3,7 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { Separator } from '@/components/ui/separator'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+// Language switcher hidden for launch — the platform ships English-only for now.
 
 type AppShellProps = {
   children: React.ReactNode
@@ -22,9 +22,7 @@ export function AppShell({ children, pageTitle }: AppShellProps) {
           {pageTitle && (
             <span className="text-sm font-medium">{pageTitle}</span>
           )}
-          <div className="ml-auto flex items-center gap-2">
-            <LanguageSwitcher />
-          </div>
+          <div className="ml-auto flex items-center gap-2" />
         </header>
 
         {/* Page content */}

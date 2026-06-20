@@ -5,6 +5,7 @@ import { Stats } from "@/components/stats"
 import { Footer } from "@/components/footer"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AppShell } from "@/components/app-shell"
+import { CompoundRain } from "@/components/landing/compound-rain"
 import { Button } from "@/components/ui/button"
 import { db } from "@/lib/db"
 
@@ -20,7 +21,9 @@ export default async function HomePage() {
       <div className="dark min-h-full bg-background text-foreground">
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
+      <div className="relative overflow-hidden">
+      <CompoundRain />
+      <section className="relative mx-auto max-w-6xl px-4 py-20">
         <p className="text-sm uppercase tracking-[0.2em] text-primary">The longevity intelligence platform</p>
         <h1 className="mt-4 max-w-4xl text-5xl font-bold leading-tight">
           Track biomarkers. Optimize protocols. Access longevity medicine — all in one platform.
@@ -57,6 +60,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </div>
 
       {/*
         REMOVED TRUST STRIP — 2026-06-13
