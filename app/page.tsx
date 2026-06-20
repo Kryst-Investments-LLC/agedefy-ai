@@ -26,7 +26,7 @@ export default async function HomePage() {
       <section className="relative mx-auto max-w-6xl px-4 py-20">
         <p className="text-sm uppercase tracking-[0.2em] text-primary">The longevity intelligence platform</p>
         <h1 className="mt-4 max-w-4xl text-5xl font-bold leading-tight">
-          Track biomarkers. Optimize protocols. Access longevity medicine — all in one platform.
+          Track biomarkers. Manage protocols. Explore longevity research — all in one platform.
         </h1>
         <p className="mt-6 max-w-3xl text-lg text-muted-foreground">
           Biozephyra combines biomarker tracking, a curated compound knowledge graph, AI-assisted informational coaching, physician consultation workflows, lab testing, and a marketplace with tracked inventory and audit trails.
