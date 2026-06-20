@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Activity,
+  Atom,
   BarChart3,
   BookOpen,
+  Boxes,
   Brain,
   Calendar,
   GitBranch,
@@ -13,6 +15,7 @@ import {
   Home,
   Lock,
   Microscope,
+  PersonStanding,
   Search,
   Shield,
   ShoppingCart,
@@ -65,6 +68,14 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { name: 'Pathways', href: '/pathways', icon: GitBranch },
       { name: 'Lab Testing', href: '/lab-testing', icon: Microscope, premium: true },
       { name: 'AI Personalization', href: '/personalization', icon: Brain, premium: true },
+    ],
+  },
+  {
+    label: '3D Views',
+    items: [
+      { name: '3D Body', href: '/body', icon: PersonStanding, badge: 'New' },
+      { name: 'Compound Board', href: '/compounds/board', icon: Boxes, badge: 'New' },
+      { name: 'Protein Docking', href: '/research/docking', icon: Atom, badge: 'New' },
     ],
   },
   {

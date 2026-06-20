@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { authOptions } from "@/lib/auth"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DockingExplorer } from "@/components/discovery/docking-explorer"
@@ -24,8 +24,7 @@ export default async function DockingPage() {
   if (!role || !ALLOWED_ROLES.has(role)) redirect("/dashboard")
 
   return (
-    <>
-      <Navigation />
+    <AppShell pageTitle="3D Protein Docking">
       <main className="container mx-auto max-w-5xl px-4 py-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">3D Protein Docking</h1>
@@ -55,6 +54,6 @@ export default async function DockingPage() {
           experimental validation. Not medical advice.
         </p>
       </main>
-    </>
+    </AppShell>
   )
 }
