@@ -18,7 +18,8 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
     `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.stripe.com https://eutils.ncbi.nlm.nih.gov https://clinicaltrials.gov",
+    // pubchem + rcsb power the 3D molecule and protein-docking viewers (client-side fetch).
+    "connect-src 'self' https://api.stripe.com https://eutils.ncbi.nlm.nih.gov https://pubchem.ncbi.nlm.nih.gov https://files.rcsb.org https://clinicaltrials.gov",
     "frame-src 'self' https://js.stripe.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",

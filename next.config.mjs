@@ -29,7 +29,7 @@ const nextConfig = {
               "default-src 'self'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.stripe.com https://eutils.ncbi.nlm.nih.gov https://clinicaltrials.gov",
+              "connect-src 'self' https://api.stripe.com https://eutils.ncbi.nlm.nih.gov https://pubchem.ncbi.nlm.nih.gov https://files.rcsb.org https://clinicaltrials.gov",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
