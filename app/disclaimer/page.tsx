@@ -51,10 +51,41 @@ export default function DisclaimerPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mt-8 mb-3">No Liability</h2>
+            <h2 className="text-xl font-semibold text-white mt-8 mb-3">Medical Emergencies</h2>
             <p>
-              Biozephyra and its operators are not liable for any adverse health effects, injuries, or damages arising
-              from the use of information on this platform. Use at your own risk.
+              Biozephyra is <strong>not</strong> for medical emergencies. If you think you may have a medical emergency,
+              call your doctor or your local emergency number (such as 911 in the United States) immediately. Do not rely
+              on this platform for urgent or emergency medical needs.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mt-8 mb-3">No Doctor–Patient Relationship</h2>
+            <p>
+              Using Biozephyra does not create a doctor–patient, physician, or other professional relationship between you
+              and Biozephyra. Any telemedicine consultations, lab orders, or clinician interactions facilitated through the
+              platform are provided by independent, licensed third-party providers who are solely responsible for the care
+              they deliver. Biozephyra does not practice medicine and does not supervise those providers.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mt-8 mb-3">Dietary Supplements &amp; FDA Statement</h2>
+            <p>
+              Statements regarding compounds, supplements, or dietary ingredients have <strong>not</strong> been evaluated
+              by the U.S. Food and Drug Administration (FDA) or any comparable regulator. Products and information referenced
+              on this platform are not intended to diagnose, treat, cure, or prevent any disease. Regulatory status of any
+              compound varies by jurisdiction and may change.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mt-8 mb-3">Assumption of Risk &amp; No Liability</h2>
+            <p>
+              You use Biozephyra and any information accessed through it entirely at your own risk. To the maximum extent
+              permitted by law, Biozephyra and its operators, officers, and affiliates are not liable for any adverse health
+              effects, injuries, losses, or damages — direct or indirect — arising from your use of, or reliance on, the
+              platform or its content.
             </p>
           </section>
         </div>

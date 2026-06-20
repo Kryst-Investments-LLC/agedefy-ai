@@ -83,8 +83,8 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2024 Biozephyra. All rights reserved. This app is for educational purposes only and does not provide
-            medical advice.
+            © {new Date().getFullYear()} Biozephyra. All rights reserved. This information is for educational and
+            research purposes only and is not medical advice. Always consult a qualified healthcare provider.
           </p>
         </div>
       </div>
