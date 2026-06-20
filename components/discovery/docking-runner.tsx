@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { runDock, type DockRenderState } from "@/lib/discovery/docking-wiring"
 
 const DockingViewer = dynamic(
   () => import("./docking-viewer").then((m) => m.DockingViewer),
@@ -20,31 +21,11 @@ const DockingViewer = dynamic(
   },
 )
 
-interface DockResult {
-  ligand_smiles: string
-  binding_affinity_kcal_mol: number
-  pose_scores_kcal_mol: number[]
-  best_pose_pdbqt: string // base64 PDBQT
-  n_poses_returned: number
-  model_version: string
-}
-
-interface RenderState {
-  receptorText: string
-  ligandText: string
-  affinity: number
-  poseScores: number[]
-}
-
-/** Heuristic: looks like raw PDBQT text (vs. an already-base64 blob). */
-function looksLikeRawPdbqt(s: string): boolean {
-  return /\b(ATOM|HETATM|ROOT|BRANCH|REMARK)\b/.test(s)
-}
-
 /**
  * Live docking runner. Sends a prepared receptor + ligand SMILES + box to
  * POST /api/agents/chemistry/dock (AutoDock Vina via the screening sidecar) and
- * renders the returned best pose in the 3D docking viewer.
+ * renders the returned best pose in the 3D docking viewer. The request/response
+ * wiring lives in lib/discovery/docking-wiring.ts (and is integration-tested).
  *
  * Requires the screening sidecar to be enabled (ENABLE_SCREENING_SIDECAR=true)
  * and a researcher session.
@@ -59,69 +40,18 @@ export function DockingRunner() {
 
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [render, setRender] = useState<RenderState | null>(null)
+  const [render, setRender] = useState<DockRenderState | null>(null)
 
   async function runDocking() {
     setError(null)
     setRunning(true)
     setRender(null)
-    try {
-      const raw = receptor.trim()
-      if (!raw || !smiles.trim()) {
-        setError("Provide both a receptor (PDBQT) and a ligand SMILES.")
-        return
-      }
-      const isRaw = looksLikeRawPdbqt(raw)
-      const receptorBase64 = isRaw ? btoa(raw) : raw
-      const receptorText = isRaw ? raw : atob(raw)
-
-      const res = await fetch("/api/agents/chemistry/dock", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          smiles: smiles.trim(),
-          receptor_pdbqt: receptorBase64,
-          box: { center, size },
-          exhaustiveness,
-          n_poses: nPoses,
-        }),
-      })
-
-      if (res.status === 404) {
-        setError(
-          "Live docking is unavailable: the screening sidecar is not enabled (ENABLE_SCREENING_SIDECAR). Use the PDB Explorer to inspect existing structures, or enable the sidecar to run AutoDock Vina.",
-        )
-        return
-      }
-      if (res.status === 401) {
-        setError("Your session expired — please sign in again.")
-        return
-      }
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setError(body.error ?? `Docking failed (HTTP ${res.status}).`)
-        return
-      }
-
-      const result = (await res.json()) as DockResult
-      let ligandText = ""
-      try {
-        ligandText = atob(result.best_pose_pdbqt)
-      } catch {
-        ligandText = result.best_pose_pdbqt
-      }
-
-      setRender({
-        receptorText,
-        ligandText,
-        affinity: result.binding_affinity_kcal_mol,
-        poseScores: result.pose_scores_kcal_mol ?? [],
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Docking request failed.")
-    } finally {
-      setRunning(false)
-    }
+    const outcome = await runDock(fetch as never, {
+      receptor, smiles, center, size, exhaustiveness, nPoses,
+    })
+    if (outcome.ok && outcome.render) setRender(outcome.render)
+    else setError(outcome.error ?? "Docking failed.")
+    setRunning(false)
   }
 
   return (
