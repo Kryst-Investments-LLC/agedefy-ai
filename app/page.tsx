@@ -4,7 +4,7 @@ import { Features } from "@/components/features"
 import { Stats } from "@/components/stats"
 import { Footer } from "@/components/footer"
 import { CookieConsent } from "@/components/cookie-consent"
-import { Navigation } from "@/components/navigation"
+import { AppShell } from "@/components/app-shell"
 import { Button } from "@/components/ui/button"
 import { db } from "@/lib/db"
 
@@ -16,8 +16,8 @@ export default async function HomePage() {
   ])
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
-      <Navigation />
+    <AppShell pageTitle="Home">
+      <div className="dark min-h-full bg-background text-foreground">
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 py-20">
@@ -75,6 +75,7 @@ export default async function HomePage() {
       <Features />
       <Footer />
       <CookieConsent />
-    </div>
+      </div>
+    </AppShell>
   )
 }
