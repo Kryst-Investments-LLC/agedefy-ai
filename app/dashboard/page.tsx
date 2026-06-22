@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache"
 import { BiomarkerTrends } from "@/components/biomarker-trends"
 import { DashboardDailyBrief } from "@/components/dashboard-daily-brief"
 import { DashboardWorkspace } from "@/components/dashboard-workspace"
+import { BiomarkerBulkAdd } from "@/components/biomarker-bulk-add"
 import { EnterpriseOperationsPanel } from "@/components/enterprise-operations-panel"
 import { AppShell } from "@/components/app-shell"
 import { ProtocolTemplates } from "@/components/protocol-templates"
@@ -190,6 +191,10 @@ export default async function DashboardPage() {
               <Link href="/account" className="rounded-lg border p-3 hover:bg-accent transition-colors">Account Settings</Link>
             </div>
           </section>
+        </div>
+
+        <div className="mb-6">
+          <BiomarkerBulkAdd />
         </div>
 
         <DashboardWorkspace
