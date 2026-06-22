@@ -1,0 +1,27 @@
+# Fly.io config — OpenMM MM-GBSA sidecar (GPU, scale-to-zero).
+# GPU is set on deploy:  fly deploy --vm-gpu-kind a100-40gb
+# (or l40s). Keep ONE machine — a GPU is not shareable across workers.
+app = "agedefy-openmm"
+primary_region = "ord"   # pick a GPU-enabled region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # scale to zero — GPU minutes are the only real cost here
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "90s"   # OpenMM/CUDA init is slow on cold start
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  memory = "16gb"
+  # gpu_kind is supplied at deploy time via --vm-gpu-kind (a100-40gb / l40s)
