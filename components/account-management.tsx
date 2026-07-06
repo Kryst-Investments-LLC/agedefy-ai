@@ -137,13 +137,13 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
 
   return (
     <div className="mt-6 grid gap-4 md:grid-cols-2">
-      <section className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+      <section className="rounded-2xl border border-border bg-background p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Profile controls</h2>
-            <p className="mt-1 text-sm text-gray-400">Persist real preference fields to the user profile record.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Persist real preference fields to the user profile record.</p>
           </div>
-          {isPending ? <span className="text-sm text-gray-500">Refreshing...</span> : null}
+          {isPending ? <span className="text-sm text-muted-foreground">Refreshing...</span> : null}
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={saveProfile}>
@@ -160,7 +160,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
             <Label htmlFor="risk-tolerance">Risk tolerance</Label>
             <select
               id="risk-tolerance"
-              className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+              className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               value={profileForm.riskTolerance}
               onChange={(event) => setProfileForm((current) => ({ ...current, riskTolerance: event.target.value }))}
             >
@@ -169,14 +169,14 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
               <option value="high">High</option>
             </select>
           </div>
-          {profileError ? <p className="text-sm text-red-400">{profileError}</p> : null}
+          {profileError ? <p className="text-sm text-red-600 dark:text-red-400">{profileError}</p> : null}
           <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Save profile</Button>
         </form>
       </section>
 
-      <section className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+      <section className="rounded-2xl border border-border bg-background p-6">
         <h2 className="text-lg font-semibold">Subscription records</h2>
-        <p className="mt-1 text-sm text-gray-400">Manage subscription state in the database for support workflows, operational testing, and audit verification.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Manage subscription state in the database for support workflows, operational testing, and audit verification.</p>
 
         <form className="mt-6 space-y-4" onSubmit={createSubscription}>
           <div className="grid gap-4 md:grid-cols-2">
@@ -184,7 +184,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
               <Label htmlFor="plan">Plan</Label>
               <select
                 id="plan"
-                className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
                 value={subscriptionForm.plan}
                 onChange={(event) => {
                   const selected = manualPlanOptions.find((option) => option.label === event.target.value)
@@ -226,7 +226,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
               <Label htmlFor="cycle">Billing cycle</Label>
               <select
                 id="cycle"
-                className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
                 value={subscriptionForm.billingCycle}
                 onChange={(event) => setSubscriptionForm((current) => ({ ...current, billingCycle: event.target.value }))}
               >
@@ -240,7 +240,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
             <Label htmlFor="status">Status</Label>
             <select
               id="status"
-              className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+              className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               value={subscriptionForm.status}
               onChange={(event) =>
                 setSubscriptionForm((current) => ({ ...current, status: event.target.value as SubscriptionStatus }))
@@ -251,18 +251,18 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
               ))}
             </select>
           </div>
-          {subscriptionError ? <p className="text-sm text-red-400">{subscriptionError}</p> : null}
+          {subscriptionError ? <p className="text-sm text-red-600 dark:text-red-400">{subscriptionError}</p> : null}
           <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Create manual subscription record</Button>
         </form>
 
         <div className="mt-6 space-y-3">
           {subscriptions.length ? (
             subscriptions.map((subscription) => (
-              <div key={subscription.id} className="rounded-xl border border-gray-800 p-4">
+              <div key={subscription.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="font-medium">{subscription.plan}</p>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {subscription.status.toLowerCase()} · {subscription.billingCycle} · {subscription.currency} {subscription.priceCents / 100}
                     </p>
                   </div>
@@ -270,7 +270,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
                     {subscription.status !== SubscriptionStatus.CANCELED ? (
                       <Button
                         variant="outline"
-                        className="border-gray-700 text-gray-200 hover:bg-gray-800"
+                        className="border-border text-gray-200 hover:bg-gray-800"
                         onClick={() => updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELED)}
                       >
                         Cancel
@@ -278,7 +278,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
                     ) : null}
                     <Button
                       variant="outline"
-                      className="border-gray-700 text-gray-200 hover:bg-gray-800"
+                      className="border-border text-gray-200 hover:bg-gray-800"
                       onClick={() => deleteSubscription(subscription.id)}
                     >
                       Delete
@@ -288,7 +288,7 @@ export function AccountManagement({ profile, subscriptions }: AccountManagementP
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No subscription records yet.</p>
+            <p className="text-sm text-muted-foreground">No subscription records yet.</p>
           )}
         </div>
       </section>

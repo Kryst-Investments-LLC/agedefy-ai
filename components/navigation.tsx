@@ -49,16 +49,16 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-50">
+    <nav className="bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-teal-400 to-blue-400 rounded-lg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
+              <Shield className="h-5 w-5 text-foreground" />
             </div>
-            <span className="text-xl font-bold text-white">Biozephyra</span>
-            <Badge className="bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs">BETA</Badge>
+            <span className="text-xl font-bold text-foreground">Biozephyra</span>
+            <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20 text-xs">BETA</Badge>
           </Link>
 
           {/* Desktop Navigation */}
@@ -67,12 +67,12 @@ export function Navigation() {
               <Link key={item.name} href={item.href}>
                 <Button
                   variant="ghost"
-                  className="text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2 whitespace-nowrap"
+                  className="text-muted-foreground hover:text-white hover:bg-gray-700 flex items-center gap-2 whitespace-nowrap"
                 >
                   <item.icon className="h-4 w-4" />
                   {item.name}
                   {item.badge && (
-                    <Badge className="bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs ml-1">{item.badge}</Badge>
+                    <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20 text-xs ml-1">{item.badge}</Badge>
                   )}
                 </Button>
               </Link>
@@ -80,20 +80,20 @@ export function Navigation() {
 
             {/* More dropdown for remaining items */}
             <div className="relative group">
-              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-700">
+              <Button variant="ghost" className="text-muted-foreground hover:text-white hover:bg-gray-700">
                 More
               </Button>
-              <div className="absolute top-full left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <div className="absolute top-full left-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 {navigation.slice(8).map((item) => (
                   <Link key={item.name} href={item.href}>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
+                      className="w-full justify-start text-muted-foreground hover:text-white hover:bg-gray-700"
                     >
                       <item.icon className="h-4 w-4 mr-2" />
                       {item.name}
                       {item.badge && (
-                        <Badge className="bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs ml-auto">
+                        <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20 text-xs ml-auto">
                           {item.badge}
                         </Badge>
                       )}
@@ -108,13 +108,13 @@ export function Navigation() {
           <div className="hidden md:flex items-center space-x-4">
             <GlobalSearch />
             <Link href="/pricing">
-              <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-2">
+              <Button variant="ghost" className="text-muted-foreground hover:text-white flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Pricing
               </Button>
             </Link>
             <Link href="/account">
-              <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-2">
+              <Button variant="ghost" className="text-muted-foreground hover:text-white flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Account
               </Button>
@@ -125,7 +125,7 @@ export function Navigation() {
           {/* Mobile menu button */}
           <Button
             variant="ghost"
-            className="lg:hidden text-gray-300 hover:text-white"
+            className="lg:hidden text-muted-foreground hover:text-white"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isOpen}
@@ -136,34 +136,34 @@ export function Navigation() {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-700">
+          <div className="lg:hidden py-4 border-t border-border">
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {navigation.map((item) => (
                 <Link key={item.name} href={item.href}>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
+                    className="w-full justify-start text-muted-foreground hover:text-white hover:bg-gray-700"
                     onClick={() => setIsOpen(false)}
                   >
                     <item.icon className="h-4 w-4 mr-2" />
                     {item.name}
                     {item.badge && (
-                      <Badge className="bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs ml-2">
+                      <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20 text-xs ml-2">
                         {item.badge}
                       </Badge>
                     )}
                   </Button>
                 </Link>
               ))}
-              <div className="pt-4 border-t border-gray-700 space-y-2">
+              <div className="pt-4 border-t border-border space-y-2">
                 <Link href="/pricing">
-                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+                  <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-white">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Pricing
                   </Button>
                 </Link>
                 <Link href="/account">
-                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+                  <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-white">
                     <User className="h-4 w-4 mr-2" />
                     Account
                   </Button>

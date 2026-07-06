@@ -107,7 +107,7 @@ export function PromptDiscovery({
               disabled={loading}
               className="min-h-[200px] resize-none"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {prompt.length}/5000 characters
             </p>
           </div>

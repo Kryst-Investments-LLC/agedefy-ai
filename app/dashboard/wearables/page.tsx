@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { AppShell } from "@/components/app-shell"
 import { WearableConnectCard, WearableDataFeed } from "@/components/wearable-connect"
 
 export const metadata: Metadata = {
@@ -9,17 +10,19 @@ export const metadata: Metadata = {
 
 export default function WearablesPage() {
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Wearable Devices</h1>
-        <p className="text-muted-foreground mt-1">
-          Connect fitness trackers and health wearables to automatically sync your
-          activity, sleep, and biometric data.
-        </p>
-      </div>
+    <AppShell pageTitle="Wearables">
+      <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Wearable Devices</h1>
+          <p className="text-muted-foreground mt-1">
+            Connect fitness trackers and health wearables to automatically sync your
+            activity, sleep, and biometric data.
+          </p>
+        </div>
 
-      <WearableConnectCard />
-      <WearableDataFeed />
-    </main>
+        <WearableConnectCard />
+        <WearableDataFeed />
+      </div>
+    </AppShell>
   )
 }

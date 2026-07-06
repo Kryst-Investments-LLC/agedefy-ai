@@ -140,7 +140,7 @@ export function AIHealthCoach() {
               >
                 {msg.role !== "user" && (
                   <div className="h-8 w-8 rounded-full bg-teal-600/20 flex items-center justify-center shrink-0">
-                    <Bot className="h-4 w-4 text-teal-400" />
+                    <Bot className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                   </div>
                 )}
                 <div
@@ -148,8 +148,8 @@ export function AIHealthCoach() {
                     msg.role === "user"
                       ? "bg-teal-600 text-white"
                       : msg.role === "system"
-                      ? "bg-gray-800 border border-gray-700"
-                      : "bg-gray-800 border border-gray-700"
+                      ? "bg-card border border-border"
+                      : "bg-card border border-border"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -159,15 +159,15 @@ export function AIHealthCoach() {
                   {msg.role === "assistant" && (msg.disclaimers?.length || msg.citations?.length) ? (
                     <div className="mt-3 space-y-3">
                       {msg.disclaimers?.length ? (
-                        <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-2 text-xs text-yellow-100">
+                        <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-2 text-xs text-yellow-800 dark:text-yellow-100">
                           {msg.disclaimers.map((item, index) => (
                             <p key={`${msg.id}-disclaimer-${index}`}>{item}</p>
                           ))}
                         </div>
                       ) : null}
                       {msg.citations?.length ? (
-                        <div className="space-y-1 text-xs text-gray-300">
-                          <p className="uppercase tracking-[0.16em] text-gray-500">Sources</p>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <p className="uppercase tracking-[0.16em] text-muted-foreground">Sources</p>
                           {msg.citations.map((citation, index) => (
                             citation.url ? (
                               <a
@@ -175,7 +175,7 @@ export function AIHealthCoach() {
                                 href={citation.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="block text-teal-300 hover:underline"
+                                className="block text-teal-700 dark:text-teal-300 hover:underline"
                               >
                                 {citation.source}: {citation.title}
                               </a>
@@ -191,8 +191,8 @@ export function AIHealthCoach() {
                   ) : null}
                 </div>
                 {msg.role === "user" && (
-                  <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-gray-300" />
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -200,9 +200,9 @@ export function AIHealthCoach() {
             {loading && (
               <div className="flex gap-3">
                 <div className="h-8 w-8 rounded-full bg-teal-600/20 flex items-center justify-center shrink-0">
-                  <Bot className="h-4 w-4 text-teal-400" />
+                  <Bot className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
-                <div className="rounded-lg px-4 py-3 bg-gray-800 border border-gray-700">
+                <div className="rounded-lg px-4 py-3 bg-card border border-border">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               </div>
@@ -210,7 +210,7 @@ export function AIHealthCoach() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-yellow-400 mb-3">
+            <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400 mb-3">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>

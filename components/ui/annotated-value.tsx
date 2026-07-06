@@ -22,10 +22,10 @@ export function AnnotatedValueDisplay({
     <span className={`inline-flex items-center gap-1 ${className}`}>
       <span className="font-medium">{format(annotated.value)}</span>
       {annotated.unit && (
-        <span className="text-xs text-gray-500 dark:text-gray-400">{annotated.unit}</span>
+        <span className="text-xs text-muted-foreground dark:text-gray-400">{annotated.unit}</span>
       )}
       {uncertainty && (
-        <span className="text-xs text-gray-400 dark:text-gray-500" title={uncertainty}>
+        <span className="text-xs text-muted-foreground dark:text-gray-500" title={uncertainty}>
           ({uncertainty})
         </span>
       )}

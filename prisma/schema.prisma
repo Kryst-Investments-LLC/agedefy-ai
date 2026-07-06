@@ -150,6 +150,7 @@ model User {
   createdOrchestrationJobs    OrchestrationJob[]              @relation("OrchestrationJobCreator")
   defaultTenant               Tenant?                         @relation("UserDefaultTenant", fields: [defaultTenantId], references: [id], onDelete: SetNull)
   organizationMemberships     OrganizationMembership[]
+  reminders                   Reminder[]                      @relation("ReminderUser")
   mfaSecret                   UserMfaSecret?
   activeSessions              ActiveSession[]
   trustScores                 TrustScore[]                    @relation("TrustScoreUser")
@@ -191,6 +192,12 @@ model User {
   pgxProfile                  PharmacogenomicProfile?
   tumorProfiles               TumorProfile[]
   transcriptomicSignatures    TranscriptomicSignature[]
+  // Moat relations
+  privacyBudget               UserPrivacyBudget?              @relation("UserPrivacyBudget")
+  federationConsents          FederationConsent[]             @relation("FederationConsentUser")
+  irbApprovals                IrbApproval[]                   @relation("IrbApprovalUser")
+  forkedProtocols             ProtocolFork[]                  @relation("ProtocolForkUser")
+  clinicianCoSigns            ClinicianCoSign[]               @relation("ClinicianCoSignUser")
 }
 
 model UserMfaSecret {
@@ -394,30 +401,37 @@ model Biomarker {
 }
 
 model Protocol {
-  id                       String                @id @default(cuid())
-  tenantId                 String                @default("default")
-  userId                   String
-  name                     String
-  status                   String                @default("draft")
-  description              String?
+  id                      String                @id @default(cuid())
+  tenantId                String                @default("default")
+  userId                  String
+  name                    String
+  status                  String                @default("draft")
+  description             String?
   /// Tier 4: cycle length in days (default 28-day cycle)
-  protocolCycleLengthDays  Int                   @default(28)
+  protocolCycleLengthDays Int                   @default(28)
   /// Tier 4: when the current cycle started (null until protocol is activated)
-  protocolCycleStartDate   DateTime?
-  createdAt                DateTime              @default(now())
-  updatedAt                DateTime              @updatedAt
-  user                     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outcomes                 InterventionOutcome[]
-  contraindicationScore    Float?
-  biomarkerMeasurements    Biomarker[]
-  labResults               LabResult[]
-  adverseEventReports      AdverseEventReport[]
-  aggregateOutcomes        AggregateOutcome[]    @relation("AggregateOutcomeProtocol")
-  protocolOutcomes         ProtocolOutcome[]     @relation("ProtocolOutcomeProtocol")
-  versions                 ProtocolVersion[]     @relation("ProtocolVersions")
+  protocolCycleStartDate  DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  user                    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outcomes                InterventionOutcome[]
+  contraindicationScore   Float?
+  biomarkerMeasurements   Biomarker[]
+  labResults              LabResult[]
+  adverseEventReports     AdverseEventReport[]
+  aggregateOutcomes       AggregateOutcome[]    @relation("AggregateOutcomeProtocol")
+  protocolOutcomes        ProtocolOutcome[]     @relation("ProtocolOutcomeProtocol")
+  versions                ProtocolVersion[]     @relation("ProtocolVersions")
+  // M2: fork social graph
+  forkCount               Int                   @default(0)
+  forkedFromId            String?
+  forkedFrom              Protocol?             @relation("ProtocolForkTree", fields: [forkedFromId], references: [id])
+  forks                   Protocol[]            @relation("ProtocolForkTree")
+  forkRecords             ProtocolFork[]
 
   @@index([userId, updatedAt])
   @@index([tenantId, userId])
+  @@index([forkCount])
 }
 
 model Account {
@@ -2497,35 +2511,35 @@ model PhysiologicalTwin {
 }
 
 model TwinSimulationRun {
-  id              String            @id @default(cuid())
-  tenantId        String            @default("default")
-  twinId          String
-  userId          String
-  intervention    String // free text label, links to compound/protocol when known
-  compoundId      String?
-  doseMg          Float?
-  scheduleCron    String?
-  horizonDays     Int
-  endpoint        String // e.g. "GrimAge_delta","CRP_AUC"
-  predictedMean   Float
-  predictedSdLo   Float // 95% CI lower
-  predictedSdHi   Float // 95% CI upper
-  uncertaintyKind String // "monte_carlo","bootstrap","conformal"
-  inputsHash      String // sha256 of inputs — required for reproducible replay
-  modelVersion    String
+  id                    String            @id @default(cuid())
+  tenantId              String            @default("default")
+  twinId                String
+  userId                String
+  intervention          String // free text label, links to compound/protocol when known
+  compoundId            String?
+  doseMg                Float?
+  scheduleCron          String?
+  horizonDays           Int
+  endpoint              String // e.g. "GrimAge_delta","CRP_AUC"
+  predictedMean         Float
+  predictedSdLo         Float // 95% CI lower
+  predictedSdHi         Float // 95% CI upper
+  uncertaintyKind       String // "monte_carlo","bootstrap","conformal"
+  inputsHash            String // sha256 of inputs — required for reproducible replay
+  modelVersion          String
   // ── Tier 5.3: Extended prediction logging ──
   /// How many days ahead this prediction applies
-  predictionWindowDays Int                @default(0)
+  predictionWindowDays  Int               @default(0)
   /// When the prediction window closes — scored after this date (createdAt + predictionWindowDays)
-  predictionExpiresAt  DateTime?
+  predictionExpiresAt   DateTime?
   /// Full input assumptions: { compoundIds, doses, baselineBiomarkers, pkParamsUsed, modelVersion }
-  pkParamsUsedJson     Json?
+  pkParamsUsedJson      Json?
   /// Full output trajectories: { biomarker, predictedValues: [{ t, value }] }[]
   outcomeTrajectoryJson Json?
   /// Accuracy score filled in by twin-scorer.ts after predictionExpiresAt
-  twinAccuracyScore    Float?
-  createdAt       DateTime          @default(now())
-  twin            PhysiologicalTwin @relation(fields: [twinId], references: [id], onDelete: Cascade)
+  twinAccuracyScore     Float?
+  createdAt             DateTime          @default(now())
+  twin                  PhysiologicalTwin @relation(fields: [twinId], references: [id], onDelete: Cascade)
 
   @@index([userId, endpoint, createdAt])
   @@index([inputsHash])
@@ -2815,6 +2829,28 @@ model AgentClaim {
   @@index([tenantId, agentClass, createdAt])
 }
 
+// Durable agent reasoning trace. The in-memory emitter (lib/agents/trace-emitter)
+// is ephemeral (30-min TTL); this table persists the reasoning tree — inputs,
+// decisions, and structured `evidence` (citations / confidence) — for audit and
+// deterministic replay. `id` is the emitter's event id so re-persisting a
+// resumed session is idempotent (createMany skipDuplicates).
+model AgentTraceEvent {
+  id         String   @id // TraceEvent.id (uuid from the emitter)
+  sessionId  String // AgentSession.id
+  tenantId   String   @default("default")
+  kind       String // TraceEventKind
+  agentClass String?
+  icon       String
+  message    String
+  detail     String?
+  evidence   Json? // structured TraceEvidence (citations, inputs, model, confidence)
+  emittedAt  DateTime // TraceEvent.timestamp
+  createdAt  DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([tenantId, kind, createdAt])
+}
+
 // ── Wet-lab / CRO bridge ──────────────────────────────────────────────
 
 model CdiscOdmExport {
@@ -2962,9 +2998,9 @@ model ExperimentCandidate {
   acquisitionScore Float? // 0–1: priority for next experimental round
 
   // ── FEP triage gate (populated by POST /fep-triage) ────────
-  fepGateScore  Float?  // 0–1: composite worthiness of an FEP run
+  fepGateScore  Float? // 0–1: composite worthiness of an FEP run
   fepGateReason String? // human-readable triage rationale
-  fepJson       Json?   // FepResult snapshot (populated after a real FEP run)
+  fepJson       Json? // FepResult snapshot (populated after a real FEP run)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3002,7 +3038,7 @@ model ExperimentCandidateEvent {
 model CandidateLabResult {
   id           String   @id @default(cuid())
   candidateId  String
-  submissionId String?  // set when the result arrived via a LabSubmission ingest
+  submissionId String? // set when the result arrived via a LabSubmission ingest
   assayName    String // "IC50_SIRT1", "cell_viability_%", "GI50"
   value        Float
   unit         String // "µM", "%", "nM"
@@ -3015,8 +3051,8 @@ model CandidateLabResult {
   notes        String?
   createdAt    DateTime @default(now())
 
-  candidate   ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  submission  LabSubmission?      @relation("LabSubmissionResults", fields: [submissionId], references: [id], onDelete: SetNull)
+  candidate  ExperimentCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  submission LabSubmission?      @relation("LabSubmissionResults", fields: [submissionId], references: [id], onDelete: SetNull)
 
   @@index([candidateId, assayName])
   @@index([candidateId, measuredAt])
@@ -3029,34 +3065,34 @@ model CandidateLabResult {
 // ingest endpoint; results are linked back to ExperimentCandidate.
 
 enum LabSubmissionStatus {
-  PENDING   // awaiting results
-  PARTIAL   // some results received
-  COMPLETE  // researcher or lab marked done
-  VOID      // cancelled
+  PENDING // awaiting results
+  PARTIAL // some results received
+  COMPLETE // researcher or lab marked done
+  VOID // cancelled
 }
 
 model LabSubmission {
-  id          String              @id @default(cuid())
-  candidateId String
-  userId      String
-  labName     String
-  labContact  String?             // email or contact name
+  id              String              @id @default(cuid())
+  candidateId     String
+  userId          String
+  labName         String
+  labContact      String? // email or contact name
   // SHA-256 of the one-time submission token.
   // The plaintext token is returned once at creation and never stored.
-  tokenHash   String              @unique
-  status      LabSubmissionStatus @default(PENDING)
+  tokenHash       String              @unique
+  status          LabSubmissionStatus @default(PENDING)
   // Immutable snapshot of the candidate package at export time (no token).
-  packageJson Json
+  packageJson     Json
   // Researcher-specified assay requests, stored as an array of objects.
   requestedAssays Json
-  deadlineAt  DateTime?
-  notes       String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  deadlineAt      DateTime?
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  candidate   ExperimentCandidate @relation("LabSubmissionCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
-  user        User                @relation("LabSubmissionUser", fields: [userId], references: [id], onDelete: Cascade)
-  labResults  CandidateLabResult[] @relation("LabSubmissionResults")
+  candidate  ExperimentCandidate  @relation("LabSubmissionCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  user       User                 @relation("LabSubmissionUser", fields: [userId], references: [id], onDelete: Cascade)
+  labResults CandidateLabResult[] @relation("LabSubmissionResults")
 
   @@index([candidateId])
   @@index([userId, status])
@@ -3125,13 +3161,13 @@ model CroWorkOrder {
 }
 
 model CroWorkOrderEvent {
-  id          String             @id @default(cuid())
+  id          String              @id @default(cuid())
   workOrderId String
   fromStatus  CroWorkOrderStatus?
   toStatus    CroWorkOrderStatus
   actorUserId String?
   note        String?
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime            @default(now())
 
   workOrder CroWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
@@ -3348,6 +3384,27 @@ model ProtocolOutcome {
   @@index([loopCycleId])
 }
 
+/// A scheduled, user-facing reminder (e.g. re-measure your panel). Surfaced
+/// in-app when due; a job can later fan out to email/push from the same rows.
+model Reminder {
+  id        String   @id @default(cuid())
+  userId    String
+  tenantId  String   @default("default")
+  kind      String // e.g. "REMEASURE"
+  title     String
+  detail    String?
+  dueAt      DateTime
+  status     String    @default("PENDING") // PENDING | DONE | DISMISSED
+  notifiedAt DateTime? // set once the delivery job has fanned it out
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation("ReminderUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, dueAt])
+  @@index([tenantId, status, dueAt])
+}
+
 /// LLM-generated retrospective analysis of a completed loop cycle.
 /// Persisted with a W3C VC receipt; labeled research analysis, not medical advice.
 model ReflectionReport {
@@ -3410,22 +3467,22 @@ enum ProtocolVersionStatus {
 /// planning loop. Status progresses DRAFT → PENDING_APPROVAL → APPROVED → APPLIED.
 /// The live Protocol row is NOT modified until status = APPLIED.
 model ProtocolVersion {
-  id                       String                @id @default(cuid())
-  protocolId               String
-  userId                   String
-  tenantId                 String                @default("default")
+  id                        String                @id @default(cuid())
+  protocolId                String
+  userId                    String
+  tenantId                  String                @default("default")
   /// Auto-incrementing version number per protocol (1-based)
-  version                  Int
-  status                   ProtocolVersionStatus @default(DRAFT)
+  version                   Int
+  status                    ProtocolVersionStatus @default(DRAFT)
   /// JSON: { field, previousValue, newValue, rationale }[]
-  changes                  Json                  @default("[]")
+  changes                   Json                  @default("[]")
   /// Which agent session generated this draft
   generatedByAgentSessionId String?
-  approvedBy               String?
-  approvedAt               DateTime?
-  appliedAt                DateTime?
-  createdAt                DateTime              @default(now())
-  updatedAt                DateTime              @updatedAt
+  approvedBy                String?
+  approvedAt                DateTime?
+  appliedAt                 DateTime?
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
 
   protocol Protocol @relation("ProtocolVersions", fields: [protocolId], references: [id], onDelete: Cascade)
   user     User     @relation("ProtocolVersionUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -3442,31 +3499,155 @@ model ProtocolVersion {
 /// improve the digital twin accuracy over successive cycles.
 /// Falls back to population defaults (PBPK_DEFAULTS) when no profile exists.
 model UserPkProfile {
-  id                    String   @id @default(cuid())
-  userId                String
-  tenantId              String   @default("default")
-  compoundId            String
+  id                   String   @id @default(cuid())
+  userId               String
+  tenantId             String   @default("default")
+  compoundId           String
   /// Volume of distribution (L)
-  vd                    Float
+  vd                   Float
   /// Clearance (L/h)
-  cl                    Float
+  cl                   Float
   /// First-order absorption rate (h⁻¹)
-  ka                    Float
+  ka                   Float
   /// Oral bioavailability (0–1)
-  f                     Float    @default(0.7)
+  f                    Float    @default(0.7)
   /// Number of ProtocolOutcome observations used to fit
-  n                     Int
+  n                    Int
   /// Root-mean-square error of the fitted model vs observed data
-  rmse                  Float
-  fittedAt              DateTime @default(now())
+  rmse                 Float
+  fittedAt             DateTime @default(now())
   /// JSON array of ProtocolOutcome IDs used in the fit
-  fittedFromOutcomeIds  Json     @default("[]")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  fittedFromOutcomeIds Json     @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user User @relation("UserPkProfileUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, compoundId])
   @@index([userId])
   @@index([compoundId])
+}
+
+// ─── Moat M1: Federated Longitudinal Biomarker Graph ─────────────────────────
+
+/// A federation node represents a clinic, lab, or partner institution
+/// that contributes de-identified biomarker data to the federated graph.
+model FederatedNode {
+  id           String              @id @default(cuid())
+  tenantId     String              @default("default")
+  name         String
+  jurisdiction String // ISO country code (e.g. "US", "DE")
+  endpoint     String? // node API endpoint (optional for push nodes)
+  publicKey    String? // node public key for encrypted sync
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  consents     FederationConsent[]
+
+  @@index([tenantId, active])
+  @@index([jurisdiction])
+}
+
+/// A user's consent to contribute their de-identified data to a
+/// specific federated node's aggregate queries.
+model FederationConsent {
+  id        String        @id @default(cuid())
+  userId    String
+  nodeId    String
+  tenantId  String        @default("default")
+  /// Consent scope: which data categories the user has consented to share
+  scope     Json          @default("[]")
+  grantedAt DateTime      @default(now())
+  revokedAt DateTime?
+  user      User          @relation("FederationConsentUser", fields: [userId], references: [id], onDelete: Cascade)
+  node      FederatedNode @relation(fields: [nodeId], references: [id])
+
+  @@unique([userId, nodeId])
+  @@index([userId])
+  @@index([nodeId, revokedAt])
+}
+
+/// Per-user monthly differential privacy budget tracker.
+/// Deducted on each aggregate query that uses this user's data.
+/// Default: ε_max = 4.0 per user per calendar month.
+model UserPrivacyBudget {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  tenantId    String   @default("default")
+  epsilonUsed Float    @default(0)
+  epsilonMax  Float    @default(4.0)
+  queryCount  Int      @default(0)
+  periodStart DateTime // first day of current budget period
+  periodEnd   DateTime // last day of current budget period (periodStart + 30 days)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  user        User     @relation("UserPrivacyBudget", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([periodEnd])
+}
+
+// ─── Moat M2: Protocol Fork Social Graph ────────────────────────────────────
+
+/// Records when a user forks a protocol from another user's protocol.
+/// Enables the GitHub-for-protocols moat: outcome data propagates
+/// back to the source protocol's aggregate ledger (anonymised).
+model ProtocolFork {
+  id               String   @id @default(cuid())
+  sourceProtocolId String
+  forkedByUserId   String
+  forkNote         String?
+  createdAt        DateTime @default(now())
+
+  sourceProtocol Protocol @relation(fields: [sourceProtocolId], references: [id], onDelete: Cascade)
+  forkedBy       User     @relation("ProtocolForkUser", fields: [forkedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([sourceProtocolId])
+  @@index([forkedByUserId])
+}
+
+// ─── Moat M3: Researcher Cohort Query DSL ────────────────────────────────────
+
+/// IRB approval token for a researcher. Required to execute cohort DSL queries.
+model IrbApproval {
+  id          String    @id @default(cuid())
+  userId      String
+  tenantId    String    @default("default")
+  token       String    @unique @default(cuid())
+  institution String
+  studyId     String
+  approvedAt  DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation("IrbApprovalUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([token])
+}
+
+// ─── Moat M7: Clinician Co-Sign Premium Tier ─────────────────────────────────
+
+/// Auditable co-sign record from a licensed clinician on any AI-generated result.
+/// Co-signing upgrades YELLOW-tier recommendations to provisional approval and
+/// creates an auditable liability-transfer record.
+model ClinicianCoSign {
+  id                String    @id @default(cuid())
+  resourceType      String // "DosageSuggestion" | "InvestigationPlan" | "CycleReport" …
+  resourceId        String // ID of the signed resource
+  clinicianId       String
+  tenantId          String    @default("default")
+  /// Clinician's digital signature (base64 of SHA-256 of resourceType+resourceId+clinicianId+signedAt)
+  signature         String
+  signedAt          DateTime  @default(now())
+  expiresAt         DateTime?
+  jurisdiction      String? // ISO country code
+  licenseNumber     String
+  licenseVerifiedAt DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  clinician         User      @relation("ClinicianCoSignUser", fields: [clinicianId], references: [id], onDelete: Cascade)
+
+  @@index([resourceType, resourceId])
+  @@index([clinicianId])
+  @@index([signedAt])
 }

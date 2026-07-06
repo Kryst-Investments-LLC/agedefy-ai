@@ -91,7 +91,7 @@ export function CandidateDetailPanel({
                   <div key={s} className="flex items-center gap-1 flex-shrink-0">
                     <span
                       className={`text-xs px-2 py-0.5 rounded ${
-                        done ? STATUS_COLORS[s] : 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-600'
+                        done ? STATUS_COLORS[s] : 'bg-gray-100 text-muted-foreground dark:bg-slate-800 dark:text-gray-600'
                       }`}
                     >
                       {LIFECYCLE_LABELS[s]}

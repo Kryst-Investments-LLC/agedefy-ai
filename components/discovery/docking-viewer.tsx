@@ -178,12 +178,12 @@ export function DockingViewer({
           <div ref={containerRef} style={{ height, width: "100%" }} className="bg-[#0b1020]" />
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#0b1020]/80">
-              <p className="text-sm text-gray-400 animate-pulse">Loading docking pose…</p>
+              <p className="text-sm text-muted-foreground animate-pulse">Loading docking pose…</p>
             </div>
           )}
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#0b1020]/90">
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
         </div>

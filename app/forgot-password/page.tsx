@@ -28,9 +28,9 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-16">
+    <main className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-md">
-        <Card className="border-gray-800 bg-gray-900 text-white">
+        <Card className="border-border bg-background text-foreground">
           <CardHeader>
             <CardTitle>Reset password</CardTitle>
             <CardDescription>
@@ -40,11 +40,11 @@ export default function ForgotPasswordPage() {
           <CardContent>
             {submitted ? (
               <div className="space-y-4">
-                <p className="text-sm text-gray-300">
+                <p className="text-sm text-muted-foreground">
                   If an account with that email exists, a password reset link has been sent.
                   Check your inbox.
                 </p>
-                <Link href="/sign-in" className="text-teal-400 hover:underline text-sm">
+                <Link href="/sign-in" className="text-teal-600 dark:text-teal-400 hover:underline text-sm">
                   Back to sign in
                 </Link>
               </div>
@@ -69,8 +69,8 @@ export default function ForgotPasswordPage() {
                   {isSubmitting ? "Sending…" : "Send reset link"}
                 </Button>
 
-                <p className="text-center text-sm text-gray-400">
-                  <Link href="/sign-in" className="text-teal-400 hover:underline">
+                <p className="text-center text-sm text-muted-foreground">
+                  <Link href="/sign-in" className="text-teal-600 dark:text-teal-400 hover:underline">
                     Back to sign in
                   </Link>
                 </p>

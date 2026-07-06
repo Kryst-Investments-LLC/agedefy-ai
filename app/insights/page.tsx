@@ -1,6 +1,11 @@
 import type { Metadata } from "next"
+import { getServerSession } from "next-auth"
 
+import { AppShell } from "@/components/app-shell"
 import { AggregateOutcomeCards } from "@/components/insights/aggregate-outcomes"
+import { EffectReadout } from "@/components/effect-readout"
+import { authOptions } from "@/lib/auth"
+import { getLatestProtocolEffect } from "@/lib/outcomes/latest-effect"
 
 export const metadata: Metadata = {
   title: "Population Insights — Biozephyra",
@@ -13,18 +18,29 @@ export const metadata: Metadata = {
   },
 }
 
-export default function InsightsPage() {
+export default async function InsightsPage() {
+  const session = await getServerSession(authOptions)
+  const personalEffect = session?.user?.id ? await getLatestProtocolEffect(session.user.id) : null
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
+    <AppShell pageTitle="Insights">
+    <div className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Population Insights</h1>
+        <h1 className="text-3xl font-bold">Insights</h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Anonymised outcome data from consenting Biozephyra users, aggregated with
-          k-anonymity (k≥5) and differential privacy. No individual data is
-          ever exposed.
+          Your measured protocol effects, plus anonymised population-level outcomes
+          aggregated with k-anonymity (k≥5) and differential privacy.
         </p>
       </div>
+
+      {/* Your measured effect — the personal causal readout */}
+      {personalEffect && (
+        <section>
+          <h2 className="mb-3 text-xl font-semibold">Your latest measured effect</h2>
+          <EffectReadout effect={personalEffect} />
+        </section>
+      )}
 
       {/* Privacy banner */}
       <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950 p-4">
@@ -80,6 +96,7 @@ export default function InsightsPage() {
           </li>
         </ol>
       </section>
-    </main>
+    </div>
+    </AppShell>
   )
 }

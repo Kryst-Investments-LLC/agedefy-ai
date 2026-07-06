@@ -60,26 +60,26 @@ export default async function AccountPage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-4xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-4xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Account</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Account</p>
           <h1 className="text-4xl font-bold">{user?.name ?? "Account"}</h1>
-          <p className="mt-2 text-gray-400">Email: {user?.email}</p>
-          <p className="mt-2 text-sm text-gray-500">Entitlement: {activeSubscription ? `${activeSubscription.plan} (${activeSubscription.status.toLowerCase()})` : "No active subscription"}</p>
+          <p className="mt-2 text-muted-foreground">Email: {user?.email}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Entitlement: {activeSubscription ? `${activeSubscription.plan} (${activeSubscription.status.toLowerCase()})` : "No active subscription"}</p>
           {session.user.role === "ADMIN" ? (
             <div className="mt-4">
               <Link href="/admin">
-                <Button variant="outline" className="border-gray-700 text-gray-100 hover:bg-gray-800">Open admin console</Button>
+                <Button variant="outline" className="border-border text-gray-100 hover:bg-gray-800">Open admin console</Button>
               </Link>
             </div>
           ) : null}
         </div>
 
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+          <div className="rounded-2xl border border-border bg-background p-6">
             <h2 className="text-lg font-semibold">Identity</h2>
-            <dl className="mt-4 space-y-3 text-sm text-gray-300">
+            <dl className="mt-4 space-y-3 text-sm text-muted-foreground">
               <div className="flex justify-between gap-4">
                 <dt>Role</dt>
                 <dd>{session.user.role.toLowerCase()}</dd>
@@ -95,22 +95,22 @@ export default async function AccountPage() {
             </dl>
           </div>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+          <div className="rounded-2xl border border-border bg-background p-6">
             <h2 className="text-lg font-semibold">Subscriptions</h2>
             {user?.subscriptions.length ? (
               <div className="mt-4 space-y-4">
                 {user.subscriptions.map((subscription) => (
-                  <div key={subscription.id} className="rounded-xl border border-gray-800 p-4">
+                  <div key={subscription.id} className="rounded-xl border border-border p-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="font-medium">{subscription.plan}</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           {subscription.status.toLowerCase()}
                           {subscription.regionTier ? ` · ${subscription.regionTier}` : ""}
                           {subscription.seatQuantity > 1 ? ` · ${subscription.seatQuantity} seats` : ""}
                         </p>
                         {subscription.monthlyAICreditAllowance !== null ? (
-                          <p className="mt-1 text-xs text-gray-500">{subscription.monthlyAICreditAllowance.toLocaleString()} AI credits per month</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{subscription.monthlyAICreditAllowance.toLocaleString()} AI credits per month</p>
                         ) : null}
                       </div>
                       <p>{formatCurrency(subscription.priceCents, subscription.currency)}</p>
@@ -119,46 +119,46 @@ export default async function AccountPage() {
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-gray-400">No active subscriptions are stored for this account yet.</p>
+              <p className="mt-4 text-sm text-muted-foreground">No active subscriptions are stored for this account yet.</p>
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+          <div className="rounded-2xl border border-border bg-background p-6">
             <h2 className="text-lg font-semibold">AI credit balances</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-400">Included this month</p>
-                <p className="mt-2 text-2xl font-semibold text-white">
+              <div className="rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">Included this month</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
                   {(aiCreditBalance.includedCreditsRemaining ?? 0).toLocaleString()} / {(aiCreditBalance.includedCreditsTotal ?? 0).toLocaleString()}
                 </p>
-                <p className="mt-1 text-xs text-gray-500">{aiCreditBalance.includedCreditsConsumed.toLocaleString()} consumed since reset</p>
+                <p className="mt-1 text-xs text-muted-foreground">{aiCreditBalance.includedCreditsConsumed.toLocaleString()} consumed since reset</p>
               </div>
-              <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-400">Purchased top-ups remaining</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{aiCreditBalance.purchasedCreditsRemaining.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-gray-500">{aiCreditBalance.pendingReservedCredits.toLocaleString()} credits currently reserved</p>
+              <div className="rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">Purchased top-ups remaining</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{aiCreditBalance.purchasedCreditsRemaining.toLocaleString()}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{aiCreditBalance.pendingReservedCredits.toLocaleString()} credits currently reserved</p>
               </div>
             </div>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-muted-foreground">
               {`Monthly included credits reset on ${formatDateTime(new Date(aiCreditBalance.nextResetAt))}. Purchased credits remain available until consumed.`}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 md:col-span-2">
+          <div className="rounded-2xl border border-border bg-background p-6 md:col-span-2">
             <h2 className="text-lg font-semibold">Billing records</h2>
             {user?.billingRecords.length ? (
               <div className="mt-4 space-y-3">
                 {user.billingRecords.map((record) => (
-                  <div key={record.id} className="rounded-xl border border-gray-800 p-4">
+                  <div key={record.id} className="rounded-xl border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-medium text-white">{record.description}</p>
-                        <p className="mt-1 text-sm text-gray-400">
+                        <p className="font-medium text-foreground">{record.description}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
                           {record.category.toLowerCase().replaceAll("_", " ")} · {record.status.toLowerCase()}
                           {formatCreditDelta(record.aiCreditsDelta) ? ` · ${formatCreditDelta(record.aiCreditsDelta)}` : ""}
                           {formatAICreditSource(record.aiCreditSource) ? ` · ${formatAICreditSource(record.aiCreditSource)}` : ""}
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">{formatDateTime(record.createdAt)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(record.createdAt)}</p>
                       </div>
                       <p className="text-sm text-gray-200">{formatCurrency(record.amountCents, record.currency)}</p>
                     </div>
@@ -166,25 +166,25 @@ export default async function AccountPage() {
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-gray-400">No billable service records or AI top-ups have been stored for this account yet.</p>
+              <p className="mt-4 text-sm text-muted-foreground">No billable service records or AI top-ups have been stored for this account yet.</p>
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 md:col-span-2">
+          <div className="rounded-2xl border border-border bg-background p-6 md:col-span-2">
             <h2 className="text-lg font-semibold">Scientist-Sponsor Marketplace</h2>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-muted-foreground">
               Marketplace access is derived from your platform role and uses the same authenticated workspace session.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-300">
+            <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
               {marketplaceRoles.map((role) => (
-                <span key={role} className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-1 text-teal-200">
+                <span key={role} className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-1 text-teal-700 dark:text-teal-200">
                   {role}
                 </span>
               ))}
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/scientist-sponsor">
-                <Button variant="outline" className="border-gray-700 text-gray-100 hover:bg-gray-800">Open scientist-sponsor workspace</Button>
+                <Button variant="outline" className="border-border text-gray-100 hover:bg-gray-800">Open scientist-sponsor workspace</Button>
               </Link>
               <Link href="/scientist-sponsor-marketplace">
                 <Button variant="ghost" className="text-gray-200 hover:bg-gray-800">Open canonical route</Button>

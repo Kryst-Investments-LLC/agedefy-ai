@@ -44,24 +44,24 @@ function VerifyEmailContent() {
   }, [token, router])
 
   return (
-    <Card className="border-gray-800 bg-gray-900 text-white">
+    <Card className="border-border bg-background text-foreground">
       <CardHeader>
         <CardTitle>Email Verification</CardTitle>
       </CardHeader>
       <CardContent>
         {status === "verifying" && (
-          <p className="text-sm text-gray-300">Verifying your email…</p>
+          <p className="text-sm text-muted-foreground">Verifying your email…</p>
         )}
         {status === "success" && (
           <div className="space-y-2">
-            <p className="text-sm text-green-400">Email verified successfully!</p>
-            <p className="text-sm text-gray-400">Redirecting to dashboard…</p>
+            <p className="text-sm text-green-600 dark:text-green-400">Email verified successfully!</p>
+            <p className="text-sm text-muted-foreground">Redirecting to dashboard…</p>
           </div>
         )}
         {status === "error" && (
           <div className="space-y-2">
-            <p className="text-sm text-red-400">{errorMessage}</p>
-            <Link href="/dashboard" className="text-teal-400 hover:underline text-sm">
+            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+            <Link href="/dashboard" className="text-teal-600 dark:text-teal-400 hover:underline text-sm">
               Go to dashboard
             </Link>
           </div>
@@ -73,9 +73,9 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-16">
+    <main className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-md">
-        <Suspense fallback={<div className="text-gray-400">Loading…</div>}>
+        <Suspense fallback={<div className="text-muted-foreground">Loading…</div>}>
           <VerifyEmailContent />
         </Suspense>
       </div>

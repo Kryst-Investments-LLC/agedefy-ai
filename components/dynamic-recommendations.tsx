@@ -11,24 +11,24 @@ interface DynamicRecommendationsProps {
 }
 
 const typeConfig = {
-  compound: { icon: FlaskConical, label: "Compound", badge: "bg-purple-600/20 text-purple-300 border-purple-500/20" },
-  protocol_adjustment: { icon: ClipboardList, label: "Protocol", badge: "bg-amber-600/20 text-amber-300 border-amber-500/20" },
-  lab_panel: { icon: TestTube, label: "Lab Panel", badge: "bg-blue-600/20 text-blue-300 border-blue-500/20" },
-  research: { icon: BookOpen, label: "Research", badge: "bg-teal-600/20 text-teal-300 border-teal-500/20" },
+  compound: { icon: FlaskConical, label: "Compound", badge: "bg-purple-600/20 text-purple-700 dark:text-purple-300 border-purple-500/20" },
+  protocol_adjustment: { icon: ClipboardList, label: "Protocol", badge: "bg-amber-600/20 text-amber-700 dark:text-amber-300 border-amber-500/20" },
+  lab_panel: { icon: TestTube, label: "Lab Panel", badge: "bg-blue-600/20 text-blue-700 dark:text-blue-300 border-blue-500/20" },
+  research: { icon: BookOpen, label: "Research", badge: "bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20" },
 } as const
 
 const qualityColors = {
-  high: "bg-green-600/20 text-green-300 border-green-500/20",
-  moderate: "bg-yellow-600/20 text-yellow-300 border-yellow-500/20",
-  low: "bg-gray-600/20 text-gray-300 border-gray-500/20",
+  high: "bg-green-600/20 text-green-700 dark:text-green-300 border-green-500/20",
+  moderate: "bg-yellow-600/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20",
+  low: "bg-gray-600/20 text-muted-foreground border-gray-500/20",
 } as const
 
 export function DynamicRecommendations({ recommendations }: DynamicRecommendationsProps) {
   if (recommendations.length === 0) {
     return (
-      <Card className="border-gray-700 bg-gray-900">
+      <Card className="border-border bg-background">
         <CardContent className="p-6">
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             No recommendations available yet. Add biomarker readings and protocols to receive personalized insights.
           </p>
         </CardContent>
@@ -42,15 +42,15 @@ export function DynamicRecommendations({ recommendations }: DynamicRecommendatio
         const config = typeConfig[rec.type]
         const Icon = config.icon
         return (
-          <Card key={`${rec.type}-${rec.title}-${i}`} className="border-gray-700 bg-gray-900">
+          <Card key={`${rec.type}-${rec.title}-${i}`} className="border-border bg-background">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5 rounded-md bg-gray-800 p-2">
-                  <Icon className="h-4 w-4 text-teal-400" />
+                <div className="flex-shrink-0 mt-0.5 rounded-md bg-card p-2">
+                  <Icon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h4 className="text-sm font-semibold text-white truncate">
+                    <h4 className="text-sm font-semibold text-foreground truncate">
                       {rec.title}
                     </h4>
                     <Badge className={config.badge + " text-xs"}>
@@ -60,18 +60,18 @@ export function DynamicRecommendations({ recommendations }: DynamicRecommendatio
                       {rec.evidenceQuality} evidence
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {rec.reason}
                   </p>
                   {rec.relatedPathway && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Pathway: {rec.relatedPathway}
                     </p>
                   )}
                 </div>
                 <div className="flex-shrink-0 text-right">
-                  <div className="text-xs text-gray-500">Relevance</div>
-                  <div className="text-sm font-bold text-teal-400">
+                  <div className="text-xs text-muted-foreground">Relevance</div>
+                  <div className="text-sm font-bold text-teal-600 dark:text-teal-400">
                     {Math.round(rec.relevanceScore * 100)}%
                   </div>
                 </div>

@@ -115,15 +115,15 @@ export default async function AdminPage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-7xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-7xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Enterprise control</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Enterprise control</p>
           <h1 className="mt-3 text-4xl font-bold">Admin Console</h1>
-          <p className="mt-3 max-w-2xl text-gray-400">
+          <p className="mt-3 max-w-2xl text-muted-foreground">
             Platform statistics, user management, audit events, review queue, and community moderation.
             {flaggedCount > 0 && (
-              <span className="ml-2 text-red-400 font-medium">{flaggedCount} flagged post{flaggedCount > 1 ? "s" : ""} need review.</span>
+              <span className="ml-2 text-red-600 dark:text-red-400 font-medium">{flaggedCount} flagged post{flaggedCount > 1 ? "s" : ""} need review.</span>
             )}
           </p>
         </div>
@@ -144,8 +144,8 @@ export default async function AdminPage() {
               { label: "Marketplace deal rooms", value: totalMarketplaceDealRooms },
               { label: "Community posts", value: totalPosts },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-gray-800 bg-gray-950 p-4">
-                <p className="text-sm text-gray-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
                 <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
               </div>
             ))}
@@ -154,17 +154,17 @@ export default async function AdminPage() {
 
         <AdminOrchestrationOverview />
 
-        <section className="mb-10 rounded-3xl border border-gray-800 bg-gray-950 p-6">
+        <section className="mb-10 rounded-3xl border border-border bg-background p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Scientist-Sponsor Marketplace Operations</h2>
-              <p className="mt-2 max-w-3xl text-sm text-gray-400">
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
                 Monitor deal flow, funding activity, notifications, and audit volume for the marketplace module from the same admin surface used for core platform controls.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/scientist-sponsor-marketplace">
-                <Button variant="outline" className="border-gray-700 text-gray-100 hover:bg-gray-800">Open canonical workspace</Button>
+                <Button variant="outline" className="border-border text-gray-100 hover:bg-gray-800">Open canonical workspace</Button>
               </Link>
               <Link href="/scientist-sponsor">
                 <Button variant="ghost" className="text-gray-200 hover:bg-gray-800">Open alias route</Button>
@@ -184,9 +184,9 @@ export default async function AdminPage() {
               { label: "Discoveries", value: totalMarketplaceDiscoveries },
               { label: "Audit events (7d)", value: recentMarketplaceAuditEvents },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-400">{stat.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-white">{stat.value}</p>
+              <div key={stat.label} className="rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="mt-1 text-2xl font-semibold text-foreground">{stat.value}</p>
               </div>
             ))}
           </div>

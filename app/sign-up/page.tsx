@@ -56,9 +56,9 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-16">
+    <main className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-md">
-        <Card className="border-gray-800 bg-gray-900 text-white">
+        <Card className="border-border bg-background text-foreground">
           <CardHeader>
             <CardTitle>Create account</CardTitle>
             <CardDescription>Set up a real Biozephyra workspace with persistent data.</CardDescription>
@@ -90,13 +90,13 @@ export default function SignUpPage() {
                   required
                 />
               </div>
-              {error ? <p className="text-sm text-red-400">{error}</p> : null}
+              {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
               <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isSubmitting}>
                 {isSubmitting ? "Creating account..." : "Create account"}
               </Button>
             </form>
-            <p className="mt-4 text-sm text-gray-400">
-              Already have an account? <Link href="/sign-in" className="text-teal-400">Sign in</Link>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Already have an account? <Link href="/sign-in" className="text-teal-600 dark:text-teal-400">Sign in</Link>
             </p>
           </CardContent>
         </Card>

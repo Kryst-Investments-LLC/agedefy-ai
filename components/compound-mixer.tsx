@@ -151,7 +151,7 @@ export function CompoundMixer() {
               <div key={c.id} className="rounded-lg border p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Link href={`/compounds/${c.id}`} className="font-semibold hover:underline text-teal-400">{c.name}</Link>
+                    <Link href={`/compounds/${c.id}`} className="font-semibold hover:underline text-teal-600 dark:text-teal-400">{c.name}</Link>
                     <Badge variant="outline">{c.category}</Badge>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removeCompound(c.id)}>
@@ -219,7 +219,7 @@ export function CompoundMixer() {
                     <Icon className={`h-5 w-5 mt-0.5 ${ix.severity === "DANGEROUS" ? "text-red-500" : ix.severity === "CAUTION" ? "text-yellow-500" : ix.severity === "BENEFICIAL" ? "text-green-500" : "text-muted-foreground"}`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Badge className={`${severityColor[ix.severity]} text-white text-xs`}>{ix.severity}</Badge>
+                        <Badge className={`${severityColor[ix.severity]} text-foreground text-xs`}>{ix.severity}</Badge>
                         <span className="text-sm font-medium">
                           {ix.compoundA?.name ?? "?"} × {ix.compoundB?.name ?? "?"}
                         </span>

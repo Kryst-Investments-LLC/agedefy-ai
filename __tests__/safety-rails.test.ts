@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { readFileSync, readdirSync } from "node:fs"
+import { readFileSync, readdirSync, type Dirent } from "node:fs"
 import { join, resolve } from "node:path"
 
 /**
@@ -23,7 +23,9 @@ const root = process.cwd()
 const read = (p: string) => readFileSync(resolve(root, p), "utf8")
 
 function walk(dir: string, acc: string[] = []): string[] {
-  let entries: ReturnType<typeof readdirSync>
+  // `Dirent[]` (i.e. Dirent<string>) is what `withFileTypes: true` returns;
+  // `ReturnType<typeof readdirSync>` mis-resolves to the Dirent<Buffer> overload.
+  let entries: Dirent[]
   try {
     entries = readdirSync(resolve(root, dir), { withFileTypes: true })
   } catch {

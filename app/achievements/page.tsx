@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Trophy } from "lucide-react"
+import { AppShell } from "@/components/app-shell"
 import {
   AchievementsGrid,
   XPLevelBar,
@@ -69,15 +70,17 @@ export default function AchievementsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-4xl py-8 px-4 animate-pulse space-y-6">
-        <div className="h-8 w-48 bg-muted rounded" />
-        <div className="h-24 bg-muted rounded-lg" />
-        <div className="grid grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-28 bg-muted rounded-lg" />
-          ))}
+      <AppShell pageTitle="Achievements">
+        <div className="container mx-auto max-w-4xl py-8 px-4 animate-pulse space-y-6">
+          <div className="h-8 w-48 bg-muted rounded" />
+          <div className="h-24 bg-muted rounded-lg" />
+          <div className="grid grid-cols-4 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-28 bg-muted rounded-lg" />
+            ))}
+          </div>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -95,28 +98,30 @@ export default function AchievementsPage() {
     .filter((g) => g.items.length > 0)
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4 space-y-8">
-      <div>
-        <div className="flex items-center gap-2">
-          <Trophy className="h-7 w-7 text-primary" />
-          <h1 className="text-3xl font-bold tracking-tight">Achievements</h1>
+    <AppShell pageTitle="Achievements">
+      <div className="container mx-auto max-w-4xl py-8 px-4 space-y-8">
+        <div>
+          <div className="flex items-center gap-2">
+            <Trophy className="h-7 w-7 text-primary" />
+            <h1 className="text-3xl font-bold tracking-tight">Achievements</h1>
+          </div>
+          <p className="mt-1 text-muted-foreground">
+            {unlockedCount} of {totalCount} unlocked
+          </p>
         </div>
-        <p className="mt-1 text-muted-foreground">
-          {unlockedCount} of {totalCount} unlocked
-        </p>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <XPLevelBar xp={xp} />
-        <StreakDisplay streaks={streaks} />
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <XPLevelBar xp={xp} />
+          <StreakDisplay streaks={streaks} />
+        </div>
 
-      {grouped.map((group) => (
-        <section key={group.key}>
-          <h2 className="text-lg font-semibold mb-3">{group.label}</h2>
-          <AchievementsGrid achievements={group.items} />
-        </section>
-      ))}
-    </div>
+        {grouped.map((group) => (
+          <section key={group.key}>
+            <h2 className="text-lg font-semibold mb-3">{group.label}</h2>
+            <AchievementsGrid achievements={group.items} />
+          </section>
+        ))}
+      </div>
+    </AppShell>
   )
 }

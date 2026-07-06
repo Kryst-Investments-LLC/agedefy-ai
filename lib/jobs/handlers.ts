@@ -9,6 +9,7 @@ import { materializeSnapshot } from "@/lib/loop/snapshot-materializer"
 import { writeProtocolOutcome } from "@/lib/loop/outcome-writer"
 import { sweepExpiredCycles } from "@/lib/loop/cycle-scheduler"
 import { sweepExpiredPredictions } from "@/lib/loop/prediction-log-sweeper"
+import { sweepDueReminders } from "@/lib/reminders/reminder-sweeper"
 import { runReflectionAgent } from "@/lib/agents/reflection-agent"
 import { candidateRealityCheckService } from "@/lib/services/candidate-reality-check"
 import {
@@ -317,6 +318,13 @@ async function handlePredictionLogSweep(job: OrchestrationJob) {
   return result
 }
 
+async function handleReminderNotifyDue(job: OrchestrationJob) {
+  logger.info("Reminder delivery sweep started", { jobId: job.id })
+  const result = await sweepDueReminders()
+  logger.info("Reminder delivery sweep complete", { ...result })
+  return result
+}
+
 export async function processOrchestrationJob(job: OrchestrationJob) {
   logger.info("Processing orchestration job", {
     jobId: job.id,
@@ -345,6 +353,8 @@ export async function processOrchestrationJob(job: OrchestrationJob) {
       return handleCycleSweep(job)
     case "loop.prediction-log-sweep":
       return handlePredictionLogSweep(job)
+    case "reminder.notify-due":
+      return handleReminderNotifyDue(job)
     default:
       throw new Error(`No orchestration handler registered for job type ${job.jobType}`)
   }

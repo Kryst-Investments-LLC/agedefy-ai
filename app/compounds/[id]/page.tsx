@@ -10,10 +10,10 @@ import { ArrowLeft, ExternalLink } from "lucide-react"
 
 const severityColor: Record<string, string> = {
   BENEFICIAL: "bg-green-600 text-white",
-  NEUTRAL: "bg-gray-600 text-white",
-  CAUTION: "bg-yellow-600 text-white",
+  NEUTRAL: "bg-gray-600 text-foreground",
+  CAUTION: "bg-yellow-600 text-foreground",
   DANGEROUS: "bg-red-600 text-white",
-  UNKNOWN: "bg-gray-500 text-white",
+  UNKNOWN: "bg-gray-500 text-foreground",
 }
 
 export default async function CompoundDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,10 +48,10 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-4xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-4xl px-4 py-10 text-foreground">
         <Link href="/mixer">
-          <Button variant="ghost" className="text-gray-400 hover:text-white mb-4">
+          <Button variant="ghost" className="text-muted-foreground hover:text-white mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Mixer
           </Button>
         </Link>
@@ -62,10 +62,10 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
             <Badge variant="outline" className="text-sm">{compound.category}</Badge>
           </div>
           {aliases.length > 0 && (
-            <p className="mt-2 text-gray-400">Also known as: {aliases.join(", ")}</p>
+            <p className="mt-2 text-muted-foreground">Also known as: {aliases.join(", ")}</p>
           )}
           {compound.casNumber && (
-            <p className="mt-1 text-xs text-gray-500">CAS: {compound.casNumber}</p>
+            <p className="mt-1 text-xs text-muted-foreground">CAS: {compound.casNumber}</p>
           )}
         </div>
 
@@ -173,7 +173,7 @@ export default async function CompoundDetailPage({ params }: { params: Promise<{
                   <div key={sl.id} className="flex items-center gap-2 text-sm">
                     <Badge variant="outline" className="text-xs">{sl.source}</Badge>
                     {sl.url ? (
-                      <a href={sl.url} target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline flex items-center gap-1">
+                      <a href={sl.url} target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1">
                         {sl.title ?? sl.externalId} <ExternalLink className="h-3 w-3" />
                       </a>
                     ) : (

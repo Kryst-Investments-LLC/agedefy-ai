@@ -208,7 +208,7 @@ export function MolecularViewer({
 
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a2e]/80">
-              <p className="text-sm text-gray-400 animate-pulse">
+              <p className="text-sm text-muted-foreground animate-pulse">
                 Loading 3D structure…
               </p>
             </div>
@@ -216,7 +216,7 @@ export function MolecularViewer({
 
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a2e]/90">
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
         </div>

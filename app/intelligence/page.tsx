@@ -191,12 +191,12 @@ export default async function IntelligencePage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-7xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-7xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Biomedical intelligence</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Biomedical intelligence</p>
           <h1 className="mt-3 text-4xl font-bold">Discovery Workspace</h1>
-          <p className="mt-3 max-w-3xl text-gray-400">
+          <p className="mt-3 max-w-3xl text-muted-foreground">
             Manage evidence, hypotheses, cohorts, outcomes, and trial matching in one place. This is the foundation for enterprise-grade
             biomedical discovery, causal learning, and AI-wave-resilient proprietary intelligence.
           </p>

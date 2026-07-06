@@ -29,10 +29,10 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-3xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-3xl px-4 py-10 text-foreground">
         <Link href="/learn">
-          <Button variant="ghost" className="text-gray-400 hover:text-white mb-6">
+          <Button variant="ghost" className="text-muted-foreground hover:text-white mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Learning Center
           </Button>
         </Link>
@@ -44,8 +44,8 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
                 TODO: restore only when a real editorial/clinical review workflow populates it. */}
           </div>
           <h1 className="text-4xl font-bold leading-tight">{article.title}</h1>
-          <p className="mt-3 text-lg text-gray-400">{article.summary}</p>
-          <div className="mt-4 flex items-center gap-3 text-sm text-gray-500">
+          <p className="mt-3 text-lg text-muted-foreground">{article.summary}</p>
+          <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
             {article.author.name && <span>By {article.author.name}</span>}
             {article.publishedAt && (
               <span>
@@ -67,34 +67,34 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
             if (line.startsWith("- **")) {
               const match = line.match(/^- \*\*(.+?)\*\*(.*)$/)
               if (match) {
-                return <p key={i} className="ml-4 mb-1"><strong className="text-white">{match[1]}</strong>{match[2]}</p>
+                return <p key={i} className="ml-4 mb-1"><strong className="text-foreground">{match[1]}</strong>{match[2]}</p>
               }
             }
             if (line.startsWith("- ")) {
-              return <p key={i} className="ml-4 mb-1 text-gray-300">• {line.slice(2)}</p>
+              return <p key={i} className="ml-4 mb-1 text-muted-foreground">• {line.slice(2)}</p>
             }
             if (/^\d+\. \*\*/.test(line)) {
               const match = line.match(/^\d+\. \*\*(.+?)\*\*(.*)$/)
               if (match) {
-                return <p key={i} className="ml-4 mb-1"><strong className="text-white">{match[1]}</strong>{match[2]}</p>
+                return <p key={i} className="ml-4 mb-1"><strong className="text-foreground">{match[1]}</strong>{match[2]}</p>
               }
             }
             if (line.startsWith("**Key reference:**")) {
               return (
-                <div key={i} className="mt-6 rounded-lg border border-gray-700 bg-gray-950 p-4">
-                  <p className="text-sm text-gray-400">{line.replace(/\*\*/g, "")}</p>
+                <div key={i} className="mt-6 rounded-lg border border-border bg-background p-4">
+                  <p className="text-sm text-muted-foreground">{line.replace(/\*\*/g, "")}</p>
                 </div>
               )
             }
             if (line.trim() === "") {
               return <div key={i} className="h-2" />
             }
-            return <p key={i} className="text-gray-300 mb-2">{line.replace(/\*\*(.+?)\*\*/g, "$1")}</p>
+            return <p key={i} className="text-muted-foreground mb-2">{line.replace(/\*\*(.+?)\*\*/g, "$1")}</p>
           })}
         </article>
 
-        <div className="mt-12 border-t border-gray-800 pt-6">
-          <p className="text-xs text-gray-500">
+        <div className="mt-12 border-t border-border pt-6">
+          <p className="text-xs text-muted-foreground">
             This article is for educational purposes only and does not constitute medical advice. 
             Always consult a qualified healthcare provider before making changes to your health regimen.
           </p>

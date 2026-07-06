@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 
 import { AIHealthCoach } from "@/components/ai-health-coach"
 import { AppShell } from "@/components/app-shell"
+import { SafetyEvidenceTrail, type LatestAnalysis } from "@/components/safety-evidence-trail"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { authOptions } from "@/lib/auth"
@@ -28,17 +29,57 @@ export default async function PersonalizationPage() {
     db.protocol.count({ where: { userId: session.user.id } }),
   ])
 
+  // Evidence trail for the coach's recommendations (deterministic safety + citations).
+  const latestSession = await db.agentSession.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, goal: true, status: true, result: true, createdAt: true },
+  })
+  let latestAnalysis: LatestAnalysis | null = null
+  if (latestSession) {
+    const claims = await db.agentClaim.findMany({
+      where: { sessionId: latestSession.id },
+      select: { claimText: true, evidenceKind: true, confidence: true },
+      orderBy: { confidence: "desc" },
+      take: 6,
+    })
+    let safetyFlagCount = 0
+    try {
+      const parsed = latestSession.result ? (JSON.parse(latestSession.result) as { safetyFlags?: unknown[] }) : null
+      if (Array.isArray(parsed?.safetyFlags)) safetyFlagCount = parsed.safetyFlags.length
+    } catch {
+      /* result not JSON */
+    }
+    latestAnalysis = {
+      goal: latestSession.goal,
+      status: latestSession.status,
+      createdAt: latestSession.createdAt.toISOString(),
+      safetyFlagCount,
+      requiresReview: latestSession.status === "AWAITING_REVIEW",
+      citations: claims.map((c) => ({
+        claimText: c.claimText,
+        evidenceKind: String(c.evidenceKind),
+        confidence: c.confidence,
+      })),
+    }
+  }
+
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-5xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-5xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Premium feature</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Premium feature</p>
           <h1 className="mt-3 text-4xl font-bold">AI Personalization</h1>
-          <p className="mt-3 max-w-2xl text-gray-400">
+          <p className="mt-3 max-w-2xl text-muted-foreground">
             Get AI-assisted informational summaries informed by your tracked biomarkers and protocols.
             Use it to explore compounds, pathways, and questions to review with a clinician.
           </p>
+        </div>
+
+        {/* Trust moat — safety + citation evidence trail */}
+        <div className="mb-8">
+          <SafetyEvidenceTrail latest={latestAnalysis} />
         </div>
 
         {/* Context summary */}

@@ -11,7 +11,7 @@ const CompoundBoard3D = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[480px] items-center justify-center rounded-lg bg-[#0b1020]">
-        <p className="animate-pulse text-sm text-gray-400">Loading interactive board…</p>
+        <p className="animate-pulse text-sm text-muted-foreground">Loading interactive board…</p>
       </div>
     ),
   },

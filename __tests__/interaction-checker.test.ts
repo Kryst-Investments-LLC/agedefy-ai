@@ -96,6 +96,42 @@ describe('checkUserInteractions', () => {
     )
   })
 
+  it('resolves a compound by an exact alias (not substring)', async () => {
+    mockDb.medication.findMany.mockResolvedValue([{ name: 'NAC' }, { name: 'Drug B' }])
+    mockDb.userProfile.findUnique.mockResolvedValue(null)
+    mockDb.compound.findMany.mockResolvedValue([
+      { id: 'c1', name: 'N-Acetylcysteine', aliases: '["NAC"]' },
+      { id: 'c2', name: 'Drug B', aliases: null },
+    ])
+    mockDb.compoundInteraction.findMany.mockResolvedValue([
+      { compoundAId: 'c1', compoundBId: 'c2', severity: 'DANGEROUS', description: 'x' },
+    ])
+    mockDb.clinicianTask.create.mockResolvedValue({ id: 'task-3' })
+
+    const result = await checkUserInteractions('u1', 'tenant1')
+
+    expect(result.flags).toHaveLength(1)
+    expect(result.unresolvedNames).toEqual([])
+  })
+
+  it('does NOT mis-resolve a partial name via substring, and surfaces it as unresolved', async () => {
+    // "Drug" is a substring of both catalog names. The old `contains` query
+    // would have wrongly resolved it; deterministic matching must not.
+    mockDb.medication.findMany.mockResolvedValue([{ name: 'Drug' }, { name: 'Drug B' }])
+    mockDb.userProfile.findUnique.mockResolvedValue(null)
+    mockDb.compound.findMany.mockResolvedValue([
+      { id: 'c1', name: 'Drug A', aliases: null },
+      { id: 'c2', name: 'Drug B', aliases: null },
+    ])
+
+    const result = await checkUserInteractions('u1', 'tenant1')
+
+    // Only "Drug B" resolves (exact); "Drug" stays unresolved → <2 resolved → no flags.
+    expect(result.flags).toEqual([])
+    expect(result.unresolvedNames).toContain('drug')
+    expect(mockDb.compoundInteraction.findMany).not.toHaveBeenCalled()
+  })
+
   it('ignores NEUTRAL and BENEFICIAL interactions', async () => {
     mockDb.medication.findMany.mockResolvedValue([{ name: 'Drug A' }, { name: 'Drug B' }])
     mockDb.userProfile.findUnique.mockResolvedValue(null)

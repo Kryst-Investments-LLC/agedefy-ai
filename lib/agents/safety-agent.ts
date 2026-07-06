@@ -6,6 +6,7 @@ import { logAudit } from '@/lib/audit'
 
 import { evaluateGovernance } from './governance'
 import type { GovernanceEvaluation } from './governance'
+import { ddiHitToEvidence, emitEvidence } from './trace-evidence'
 import type {
   AgentExecutionContext,
   AgentMessage,
@@ -97,7 +98,23 @@ export class SafetyAgent implements BioAgentInterface {
     //   2. Cross-check against the structured DrugDrugInteraction table.
     // Both produce SafetyFlags so HITL gating treats them identically.
     for (const compound of recommendedCompounds) {
-      const pgxRecs = await getPgxRecommendationsForUser(context.userId, compound).catch(() => [])
+      // FAIL-CLOSED: if a PGx or DDI lookup throws (infra error, schema drift),
+      // we must NOT treat the compound as clean. A swallowed `[]` would let a
+      // potentially contraindicated compound auto-approve. Instead we raise a
+      // clinician-review flag so the HITL gate engages on the *uncertainty*.
+      let pgxRecs: Awaited<ReturnType<typeof getPgxRecommendationsForUser>> = []
+      try {
+        pgxRecs = await getPgxRecommendationsForUser(context.userId, compound)
+      } catch (err) {
+        safetyFlags.push({
+          id: crypto.randomUUID(),
+          severity: 'high',
+          description: `PGx safety check for ${compound} could not be completed (${err instanceof Error ? err.message : String(err)}). Escalated for clinician review — do not auto-approve.`,
+          source: 'safety',
+          requiresClinicianReview: true,
+          createdAt: new Date().toISOString(),
+        })
+      }
       for (const rec of pgxRecs) {
         const isAvoidOrAlt = rec.level === 'AVOID' || rec.level === 'ALTERNATIVE_PREFERRED'
         safetyFlags.push({
@@ -110,7 +127,19 @@ export class SafetyAgent implements BioAgentInterface {
         })
       }
 
-      const ddiHits = await checkDrugInteractions(compound, userMedications).catch(() => [])
+      let ddiHits: Awaited<ReturnType<typeof checkDrugInteractions>> = []
+      try {
+        ddiHits = await checkDrugInteractions(compound, userMedications)
+      } catch (err) {
+        safetyFlags.push({
+          id: crypto.randomUUID(),
+          severity: 'high',
+          description: `Drug-interaction check for ${compound} could not be completed (${err instanceof Error ? err.message : String(err)}). Escalated for clinician review — do not auto-approve.`,
+          source: 'safety',
+          requiresClinicianReview: true,
+          createdAt: new Date().toISOString(),
+        })
+      }
       for (const hit of ddiHits) {
         const sev =
           hit.severity === 'contraindicated'
@@ -127,6 +156,15 @@ export class SafetyAgent implements BioAgentInterface {
           source: 'safety',
           requiresClinicianReview: hasContraindication([hit]) || hit.severity === 'major',
           createdAt: new Date().toISOString(),
+        })
+
+        // Capture the citation-grade provenance behind this flag as structured
+        // evidence, so the reasoning tree is reconstructable (not just a string).
+        emitEvidence(context.emitTrace, {
+          agentClass: 'safety',
+          message: `Interaction evidence: ${hit.drugA} × ${hit.drugB} (${hit.severity}, grade ${hit.evidenceGrade})`,
+          detail: hit.source,
+          evidence: ddiHitToEvidence(hit),
         })
       }
     }

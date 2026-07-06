@@ -36,11 +36,11 @@ const consultationTypeLabels: Record<string, string> = {
 }
 
 const statusColors: Record<string, string> = {
-  REQUESTED: "bg-yellow-600/20 text-yellow-300 border-yellow-500/20",
-  SCHEDULED: "bg-blue-600/20 text-blue-300 border-blue-500/20",
-  IN_PROGRESS: "bg-teal-600/20 text-teal-300 border-teal-500/20",
-  COMPLETED: "bg-green-600/20 text-green-300 border-green-500/20",
-  CANCELED: "bg-gray-600/20 text-gray-300 border-gray-500/20",
+  REQUESTED: "bg-yellow-600/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20",
+  SCHEDULED: "bg-blue-600/20 text-blue-700 dark:text-blue-300 border-blue-500/20",
+  IN_PROGRESS: "bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20",
+  COMPLETED: "bg-green-600/20 text-green-700 dark:text-green-300 border-green-500/20",
+  CANCELED: "bg-gray-600/20 text-muted-foreground border-gray-500/20",
 }
 
 export default function TelemedicinePage() {
@@ -98,18 +98,18 @@ export default function TelemedicinePage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-5xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-5xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Telemedicine</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Telemedicine</p>
           <h1 className="text-4xl font-bold">Longevity Physician Network</h1>
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-muted-foreground">
             Browse clinician consultation workflows for longevity medicine, hormone health, and preventive care. Clinical availability, appropriateness, and treatment decisions depend on licensure and physician judgment.
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-gray-500">Loading providers…</div>
+          <div className="text-center py-20 text-muted-foreground">Loading providers…</div>
         ) : (
           <>
             {/* Provider Directory */}
@@ -120,23 +120,23 @@ export default function TelemedicinePage() {
                   let states: string[] = []
                   try { states = JSON.parse(provider.licenseStates || "[]") } catch { /* ignore */ }
                   return (
-                    <Card key={provider.id} className="bg-gray-800 border-gray-700">
+                    <Card key={provider.id} className="bg-card border-border">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-white text-lg">{provider.name}</CardTitle>
-                            <CardDescription className="text-teal-400">{provider.credentials}</CardDescription>
+                            <CardTitle className="text-foreground text-lg">{provider.name}</CardTitle>
+                            <CardDescription className="text-teal-600 dark:text-teal-400">{provider.credentials}</CardDescription>
                           </div>
-                          <Badge className="bg-green-600/20 text-green-300 border-green-500/20" variant="outline">
+                          <Badge className="bg-green-600/20 text-green-700 dark:text-green-300 border-green-500/20" variant="outline">
                             Accepting patients
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="text-gray-300 text-sm space-y-2">
-                        <p><span className="text-gray-500">Specialty:</span> {provider.specialty}</p>
+                      <CardContent className="text-muted-foreground text-sm space-y-2">
+                        <p><span className="text-muted-foreground">Specialty:</span> {provider.specialty}</p>
                         {provider.bio && <p>{provider.bio}</p>}
                         {states.length > 0 && (
-                          <p><span className="text-gray-500">Licensed in:</span> {states.join(", ")}</p>
+                          <p><span className="text-muted-foreground">Licensed in:</span> {states.join(", ")}</p>
                         )}
                       </CardContent>
                     </Card>
@@ -156,18 +156,18 @@ export default function TelemedicinePage() {
                     Request a consultation
                   </button>
                 ) : (
-                  <Card className="bg-gray-800 border-gray-700">
+                  <Card className="bg-card border-border">
                     <CardHeader>
-                      <CardTitle className="text-white">New Consultation Request</CardTitle>
+                      <CardTitle className="text-foreground">New Consultation Request</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1">Consultation type</label>
+                          <label className="block text-sm text-muted-foreground mb-1">Consultation type</label>
                           <select
                             value={consultType}
                             onChange={(e) => setConsultType(e.target.value)}
-                            className="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-white"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
                           >
                             <option value="INITIAL">Initial Consultation</option>
                             <option value="FOLLOW_UP">Follow-up</option>
@@ -176,11 +176,11 @@ export default function TelemedicinePage() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1">Preferred provider (optional)</label>
+                          <label className="block text-sm text-muted-foreground mb-1">Preferred provider (optional)</label>
                           <select
                             value={selectedProvider}
                             onChange={(e) => setSelectedProvider(e.target.value)}
-                            className="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-white"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
                           >
                             <option value="">No preference</option>
                             {providers.map((p) => (
@@ -189,13 +189,13 @@ export default function TelemedicinePage() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1">Reason for visit (min 10 characters)</label>
+                          <label className="block text-sm text-muted-foreground mb-1">Reason for visit (min 10 characters)</label>
                           <textarea
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             rows={3}
                             maxLength={1000}
-                            className="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-white resize-none"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground resize-none"
                             placeholder="Describe what you'd like to discuss…"
                           />
                         </div>
@@ -210,7 +210,7 @@ export default function TelemedicinePage() {
                           <button
                             type="button"
                             onClick={() => setShowForm(false)}
-                            className="rounded-lg border border-gray-600 px-6 py-2 text-gray-300 hover:bg-gray-700 transition-colors"
+                            className="rounded-lg border border-border px-6 py-2 text-muted-foreground hover:bg-gray-700 transition-colors"
                           >
                             Cancel
                           </button>
@@ -222,9 +222,9 @@ export default function TelemedicinePage() {
               </section>
             ) : (
               <section className="mb-10">
-                <Card className="bg-gray-800 border-gray-700">
-                  <CardContent className="py-6 text-center text-gray-400">
-                    <a href="/sign-in" className="text-teal-400 hover:underline">Sign in</a> to request a consultation.
+                <Card className="bg-card border-border">
+                  <CardContent className="py-6 text-center text-muted-foreground">
+                    <a href="/sign-in" className="text-teal-600 dark:text-teal-400 hover:underline">Sign in</a> to request a consultation.
                   </CardContent>
                 </Card>
               </section>
@@ -236,16 +236,16 @@ export default function TelemedicinePage() {
                 <h2 className="text-2xl font-semibold mb-4">Your Consultations</h2>
                 <div className="space-y-3">
                   {consultations.map((c) => (
-                    <Card key={c.id} className="bg-gray-800 border-gray-700">
+                    <Card key={c.id} className="bg-card border-border">
                       <CardContent className="py-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-medium text-white">
+                            <p className="font-medium text-foreground">
                               {consultationTypeLabels[c.type] || c.type}
-                              {c.provider && <span className="text-gray-400 font-normal"> with {c.provider.name}</span>}
+                              {c.provider && <span className="text-muted-foreground font-normal"> with {c.provider.name}</span>}
                             </p>
-                            <p className="text-sm text-gray-400 mt-1">{c.reason}</p>
-                            <p className="text-xs text-gray-500 mt-2">Requested {new Date(c.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{c.reason}</p>
+                            <p className="text-xs text-muted-foreground mt-2">Requested {new Date(c.createdAt).toLocaleDateString()}</p>
                           </div>
                           <Badge className={statusColors[c.status] || statusColors.REQUESTED} variant="outline">
                             {c.status.toLowerCase().replace("_", " ")}

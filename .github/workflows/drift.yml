@@ -13,9 +13,9 @@ jobs:
       - name: Install powershell-yaml
         shell: pwsh
         run: Install-Module powershell-yaml -Scope CurrentUser -Force
-      - name: Validate freshness (warn-only on >365 days)
+      - name: Validate freshness (severity-tiered; fails on stale so an issue is opened)
         shell: pwsh
-        run: ./tools-v3/v3-jurisdiction-validator.ps1
+        run: ./tools-v3/v3-jurisdiction-validator.ps1 -Strict
       - name: Open issue if any rule older than 12 months
         if: failure()
         uses: peter-evans/create-issue-from-file@v5

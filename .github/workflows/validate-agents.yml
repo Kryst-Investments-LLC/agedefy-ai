@@ -82,3 +82,9 @@ jobs:
         run: |
           Install-Module powershell-yaml -Scope CurrentUser -Force
           ./tools-v3/v3-jurisdiction-validator.ps1
+
+      - name: Run cross-reference integrity check (PowerShell)
+        shell: pwsh
+        run: |
+          Install-Module powershell-yaml -Scope CurrentUser -Force
+          ./tools-v3/v3-reference-integrity.ps1

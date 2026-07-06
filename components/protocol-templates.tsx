@@ -107,7 +107,7 @@ export function ProtocolTemplates() {
             {t.targetPathways.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {t.targetPathways.map((p) => (
-                  <Badge key={p} className="bg-teal-600/20 text-teal-300 border-teal-500/20 text-xs">
+                  <Badge key={p} className="bg-teal-600/20 text-teal-700 dark:text-teal-300 border-teal-500/20 text-xs">
                     {p}
                   </Badge>
                 ))}

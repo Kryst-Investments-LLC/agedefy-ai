@@ -12,6 +12,7 @@ import { ProtocolAgent } from './protocol-agent'
 import { SafetyAgent } from './safety-agent'
 import { Scratchpad } from './scratchpad'
 import { createTraceEmitter } from './trace-emitter'
+import { persistTraceEvents } from './trace-persistence'
 import type {
   AgentClass,
   AgentExecutionContext,
@@ -269,6 +270,12 @@ export class SupervisorAgent {
       },
     })
 
+    // Flush the reasoning trace to durable storage for audit / replay.
+    // Non-fatal: a persistence failure must never fail an otherwise-good session.
+    await persistTraceEvents(sessionId, this.tenantId).catch((err) => {
+      logger.warn('Failed to persist trace events', { sessionId, error: String(err) })
+    })
+
     return agentResult
   }
 
@@ -392,6 +399,11 @@ export class SupervisorAgent {
         status,
         safetyFlagCount: allSafetyFlags.length,
       },
+    })
+
+    // Flush the (re-evaluated) reasoning trace; idempotent on the event id.
+    await persistTraceEvents(sessionId, this.tenantId).catch((err) => {
+      logger.warn('Failed to persist trace events', { sessionId, error: String(err) })
     })
 
     return agentResult

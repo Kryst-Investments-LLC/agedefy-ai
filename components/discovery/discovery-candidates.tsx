@@ -81,7 +81,7 @@ export function DiscoveryCandidates({
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-gray-400">
             No candidate hypotheses yet. Submit a prompt to generate ranked candidates worth testing.
           </p>
         </CardContent>
@@ -111,7 +111,7 @@ export function DiscoveryCandidates({
                   {candidate.prompt}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-muted-foreground dark:text-gray-400">
                     {formatDistanceToNow(new Date(candidate.createdAt), {
                       addSuffix: true,
                     })}

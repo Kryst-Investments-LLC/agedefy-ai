@@ -36,7 +36,7 @@ export function ScoreBreakdown({ breakdown, className = '' }: ScoreBreakdownProp
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-0.5">
         {SEGMENTS.map(({ key, label, color }) => (
-          <span key={key} className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+          <span key={key} className="flex items-center gap-1 text-[10px] text-muted-foreground dark:text-gray-400">
             <span className={`inline-block w-2 h-2 rounded-sm ${color}`} aria-hidden />
             {label}: {(breakdown[key] * 100).toFixed(1)}%
           </span>

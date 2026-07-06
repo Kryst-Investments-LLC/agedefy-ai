@@ -29,11 +29,11 @@ type FeedbackState = {
 }
 
 const statusBadgeStyles: Record<SubscriptionStatus, string> = {
-  ACTIVE: "border-teal-500/30 bg-teal-500/10 text-teal-200",
-  TRIALING: "border-sky-500/30 bg-sky-500/10 text-sky-200",
-  PAST_DUE: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  CANCELED: "border-gray-500/30 bg-gray-500/10 text-gray-300",
-  INACTIVE: "border-gray-700 bg-gray-900 text-gray-400",
+  ACTIVE: "border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-200",
+  TRIALING: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-200",
+  PAST_DUE: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+  CANCELED: "border-gray-500/30 bg-gray-500/10 text-muted-foreground",
+  INACTIVE: "border-border bg-background text-muted-foreground",
 }
 
 function buildDrafts(subscriptions: EnterpriseSubscriptionRow[]) {
@@ -200,15 +200,15 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
   }
 
   return (
-    <section className="rounded-3xl border border-gray-800 bg-gray-950 p-6 text-white">
+    <section className="rounded-3xl border border-border bg-background p-6 text-foreground">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Enterprise AI allowance editor</h2>
-          <p className="mt-2 max-w-3xl text-sm text-gray-400">
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             Set the contracted monthly AI credit allowance on enterprise subscriptions without sending operators through the general subscription APIs.
           </p>
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           {isPending ? "Refreshing..." : `${filteredSubscriptions.length} enterprise subscription${filteredSubscriptions.length === 1 ? "" : "s"}`}
         </div>
       </div>
@@ -218,12 +218,12 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by account name or email..."
-          className="max-w-sm border-gray-800 bg-gray-900 text-white placeholder:text-gray-500"
+          className="max-w-sm border-border bg-background text-foreground placeholder:text-gray-500"
         />
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as SubscriptionStatus | "ALL")}
-          className="flex h-10 rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+          className="flex h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
         >
           <option value="ALL">All statuses</option>
           {Object.values(SubscriptionStatus).map((status) => (
@@ -233,13 +233,13 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
       </div>
 
       {filteredSubscriptions.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-gray-800 bg-gray-900/60 p-6 text-sm text-gray-400">
+        <div className="mt-6 rounded-2xl border border-dashed border-border bg-background/60 p-6 text-sm text-muted-foreground">
           No enterprise subscriptions matched the current filters.
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-gray-800">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border">
           <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-gray-950 text-gray-400">
+            <thead className="bg-background text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Account</th>
                 <th className="px-4 py-3 text-left font-medium">Subscription</th>
@@ -248,7 +248,7 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
                 <th className="px-4 py-3 text-left font-medium">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800 bg-gray-900">
+            <tbody className="divide-y divide-gray-800 bg-background">
               {filteredSubscriptions.map((subscription) => {
                 const parsedDraft = parseDraftAllowance(drafts[subscription.id] ?? "")
                 const isDraftValid = typeof parsedDraft !== "undefined"
@@ -258,20 +258,20 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
                 return (
                   <tr key={subscription.id} className="align-top hover:bg-gray-800/40">
                     <td className="px-4 py-4">
-                      <p className="font-medium text-white">{subscription.userName || "Unnamed account"}</p>
-                      <p className="mt-1 text-xs text-gray-500">{subscription.userEmail}</p>
+                      <p className="font-medium text-foreground">{subscription.userName || "Unnamed account"}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{subscription.userEmail}</p>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className={statusBadgeStyles[subscription.status]}>
                           {subscription.status.toLowerCase()}
                         </Badge>
-                        <span className="text-xs uppercase tracking-[0.18em] text-gray-500">{subscription.plan}</span>
+                        <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{subscription.plan}</span>
                       </div>
-                      <p className="mt-2 text-xs text-gray-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         {subscription.seatQuantity} seat{subscription.seatQuantity === 1 ? "" : "s"} · {subscription.billingCycle} · renews {formatDate(subscription.currentPeriodEnd)}
                       </p>
-                      <p className="mt-1 text-xs text-gray-500">Updated {new Date(subscription.updatedAt).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Updated {new Date(subscription.updatedAt).toLocaleString()}</p>
                     </td>
                     <td className="px-4 py-4 text-gray-200">
                       <p>{formatAllowance(subscription.monthlyAICreditAllowance)}</p>
@@ -284,10 +284,10 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
                         inputMode="numeric"
                         value={drafts[subscription.id] ?? ""}
                         onChange={(event) => updateDraft(subscription.id, event.target.value)}
-                        className="max-w-[180px] border-gray-800 bg-gray-950 text-white"
+                        className="max-w-[180px] border-border bg-background text-foreground"
                         aria-label={`Monthly AI allowance for ${subscription.userEmail}`}
                       />
-                      <p className="mt-2 text-xs text-gray-500">Enter whole credits only.</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Enter whole credits only.</p>
                     </td>
                     <td className="px-4 py-4">
                       <Button
@@ -299,7 +299,7 @@ export function AdminEnterpriseAllowanceEditor({ subscriptions }: { subscription
                         {savingId === subscription.id ? "Saving..." : "Save allowance"}
                       </Button>
                       {feedback ? (
-                        <p className={`mt-2 text-xs ${feedback.tone === "error" ? "text-red-400" : "text-teal-300"}`}>
+                        <p className={`mt-2 text-xs ${feedback.tone === "error" ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-300"}`}>
                           {feedback.message}
                         </p>
                       ) : null}

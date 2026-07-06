@@ -20,8 +20,8 @@ const statusColor: Record<string, string> = {
   RECRUITING: "bg-green-600 text-white",
   "ACTIVE_NOT_RECRUITING": "bg-blue-600 text-white",
   "ACTIVE, NOT YET RECRUITING": "bg-blue-600 text-white",
-  COMPLETED: "bg-gray-600 text-white",
-  "NOT_YET_RECRUITING": "bg-yellow-600 text-white",
+  COMPLETED: "bg-gray-600 text-foreground",
+  "NOT_YET_RECRUITING": "bg-yellow-600 text-foreground",
   ENROLLING_BY_INVITATION: "bg-teal-600 text-white",
 }
 
@@ -143,7 +143,7 @@ export function ClinicalTrialsExplorer() {
                 </Button>
               )}
             </div>
-            {savedMsg && <p className="text-sm text-green-400 mt-1">{savedMsg}</p>}
+            {savedMsg && <p className="text-sm text-green-600 dark:text-green-400 mt-1">{savedMsg}</p>}
           </CardHeader>
           <CardContent>
             {trials.length === 0 && !loading && (
@@ -155,7 +155,7 @@ export function ClinicalTrialsExplorer() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <Badge className={`text-xs ${statusColor[trial.status] ?? "bg-gray-600 text-white"}`}>
+                        <Badge className={`text-xs ${statusColor[trial.status] ?? "bg-gray-600 text-foreground"}`}>
                           {trial.status.replace(/_/g, " ")}
                         </Badge>
                         <span className="text-xs text-muted-foreground font-mono">{trial.nctId}</span>
