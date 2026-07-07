@@ -31,6 +31,32 @@ export async function isMfaEnabled(userId: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Server-authoritative verification marker
+//
+// The MFA gate (token.mfaPending) is lowered by the JWT callback ONLY when the
+// DB shows a verification recorded after the current session's login. The
+// client cannot clear the gate by passing data to NextAuth's update() — the
+// server is the sole source of truth. `recordMfaVerification` is the write side
+// (called by the verify endpoint on a successful challenge); `getMfaVerifiedAt`
+// is the read side used by the callback.
+// ---------------------------------------------------------------------------
+
+export async function recordMfaVerification(userId: string): Promise<void> {
+  await db.userMfaSecret.updateMany({
+    where: { userId },
+    data: { lastVerifiedAt: new Date() },
+  })
+}
+
+export async function getMfaVerifiedAt(userId: string): Promise<Date | null> {
+  const record = await db.userMfaSecret.findUnique({
+    where: { userId },
+    select: { lastVerifiedAt: true },
+  })
+  return record?.lastVerifiedAt ?? null
+}
+
+// ---------------------------------------------------------------------------
 // Secret + QR generation
 // ---------------------------------------------------------------------------
 

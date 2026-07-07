@@ -12,7 +12,7 @@ import { getFallbackTenantId, resolveStoredTenantContextForUser } from "@/lib/te
 import { isConfiguredAdminEmail } from "@/lib/admin"
 import { getNonPasswordAuthHash, isLegacyEmptyPasswordHash, isPasswordLoginAllowed } from "@/lib/auth-password"
 import { loginSchema } from "@/lib/validators/auth"
-import { isMfaEnabled, isMfaRequired } from "@/lib/mfa"
+import { getMfaVerifiedAt, isMfaEnabled, isMfaRequired } from "@/lib/mfa"
 
 // ---------------------------------------------------------------------------
 // OIDC SSO Provider (optional)
@@ -156,6 +156,7 @@ export const authOptions: NextAuthOptions = {
             token.sub = dbUser.id
             token.role = dbUser.role
             token.tenantId = dbUser.defaultTenantId ?? getFallbackTenantId()
+            token.loginAt = Date.now()
             token.mfaPending = await isMfaEnabled(dbUser.id) || isMfaRequired(dbUser.role)
             return token
           }
@@ -164,14 +165,25 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role ?? UserRole.MEMBER
         token.tenantId = user.tenantId ?? getFallbackTenantId()
         token.organizationId = user.organizationId
+        token.loginAt = Date.now()
         token.mfaPending = (user as unknown as Record<string, unknown>).mfaPending === true
       }
 
-      // Allow MFA verification endpoint and MFA setup to clear mfaPending
-      if (trigger === "update" && token.mfaPending) {
-        // The verify/setup endpoint triggers a session update with mfaPending=false
-        const updatePayload = user as unknown as Record<string, unknown> | undefined
-        if (updatePayload?.mfaPending === false) {
+      // Server-authoritative MFA clear. The gate is lowered ONLY when the DB
+      // shows a second-factor challenge that was recorded AFTER this session's
+      // login epoch (token.loginAt). Nothing here trusts the update() payload,
+      // so a client cannot bypass MFA by calling update({ mfaPending: false }).
+      // Runs on every refresh while pending (cheap: one indexed lookup, and it
+      // stops once cleared).
+      if (token.mfaPending && token.sub) {
+        const loginEpoch =
+          typeof token.loginAt === "number"
+            ? token.loginAt
+            : typeof token.iat === "number"
+              ? token.iat * 1000
+              : 0
+        const verifiedAt = await getMfaVerifiedAt(token.sub as string)
+        if (verifiedAt && verifiedAt.getTime() >= loginEpoch) {
           token.mfaPending = false
         }
       }
@@ -193,6 +205,9 @@ export const authOptions: NextAuthOptions = {
           if (previousRole !== dbUser.role && isMfaRequired(dbUser.role)) {
             const enrolled = await isMfaEnabled(token.sub as string)
             token.mfaPending = enrolled || true
+            // New privilege → new auth epoch: a verification recorded before
+            // this elevation must not satisfy the re-raised gate.
+            token.loginAt = Date.now()
           }
         }
       }

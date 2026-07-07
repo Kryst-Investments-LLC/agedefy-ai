@@ -207,6 +207,10 @@ model UserMfaSecret {
   verified    Boolean  @default(false)
   backupCodes Json?
   createdAt   DateTime @default(now())
+  // Timestamp of the most recent successful second-factor challenge. The JWT
+  // callback compares this against the session's login time to decide whether
+  // the MFA gate is satisfied — the client can never clear the gate directly.
+  lastVerifiedAt DateTime?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

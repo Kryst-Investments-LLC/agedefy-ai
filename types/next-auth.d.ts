@@ -25,5 +25,8 @@ declare module "next-auth/jwt" {
     tenantId?: string
     organizationId?: string
     mfaPending?: boolean
+    // Epoch (ms) of the current login / privilege elevation. The MFA gate is
+    // only cleared by a verification recorded at or after this instant.
+    loginAt?: number
   }
 }

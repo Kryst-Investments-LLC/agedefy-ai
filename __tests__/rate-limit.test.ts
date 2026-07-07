@@ -1,6 +1,32 @@
 import { afterEach, describe, expect, it } from "vitest"
 
-import { applyRateLimit, getRateLimitBackend, rateLimit, setRateLimitStoreForTests } from "@/lib/rate-limit"
+import { applyRateLimit, getRateLimitBackend, rateLimit, resolveClientIp, setRateLimitStoreForTests } from "@/lib/rate-limit"
+
+function req(headers: Record<string, string>): Request {
+  return new Request("https://example.test/api/demo", { headers })
+}
+
+describe("resolveClientIp (anti-spoofing)", () => {
+  it("ignores a client-prepended X-Forwarded-For entry", () => {
+    // Attacker prepends a fake IP; the trusted proxy appends the real one last.
+    expect(resolveClientIp(req({ "x-forwarded-for": "1.2.3.4, 203.0.113.9" }))).toBe("203.0.113.9")
+  })
+
+  it("does not let a spoofed leftmost entry mint a fresh bucket", () => {
+    const a = resolveClientIp(req({ "x-forwarded-for": "9.9.9.9, 203.0.113.9" }))
+    const b = resolveClientIp(req({ "x-forwarded-for": "8.8.8.8, 203.0.113.9" }))
+    expect(a).toBe(b) // same real client → same rate-limit key
+  })
+
+  it("uses the single entry when only one hop is present", () => {
+    expect(resolveClientIp(req({ "x-forwarded-for": "203.0.113.9" }))).toBe("203.0.113.9")
+  })
+
+  it("falls back to x-real-ip, then 'unknown'", () => {
+    expect(resolveClientIp(req({ "x-real-ip": "198.51.100.7" }))).toBe("198.51.100.7")
+    expect(resolveClientIp(req({}))).toBe("unknown")
+  })
+})
 
 describe("rateLimit", () => {
   afterEach(() => {

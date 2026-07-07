@@ -153,6 +153,68 @@ export function rateLimit(
 }
 
 /**
+ * Number of trusted reverse-proxy hops in front of the app (Vercel/edge/LBs).
+ * Defaults to 1 (a single trusted proxy, e.g. Vercel). Configure via
+ * TRUSTED_PROXY_HOPS if you sit behind additional trusted proxies.
+ */
+function trustedProxyHops(): number {
+  const raw = Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? "", 10)
+  return Number.isFinite(raw) && raw >= 1 ? raw : 1
+}
+
+/**
+ * Resolve the client IP for rate-limit keying.
+ *
+ * The LEFTMOST `X-Forwarded-For` entry is client-controlled: a caller can
+ * prepend an arbitrary IP to mint a fresh rate-limit bucket on every request,
+ * defeating brute-force limits on login / MFA / password-reset. The only
+ * trustworthy entries are the rightmost ones appended by our own infrastructure.
+ * With N trusted proxies, the real client IP is the entry N positions from the
+ * right (index `len - N`).
+ */
+export function resolveClientIp(request: Request): string {
+  const xff = request.headers.get("x-forwarded-for")
+  if (xff) {
+    const parts = xff.split(",").map((p) => p.trim()).filter(Boolean)
+    if (parts.length > 0) {
+      const idx = Math.max(0, parts.length - trustedProxyHops())
+      const ip = parts[idx] ?? parts[parts.length - 1]
+      if (ip) return ip
+    }
+  }
+  // x-real-ip is set by the trusted proxy (not forwardable through it).
+  return request.headers.get("x-real-ip")?.trim() || "unknown"
+}
+
+function tooManyRequests(result: RateLimitResult, route: string): NextResponse {
+  rateLimitBlockedCounter.add(1, { route })
+  return NextResponse.json(
+    { error: "Too many requests. Please try again later." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(Math.ceil((result.resetAt - Date.now()) / 1000)),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Limit": String(result.limit),
+        "X-RateLimit-Backend": result.store,
+      },
+    }
+  )
+}
+
+/**
+ * Rate-limit against an explicit key (e.g. `mfa-verify:${userId}`). Prefer this
+ * for per-principal limits that must not be bypassable by IP rotation.
+ */
+export async function applyRateLimitByKey(
+  key: string,
+  opts?: RateLimitOptions
+): Promise<NextResponse | null> {
+  const result = await rateLimitWithStore(key, opts)
+  return result.success ? null : tooManyRequests(result, key)
+}
+
+/**
  * Returns a 429 response if the caller exceeds the rate limit.
  * Use at the top of API route handlers:
  *   const blocked = await applyRateLimit(request)
@@ -162,28 +224,15 @@ export async function applyRateLimit(
   request: Request,
   opts?: RateLimitOptions
 ): Promise<NextResponse | null> {
-  const forwarded = request.headers.get("x-forwarded-for")
-  const ip = forwarded?.split(",")[0]?.trim() ?? "unknown"
+  const ip = resolveClientIp(request)
   const url = new URL(request.url).pathname
 
   const result = await rateLimitWithStore(`${ip}:${url}`, opts)
 
   if (!result.success) {
-    rateLimitBlockedCounter.add(1, { route: url })
     // Fire-and-forget abuse monitoring
     recordRateLimitBlock(ip, url).catch(() => {})
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.ceil((result.resetAt - Date.now()) / 1000)),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Limit": String(result.limit),
-          "X-RateLimit-Backend": result.store,
-        },
-      }
-    )
+    return tooManyRequests(result, url)
   }
 
   return null // not blocked
