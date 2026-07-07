@@ -28,7 +28,7 @@ export async function createPasswordResetToken(email: string) {
     },
   })
 
-  return { plainToken, email: user.email }
+  return { plainToken, email: user.email, userId: user.id }
 }
 
 export async function verifyPasswordResetToken(token: string) {

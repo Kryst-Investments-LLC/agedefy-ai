@@ -21,6 +21,26 @@ function shouldLog(level: LogLevel): boolean {
   return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[minLevel]
 }
 
+// Keys whose values are PII/secrets and must never reach the log stream.
+// Redaction is by key name and is depth-bounded, so callers can pass structured
+// meta without leaking (e.g. { user: { email } } -> { user: { email: "[redacted]" } }).
+const SENSITIVE_KEY = /(email|password|passwd|token|secret|authorization|cookie|api[-_]?key|ssn|dob|phone|address)/i
+const MAX_REDACT_DEPTH = 4
+
+function redactValue(value: unknown, depth: number): unknown {
+  if (depth > MAX_REDACT_DEPTH || value === null || typeof value !== "object") {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => redactValue(item, depth + 1))
+  }
+  const out: Record<string, unknown> = {}
+  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+    out[key] = SENSITIVE_KEY.test(key) ? "[redacted]" : redactValue(val, depth + 1)
+  }
+  return out
+}
+
 function emit(entry: LogEntry): void {
   // Structured JSON to stdout/stderr – compatible with any log collector
   const out = entry.level === "error" ? process.stderr : process.stdout
@@ -29,11 +49,12 @@ function emit(entry: LogEntry): void {
 
 function log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
   if (!shouldLog(level)) return
+  const safeMeta = meta ? (redactValue(meta, 0) as Record<string, unknown>) : undefined
   emit({
     level,
     message,
     timestamp: new Date().toISOString(),
-    ...meta,
+    ...safeMeta,
   })
 }
 
