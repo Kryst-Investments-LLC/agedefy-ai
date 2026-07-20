@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { db } from "@/lib/db"
+
 const headersMock = vi.fn()
 const constructEventMock = vi.fn()
 const confirmMarketplaceStripeCheckoutSessionMock = vi.fn()
@@ -37,6 +39,8 @@ vi.mock("@/lib/db", () => ({
     },
     idempotencyRecord: {
       create: vi.fn().mockResolvedValue({}),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
@@ -83,5 +87,34 @@ describe("POST /api/stripe/webhook marketplace checkout", () => {
       paymentIntentId: "pi_test_123",
       source: "stripe-webhook",
     })
+    // Claimed as PENDING, then marked COMPLETED only after side effects succeed.
+    expect(db.idempotencyRecord.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "PENDING" }) }),
+    )
+    expect(db.idempotencyRecord.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "COMPLETED" }) }),
+    )
+  })
+
+  it("does NOT complete the delivery when a side effect fails (so Stripe retries)", async () => {
+    constructEventMock.mockReturnValue({
+      id: "evt_fail",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: "cs_fail", payment_intent: "pi_fail", metadata: { flow: "marketplace-escrow-checkout" } } },
+    })
+    // Simulate a transient failure in the side effect.
+    confirmMarketplaceStripeCheckoutSessionMock.mockRejectedValueOnce(new Error("transient db error"))
+    ;(db.idempotencyRecord.updateMany as ReturnType<typeof vi.fn>).mockClear()
+
+    const { POST } = await import("@/app/api/stripe/webhook/route")
+    const response = await POST(new Request("http://localhost:3000/api/stripe/webhook", { method: "POST", body: "{}" }))
+
+    // 5xx tells Stripe to retry; the record must never be marked COMPLETED.
+    expect(response.status).toBe(500)
+    const completedCalls = (db.idempotencyRecord.updateMany as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([arg]) => arg?.data?.status === "COMPLETED",
+    )
+    expect(completedCalls).toHaveLength(0)
   })
 })

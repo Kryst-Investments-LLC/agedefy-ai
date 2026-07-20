@@ -42,6 +42,8 @@ vi.mock("@/lib/db", () => ({
     },
     idempotencyRecord: {
       create: vi.fn().mockResolvedValue({}),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
