@@ -47,7 +47,7 @@ groups:
 
       - alert: AiProviderLatencyP95High
         expr: |
-          histogram_quantile(0.95, rate(ai_request_latency_ms_bucket[10m])) > 5000
+          histogram_quantile(0.95, rate(biozephyra_ai_request_latency_ms_bucket[10m])) > 5000
         for: 10m
         labels:
           severity: P2
@@ -91,7 +91,7 @@ groups:
 
       - alert: RateLimitAbuseDetected
         expr: |
-          increase(rate_limit_abuse_count[5m]) > 0
+          increase(biozephyra_rate_limit_abuse_count[5m]) > 0
         for: 0m
         labels:
           severity: P3
