@@ -3,6 +3,8 @@ import Link from "next/link"
 import { AppShell } from "@/components/app-shell"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export default async function PathwaysPage() {
   const pathways = await db.pathway.findMany({
     include: {

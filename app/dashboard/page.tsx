@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     return null
   }
 
-  const [user, biomarkerCount, protocolCount, labOrderCount, pathwayCount, biomarkers, protocols, researchEntries, clinicianTasks, partnerRecords, latestBioAge, wearableConnections] = await Promise.all([
+  const [user, biomarkerCount, protocolCount, labOrderCount, pathwayCount, biomarkers, protocols, researchEntries, clinicianTasks, partnerRecords, latestBioAge] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -86,11 +86,6 @@ export default async function DashboardPage() {
     db.biologicalAgeSnapshot.findFirst({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
-    }),
-    db.wearableConnection.findMany({
-      where: { userId: session.user.id, status: 'active' },
-      select: { provider: true, lastSyncAt: true },
-      orderBy: { lastSyncAt: 'desc' },
     }),
   ])
 

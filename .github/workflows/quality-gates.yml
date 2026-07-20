@@ -1,0 +1,67 @@
+name: Application quality gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agedefy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/agedefy_test
+      POSTGRES_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/agedefy_test
+      NEXTAUTH_URL: http://127.0.0.1:3000
+      NEXTAUTH_SECRET: ci-nextauth-secret-material-change-before-production
+      MFA_ENCRYPTION_KEY: ci-mfa-encryption-key-material-change-before-production
+      SCREENING_ADAPTER_ENCRYPTION_KEY: ci-screening-key-material-change-before-production
+      ENABLE_TEST_AUTH_ENDPOINT: "false"
+      ADMIN_EMAILS: admin@example.com
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.3
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm db:deploy
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test:unit
+      - run: pnpm test:postgres
+      - run: pnpm test:integration
+      - run: pnpm build
+      - run: pnpm audit --prod --audit-level=high

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // ---------------------------------------------------------------------------
 // API Key Manager — unit tests
@@ -48,6 +48,11 @@ describe('API Key Middleware exports', () => {
     const mod = await import('@/lib/api-keys/middleware')
     expect(typeof mod.requireScope).toBe('function')
   })
+
+  it('exports requireResearchRole function', async () => {
+    const mod = await import('@/lib/api-keys/middleware')
+    expect(typeof mod.requireResearchRole).toBe('function')
+  })
 })
 
 describe('requireScope', () => {
@@ -61,6 +66,7 @@ describe('requireScope', () => {
         scopes: ['discover', 'simulate'],
         rateLimitPerMin: 60,
         sandbox: false,
+        ownerRole: 'RESEARCHER' as const,
       },
     }
     expect(requireScope(ctx, 'discover')).toBeNull()
@@ -76,11 +82,25 @@ describe('requireScope', () => {
         scopes: ['discover'],
         rateLimitPerMin: 60,
         sandbox: false,
+        ownerRole: 'RESEARCHER' as const,
       },
     }
     const result = requireScope(ctx, 'virtual-twin')
     expect(result).not.toBeNull()
     expect(result!.status).toBe(403)
+  })
+})
+
+describe('requireResearchRole', () => {
+  it('allows research roles and blocks consumer members', async () => {
+    const { requireResearchRole } = await import('@/lib/api-keys/middleware')
+    const base = {
+      id: 'key-1', userId: 'user-1', tenantId: 'default', scopes: ['discover'],
+      rateLimitPerMin: 60, sandbox: false,
+    }
+
+    expect(requireResearchRole({ key: { ...base, ownerRole: 'RESEARCHER' } })).toBeNull()
+    expect(requireResearchRole({ key: { ...base, ownerRole: 'MEMBER' } })?.status).toBe(403)
   })
 })
 

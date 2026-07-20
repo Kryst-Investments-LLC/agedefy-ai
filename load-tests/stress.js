@@ -20,7 +20,7 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost:3000";
 
-export default function () {
+export default function stressScenario() {
   const healthRes = http.get(`${BASE}/api/health`);
   check(healthRes, {
     "health 200": (r) => r.status === 200,

@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     )
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Failed to create validation listing" }, { status: 500 })
   }
 }

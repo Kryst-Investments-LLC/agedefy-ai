@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, FlaskConical, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import {
   Sheet,

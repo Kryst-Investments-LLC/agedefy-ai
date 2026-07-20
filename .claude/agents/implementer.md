@@ -23,6 +23,9 @@ is disciplined execution, not re-planning.
 - Postgres-only — never reintroduce the dual SQLite/Prisma pipeline.
 - New agent endpoints: RESEARCHER/CLINICIAN role-gated, never consumer-exposed.
 - Cohort queries keep k-anonymity (≥50) + differential privacy.
+- Touching user-visible health/science content, the compound knowledge
+  graph, coaching output, or agent endpoints? Invoke the medical-claims-path
+  skill FIRST — claim language and evidence tiers are shippability gates.
 
 ## Known traps (cost real debugging time before)
 - `requireAuthWithRole` returns `NextResponse | AuthedSession` — guard with

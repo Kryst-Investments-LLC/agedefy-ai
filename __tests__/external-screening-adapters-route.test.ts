@@ -24,7 +24,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 
-const AUTHED = { user: { id: 'u1', email: 'r@example.com' } }
+const AUTHED = { user: { id: 'u1', email: 'r@example.com', role: 'RESEARCHER' } }
 
 const ADAPTER_BODY = {
   name: 'My ADMET Tool',
@@ -134,6 +134,11 @@ describe('POST /api/screening-adapters', () => {
     const body = await res.json() as Record<string, unknown>
     expect(body.id).toBe('adp1')
     expect(body.secret).toBeUndefined()
+    expect(dbMock.externalScreeningAdapter.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ secret: expect.stringMatching(/^enc:v1:/) }),
+      }),
+    )
   })
 
   it('returns 500 on db error', async () => {
@@ -233,6 +238,19 @@ describe('PATCH /api/screening-adapters/[id]', () => {
     expect(res.status).toBe(200)
     const body = await res.json() as Record<string, unknown>
     expect(body.name).toBe('Renamed')
+  })
+
+  it('encrypts a replacement secret before storing it', async () => {
+    const { PATCH } = await import('@/app/api/screening-adapters/[id]/route')
+    const res = await PATCH(patchReq({ secret: 'replacement-secret' }), {
+      params: Promise.resolve({ id: 'adp1' }),
+    })
+    expect(res.status).toBe(200)
+    expect(dbMock.externalScreeningAdapter.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ secret: expect.stringMatching(/^enc:v1:/) }),
+      }),
+    )
   })
 
   it('accepts an empty patch object (no-op update)', async () => {

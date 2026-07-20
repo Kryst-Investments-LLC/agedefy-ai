@@ -32,6 +32,7 @@ describe("runtime baseline", () => {
       "database.postgres_required",
       "ratelimit.redis_required",
       "observability.otel_required",
+      "cron.secret_required",
     ])
   })
 
@@ -45,6 +46,7 @@ describe("runtime baseline", () => {
       REDIS_TOKEN: "token",
       OTEL_SERVICE_NAME: "biozephyra-ai-staging",
       OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
     })
 
     expect(baseline.productionBaselineRequired).toBe(true)

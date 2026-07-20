@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { authenticateAPIKey, requireScope, type APIKeyContext } from '@/lib/api-keys/middleware'
+import { authenticateAPIKey, requireResearchRole, requireScope, type APIKeyContext } from '@/lib/api-keys/middleware'
 import { recordUsage } from '@/lib/api-keys/metering'
 import { sandboxVirtualTwinResponse } from '@/lib/api-keys/sandbox'
 import { AICreditLimitError, estimateAICreditCost, runWithReservedAICredits, serializeAICreditLimitError } from '@/lib/ai-credits'
@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
   const authResult = await authenticateAPIKey(request)
   if (authResult instanceof NextResponse) return authResult
   const ctx = authResult as APIKeyContext
+
+  const roleBlocked = requireResearchRole(ctx)
+  if (roleBlocked) return roleBlocked
 
   const scopeBlocked = requireScope(ctx, 'virtual-twin')
   if (scopeBlocked) return scopeBlocked

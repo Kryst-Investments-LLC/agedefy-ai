@@ -1402,6 +1402,14 @@ enum MarketplaceOrderStatus {
   REFUNDED
 }
 
+enum ProductReviewStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 model Product {
   id               String          @id @default(cuid())
   tenantId         String          @default("default")
@@ -1416,10 +1424,20 @@ model Product {
   inStock          Boolean         @default(true)
   thirdPartyTested Boolean         @default(false)
   coaUrl           String? // certificate of analysis URL
+  reviewStatus     ProductReviewStatus @default(DRAFT)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  evidenceTier     String?
+  sourceProvenance Json?
+  affiliate        Boolean             @default(false)
+  sponsored        Boolean             @default(false)
+  lastVerifiedAt   DateTime?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   orderItems MarketplaceOrderItem[]
+
+  @@index([reviewStatus, inStock])
 }
 
 model MarketplaceOrder {

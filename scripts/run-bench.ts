@@ -190,12 +190,10 @@ async function main() {
   if (!only || only === "mech") results.push(await runMechBench(persist))
   if (!only || only === "safety") results.push(await runSafetyBench(persist))
 
-  // eslint-disable-next-line no-console
   console.log(JSON.stringify({ persist, results }, null, 2))
 }
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error(err)
   process.exit(1)
 })

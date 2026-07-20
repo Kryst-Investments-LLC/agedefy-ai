@@ -9,6 +9,8 @@ import { CompoundRain } from "@/components/landing/compound-rain"
 import { Button } from "@/components/ui/button"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export default async function HomePage() {
   const [userCount, biomarkerCount, compoundCount] = await Promise.all([
     db.user.count(),

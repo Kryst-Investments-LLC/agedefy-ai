@@ -1,0 +1,17 @@
+.git
+.github
+.next
+.next-test
+.pnpm-store
+coverage
+node_modules
+*.log
+.env
+.env.*
+!.env.example
+k8s
+charts
+tests
+traces
+data/pdb-structures
+_dev-demo-*.cjs

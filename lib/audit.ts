@@ -1,4 +1,4 @@
-import { ReviewSeverity, ReviewStatus } from "@prisma/client"
+import { Prisma, ReviewSeverity, ReviewStatus } from "@prisma/client"
 
 import { db } from "@/lib/db"
 import { computeEntryHash, getLatestHash } from "@/lib/audit-integrity"
@@ -69,6 +69,47 @@ async function writeAuditEntry(input: AuditLogInput) {
     }
   }
   throw new Error("audit.write.unreachable")
+}
+
+/**
+ * Write an audit entry through an existing transaction. Callers use this when
+ * the audited mutation and its audit record must commit or roll back together.
+ * A tenant must be supplied so tenant resolution cannot escape the transaction.
+ */
+export async function logAuditInTransactionOrThrow(
+  tx: Prisma.TransactionClient,
+  input: AuditLogInput & { tenantId: string },
+) {
+  const detailsStr = typeof input.details === "string"
+    ? input.details
+    : input.details
+      ? JSON.stringify(input.details)
+      : null
+  const prevHash = await getLatestHash(input.tenantId, tx)
+  const id = crypto.randomUUID()
+  const entryHash = computeEntryHash({
+    id,
+    action: input.action,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    details: detailsStr,
+    prevHash,
+  })
+
+  return tx.auditLog.create({
+    data: {
+      id,
+      actorUserId: input.actorUserId,
+      actorEmail: input.actorEmail,
+      tenantId: input.tenantId,
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      details: detailsStr,
+      prevHash,
+      entryHash,
+    },
+  })
 }
 
 /**

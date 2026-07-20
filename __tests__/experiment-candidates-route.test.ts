@@ -22,7 +22,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 
-const AUTHED = { user: { id: 'u1', email: 'r@example.com' } }
+const AUTHED = { user: { id: 'u1', email: 'r@example.com', role: 'RESEARCHER' } }
 
 const CHEMBL_BODY = {
   kind: 'CHEMBL',

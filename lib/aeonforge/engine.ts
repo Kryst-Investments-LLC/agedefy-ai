@@ -11,7 +11,7 @@ import {
 } from '@/lib/biomedical-intelligence'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
-import { gradeCandidate, gradeFromConfidence, gradeSimulation, type EvidenceGrade } from '@/lib/aeonforge/evidence-grade'
+import { gradeCandidate, gradeFromConfidence } from '@/lib/aeonforge/evidence-grade'
 import { applyHealthGuardrail } from '@/lib/ai/health-guardrail'
 import type {
   AeonForgeCandidateMolecule,

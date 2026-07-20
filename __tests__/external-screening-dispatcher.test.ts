@@ -4,6 +4,10 @@ import { callAdapter } from '@/lib/external-screening'
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
+vi.mock('@/lib/security/outbound-url', () => ({
+  assertSafeOutboundUrl: vi.fn(async (rawUrl: string) => new URL(rawUrl)),
+}))
+
 const ADAPTER = {
   endpointUrl: 'https://admet.example.com/screen',
   authHeader: 'Authorization',

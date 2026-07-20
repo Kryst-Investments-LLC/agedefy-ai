@@ -177,7 +177,7 @@ export function SimulationResults({
     es.onerror = () => es.close()
 
     return () => es.close()
-  }, [candidate.id, details?.id, hasPendingChecks])
+  }, [candidate.id, details, hasPendingChecks])
 
   if (loading) {
     return (

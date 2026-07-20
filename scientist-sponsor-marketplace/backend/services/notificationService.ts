@@ -1,4 +1,3 @@
-import { db } from "@/lib/db"
 import { enqueueOrchestrationJob } from "@/lib/jobs/queue"
 import { logger } from "@/lib/logger"
 import { BaseCrudService } from "@/scientist-sponsor-marketplace/backend/services/baseCrudService"

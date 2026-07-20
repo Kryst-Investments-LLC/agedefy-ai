@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { runDriftSweepBatch } from '@/lib/agents/drift-sweep'
 import { logger } from '@/lib/logger'
+import { requireCronAuthorization } from '@/lib/security/cron-auth'
 
 /**
  * POST /api/agents/drift-sweep
@@ -13,17 +14,8 @@ import { logger } from '@/lib/logger'
  *   { "crons": [{ "path": "/api/agents/drift-sweep", "schedule": "0 6 * * 1" }] }
  */
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret) {
-    logger.error('CRON_SECRET environment variable is not configured')
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const unauthorized = requireCronAuthorization(request)
+  if (unauthorized) return unauthorized
 
   const body = (await request.json().catch(() => ({}))) as { trigger?: string }
   const triggerType = body.trigger === 'manual' ? 'manual' as const : 'scheduled' as const

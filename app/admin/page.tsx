@@ -19,6 +19,9 @@ export default async function AdminPage() {
     redirect("/dashboard")
   }
 
+  const marketplaceAuditWindowStart = new Date()
+  marketplaceAuditWindowStart.setDate(marketplaceAuditWindowStart.getDate() - 7)
+
   const [
     reviewItems,
     auditLogs,
@@ -61,7 +64,7 @@ export default async function AdminPage() {
     db.marketplaceDealRoom.count(),
     db.marketplaceTransaction.count(),
     db.marketplaceNotification.count(),
-    db.marketplaceAuditLog.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    db.marketplaceAuditLog.count({ where: { createdAt: { gte: marketplaceAuditWindowStart } } }),
     db.marketplaceTransaction.findMany({
       where: { status: "SETTLED" },
       orderBy: { updatedAt: "desc" },

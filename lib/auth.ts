@@ -147,7 +147,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    async jwt({ token, user, trigger, account }) {
+    async jwt({ token, user, trigger: _trigger, account }) {
       if (user) {
         // For OIDC logins, resolve the user from the DB to get our internal ID
         if (account?.provider === "oidc" && user.email) {

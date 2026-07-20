@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { encryptExternalSecret } from '@/lib/external-secret-crypto'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { requireAuthWithRole } from '@/lib/rbac'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 import {
   createAdapterSchema,
@@ -18,9 +20,8 @@ import {
  */
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries())
   const parsed = listAdaptersQuerySchema.safeParse(params)
@@ -73,9 +74,8 @@ export async function POST(request: NextRequest) {
   if (blocked) return blocked
 
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: session.user, request })
   if (!tenantContext) {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         endpointUrl: data.endpointUrl,
         authHeader: data.authHeader,
         authScheme: data.authScheme,
-        secret: data.secret,
+        secret: encryptExternalSecret(data.secret),
         timeoutMs: data.timeoutMs,
         enabled: data.enabled,
         notes: data.notes,

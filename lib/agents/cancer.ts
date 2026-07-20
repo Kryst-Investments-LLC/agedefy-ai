@@ -8,7 +8,6 @@
  */
 
 import { db } from "@/lib/db"
-import { safeJsonParse } from "@/lib/safe-json"
 
 export interface CtdnaTrajectory {
   measuredAt: Date

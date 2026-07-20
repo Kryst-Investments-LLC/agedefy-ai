@@ -18,7 +18,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
 
-const AUTHED = { user: { id: 'u1', email: 'r@example.com' } }
+const AUTHED = { user: { id: 'u1', email: 'r@example.com', role: 'RESEARCHER' } }
 
 function patchReq(id: string, body: unknown) {
   return new NextRequest(`http://localhost/api/experiment/candidates/${id}/transition`, {
@@ -33,6 +33,10 @@ const BASE_CANDIDATE = {
   userId: 'u1',
   status: 'PROPOSED',
   displayName: 'Resveratrol',
+  smiles: 'CCO',
+  screenJson: { valid: true },
+  feedbackScore: 0.8,
+  _count: { labResults: 1 },
 }
 
 beforeEach(() => {
@@ -114,6 +118,21 @@ describe('PATCH /api/experiment/candidates/[id]/transition', () => {
     expect(body.status).toBe('SCREENED')
   })
 
+  it('blocks screening promotion without a persisted screening result', async () => {
+    getServerSessionMock.mockResolvedValue(AUTHED)
+    dbMock.experimentCandidate.findFirst.mockResolvedValue({
+      ...BASE_CANDIDATE,
+      screenJson: null,
+    })
+    const { PATCH } = await import('@/app/api/experiment/candidates/[id]/transition/route')
+    const res = await PATCH(patchReq('cand1', { toStatus: 'SCREENED' }), {
+      params: Promise.resolve({ id: 'cand1' }),
+    })
+    expect(res.status).toBe(422)
+    const body = await res.json() as { blockers: string[] }
+    expect(body.blockers.join(' ')).toMatch(/screening result/i)
+  })
+
   it('writes an ExperimentCandidateEvent row on valid transition', async () => {
     getServerSessionMock.mockResolvedValue(AUTHED)
     const { PATCH } = await import('@/app/api/experiment/candidates/[id]/transition/route')
@@ -144,7 +163,10 @@ describe('PATCH /api/experiment/candidates/[id]/transition', () => {
       dbMock.experimentCandidate.findFirst.mockResolvedValue({ ...BASE_CANDIDATE, status: from })
       txMock.experimentCandidate.update.mockResolvedValue({ ...BASE_CANDIDATE, status: to })
       const { PATCH } = await import('@/app/api/experiment/candidates/[id]/transition/route')
-      const res = await PATCH(patchReq('cand1', { toStatus: to }), { params: Promise.resolve({ id: 'cand1' }) })
+      const transitionBody = to === 'SENT_TO_LAB'
+        ? { toStatus: to, metadata: { labSubmissionId: 'submission-1' } }
+        : { toStatus: to }
+      const res = await PATCH(patchReq('cand1', transitionBody), { params: Promise.resolve({ id: 'cand1' }) })
       expect(res.status).toBe(200)
     }
   })

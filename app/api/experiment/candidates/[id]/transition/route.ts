@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { requireAuthWithRole } from '@/lib/rbac'
 import {
   isValidTransition,
   transitionCandidateSchema,
@@ -21,9 +22,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const { id } = await params
 
@@ -47,6 +47,7 @@ export async function PATCH(
   try {
     const candidate = await db.experimentCandidate.findFirst({
       where: { id, userId: session.user.id },
+      include: { _count: { select: { labResults: true } } },
     })
 
     if (!candidate) {
@@ -61,6 +62,31 @@ export async function PATCH(
           currentStatus: candidate.status,
           toStatus,
         },
+        { status: 422 },
+      )
+    }
+
+    const blockers: string[] = []
+    if (toStatus === 'SCREENED') {
+      if (!candidate.smiles) blockers.push('A molecular structure is required before screening can complete.')
+      if (!candidate.screenJson) blockers.push('A persisted screening result is required before promotion.')
+    }
+    if (toStatus === 'SENT_TO_LAB') {
+      if (!candidate.screenJson) blockers.push('The candidate must retain its screening result.')
+      if (!metadata?.labSubmissionId && !metadata?.croOrderId) {
+        blockers.push('A labSubmissionId or croOrderId is required before lab dispatch.')
+      }
+    }
+    if (toStatus === 'RESULT_LOGGED' && candidate._count.labResults < 1) {
+      blockers.push('At least one persisted laboratory result is required.')
+    }
+    if (toStatus === 'FED_BACK' && candidate.feedbackScore == null) {
+      blockers.push('A computed feedback score is required before closing the feedback loop.')
+    }
+
+    if (blockers.length > 0) {
+      return NextResponse.json(
+        { error: 'Transition prerequisites not met', currentStatus: candidate.status, toStatus, blockers },
         { status: 422 },
       )
     }

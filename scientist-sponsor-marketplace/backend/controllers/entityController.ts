@@ -68,7 +68,7 @@ export async function createEntity(request: NextRequest, entity: string) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { actingAsRole, ...payload } = body as Record<string, unknown>
+  const { actingAsRole: _actingAsRole, ...payload } = body as Record<string, unknown>
   const parsed = entityCreateSchemas[entityName].safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
@@ -122,7 +122,7 @@ export async function updateEntity(request: NextRequest, entity: string, id: str
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { actingAsRole, ...payload } = body as Record<string, unknown>
+  const { actingAsRole: _actingAsRole, ...payload } = body as Record<string, unknown>
   const parsed = entityUpdateSchemas[entityName].safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })

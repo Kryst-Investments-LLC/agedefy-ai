@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { requireAuthWithRole } from '@/lib/rbac'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 import {
   createExperimentCandidateSchema,
@@ -23,9 +24,8 @@ export async function POST(request: NextRequest) {
   if (blocked) return blocked
 
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: session.user, request })
   if (!tenantContext) {
@@ -99,9 +99,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries())
   const parsed = listCandidatesQuerySchema.safeParse(params)

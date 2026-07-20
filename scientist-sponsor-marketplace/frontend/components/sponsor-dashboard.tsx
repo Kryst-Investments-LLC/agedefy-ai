@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { DISCOVERY_CATEGORIES, DISCOVERY_STAGES } from "@/scientist-sponsor-mark
 import { formatCurrency } from "@/scientist-sponsor-marketplace/shared/utils"
 
 export function SponsorDashboard() {
-  const { snapshot, actingAs, refresh } = useMarketplaceWorkspace()
+  const { actingAs, refresh } = useMarketplaceWorkspace()
   const { runWorkflow, submitting } = useMarketplaceEntity(actingAs)
   const [discoveries, setDiscoveries] = useState<Discovery[]>([])
   const [recommendations, setRecommendations] = useState<RankedMatch[]>([])
@@ -26,7 +26,7 @@ export function SponsorDashboard() {
     search: "",
   })
 
-  async function load() {
+  const load = useCallback(async () => {
     const browseResponse = await runWorkflow("sponsor", {
       action: "browse",
       category: filters.category || undefined,
@@ -41,11 +41,11 @@ export function SponsorDashboard() {
     if (response.ok) {
       setRecommendations(await response.json())
     }
-  }
+  }, [filters, runWorkflow])
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [load])
 
   async function requestMoreInfo(discoveryId: string) {
     await runWorkflow("sponsor", { action: "requestMoreInfo", discoveryId, message: requestMessage })

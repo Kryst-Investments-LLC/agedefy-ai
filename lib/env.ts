@@ -13,6 +13,7 @@ const envSchema = z.object({
   PRISMA_RUNTIME: z.enum(["sqlite", "postgres"]).optional(),
   ENABLE_TEST_AUTH_ENDPOINT: z.enum(["true", "false"]).optional(),
   ADMIN_EMAILS: z.string().optional(),
+  CRON_SECRET: z.string().min(32).optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_GRAPH_PRICE_ID: z.string().optional(),
@@ -35,6 +36,8 @@ const envSchema = z.object({
   SSO_CLIENT_SECRET: z.string().optional(),
   SCIM_SHARED_SECRET: z.string().optional(),
   MFA_ENCRYPTION_KEY: z.string().min(32).optional(),
+  SCREENING_ADAPTER_ENCRYPTION_KEY: z.string().min(32).optional(),
+  SCREENING_ADAPTER_ALLOW_PLAINTEXT: z.enum(["true", "false"]).optional(),
   TENANCY_MODE: z.enum(["single", "shared", "isolated"]).optional(),
   DEFAULT_TENANT_ID: z.string().optional(),
   AI_GOVERNANCE_ENFORCED: z.enum(["true", "false"]).optional(),
@@ -102,6 +105,7 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     PRISMA_RUNTIME: parseOptionalEnum(process.env.PRISMA_RUNTIME, ["sqlite", "postgres"]),
     ENABLE_TEST_AUTH_ENDPOINT: parseOptionalEnum(process.env.ENABLE_TEST_AUTH_ENDPOINT, ["true", "false"]),
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    CRON_SECRET: process.env.CRON_SECRET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_GRAPH_PRICE_ID: process.env.STRIPE_GRAPH_PRICE_ID,
@@ -124,6 +128,8 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     SSO_CLIENT_SECRET: process.env.SSO_CLIENT_SECRET,
     SCIM_SHARED_SECRET: process.env.SCIM_SHARED_SECRET,
     MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
+    SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
+    SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
     TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
     DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
     AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -216,6 +222,20 @@ export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProce
     })
   }
 
+  if (productionBaselineRequired && !input.CRON_SECRET?.trim()) {
+    issues.push({
+      code: "cron.secret_required",
+      message: "Staging and production baselines require CRON_SECRET (at least 32 characters).",
+    })
+  }
+
+  if (productionBaselineRequired && input.ENABLE_TEST_AUTH_ENDPOINT === "true") {
+    issues.push({
+      code: "auth.test_endpoint_forbidden",
+      message: "ENABLE_TEST_AUTH_ENDPOINT must be false in staging and production.",
+    })
+  }
+
   return {
     appEnv,
     productionBaselineRequired,
@@ -245,6 +265,15 @@ if (resolvedAppEnvironment !== "test" && !runtimeEnvInput.MFA_ENCRYPTION_KEY?.tr
   throw new Error("Invalid environment configuration: MFA_ENCRYPTION_KEY is required outside tests.")
 }
 
+if (
+  shouldEnforceRuntimeRequirements(runtimeEnvInput) &&
+  !runtimeEnvInput.SCREENING_ADAPTER_ENCRYPTION_KEY?.trim()
+) {
+  throw new Error(
+    "Invalid environment configuration: SCREENING_ADAPTER_ENCRYPTION_KEY is required in staging and production.",
+  )
+}
+
 if (!parsedEnv.success && shouldEnforceRuntimeRequirements()) {
   throw new Error(`Invalid environment configuration: ${formatEnvironmentValidationError(parsedEnv.error)}`)
 }
@@ -264,6 +293,7 @@ const fallbackEnv: ParsedEnvironment = {
   PRISMA_RUNTIME: parseOptionalEnum(process.env.PRISMA_RUNTIME, ["sqlite", "postgres"]),
   ENABLE_TEST_AUTH_ENDPOINT: parseOptionalEnum(process.env.ENABLE_TEST_AUTH_ENDPOINT, ["true", "false"]),
   ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+  CRON_SECRET: process.env.CRON_SECRET,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   STRIPE_GRAPH_PRICE_ID: process.env.STRIPE_GRAPH_PRICE_ID,
@@ -286,6 +316,8 @@ const fallbackEnv: ParsedEnvironment = {
   SSO_CLIENT_SECRET: process.env.SSO_CLIENT_SECRET,
   SCIM_SHARED_SECRET: process.env.SCIM_SHARED_SECRET,
   MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
+  SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
+  SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
   TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
   DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
   AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
