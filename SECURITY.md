@@ -63,6 +63,17 @@ Out of scope:
 We maintain a security acknowledgements page and are happy to credit
 researchers who report valid vulnerabilities (with their permission).
 
+### Incident Response
+
+For a confirmed incident we follow the operational runbooks in
+[`docs/runbooks/production-launch-runbooks.md`](docs/runbooks/production-launch-runbooks.md)
+and use the pre-drafted communications in
+[`docs/security/incident-communication-templates.md`](docs/security/incident-communication-templates.md)
+— reporter acknowledgement/status/resolution, internal incident declaration,
+status-page updates, public advisories, and GDPR Art. 33/34 breach
+notifications. A confirmed personal-data breach triggers the DPO review and, if
+notifiable, supervisory-authority notification within 72 hours.
+
 ## Security Architecture
 
 Biozephyra AI implements the following security controls:

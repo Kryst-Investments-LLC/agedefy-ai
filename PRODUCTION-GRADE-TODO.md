@@ -154,8 +154,16 @@ items — partials are documented inline but do not increase the completed count
   critical/high findings before launch.
 - [ ] `P1-SEC-014` Add dependency, container, IaC, SAST, secret, and license scanning
   as required CI checks with documented exceptions and expiration dates.
-- [ ] `P1-SEC-015` Add a vulnerability disclosure process, security contact,
+- [x] `P1-SEC-015` Add a vulnerability disclosure process, security contact,
   severity SLA, and incident communication templates.
+  <!-- SECURITY.md: disclosure process (private reporting, safe harbour, scope),
+       security contact (security@biozephyra.com), and severity SLA (ack 24h /
+       triage 72h / fix targets). Incident communication templates in
+       docs/security/incident-communication-templates.md: reporter ack/status/
+       resolution, internal incident declaration, status-page holding update,
+       public advisory, and GDPR Art. 33/34 breach notifications; referenced from
+       SECURITY.md's Incident Response section. -->
+
 
 ## 2. Environment and configuration
 
@@ -227,7 +235,15 @@ items — partials are documented inline but do not increase the completed count
   replay protection where needed, and alerting on failures.
 - [ ] `P0-OPS-009` Define blue/green or canary deployment, automatic rollback,
   database compatibility windows, and a tested manual rollback runbook.
-- [ ] `P1-OPS-010` Add readiness, liveness, startup, and dependency health probes.
+- [x] `P1-OPS-010` Add readiness, liveness, startup, and dependency health probes.
+  <!-- LIVENESS: app/api/health/live/route.ts returns 200 without any DB/dependency
+       call (a transient dep blip must never restart a healthy pod); tested
+       __tests__/health-live.test.ts (mocks @/lib/db to throw so any future DB call
+       fails the test). READINESS + STARTUP + DEPENDENCY: existing app/api/health
+       probes DB (SELECT 1), job metrics, sidecars, and runtime baseline, returning
+       503 when deps/baseline are unmet. Probe path wiring (liveness→/api/health/live,
+       readiness/startup→/api/health) documented in the deploy runbook. -->
+
 - [ ] `P1-OPS-011` Add graceful shutdown and job lease handoff for all workers.
 - [ ] `P1-OPS-012` Configure CDN, WAF, DDoS controls, TLS, DNS failover, and domain
   ownership monitoring.
@@ -247,7 +263,7 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P0-OBS-004` Define SLIs/SLOs for authentication, payments, API success,
   AI latency, job age, data ingestion, and candidate workflow completion.
-  <!-- PROGRESS: jobExecutionCounter + authFailureCounter now emitted; the last unemitted metric httpRequestDurationHistogram is emitted via lib/observability/with-http-metrics.ts#withHttpMetrics (tested) — adopted on /api/ai/openai as the canonical example. alert-rules.yml reconciled to the exported OTel names (biozephyra_http_request_duration_ms_*, biozephyra_circuit_breaker_state_change_count) and fixed state="open" casing. REMAINING: adopt withHttpMetrics across the remaining routes (ideally via a shared route factory) and emit the gauge metrics some alerts reference (job-queue age, outbox latency, prisma pool). -->
+  <!-- PROGRESS: jobExecutionCounter + authFailureCounter now emitted; the last unemitted metric httpRequestDurationHistogram is emitted via lib/observability/with-http-metrics.ts#withHttpMetrics (tested) — adopted on all three governed AI routes (/api/ai/openai, /api/ai/anthropic, /api/ai/grok). alert-rules.yml reconciled to the exported OTel names (biozephyra_http_request_duration_ms_*, biozephyra_circuit_breaker_state_change_count) and fixed state="open" casing. REMAINING: adopt withHttpMetrics across the remaining non-AI routes (ideally via a shared route factory), emit the gauge metrics some alerts reference (job-queue age, outbox latency, prisma pool), and write the SLI/SLO target doc (the "define" half of this item is a governance deliverable). -->
 
 - [ ] `P1-OBS-005` Alert on error rate, latency, saturation, queue age, dead letters,
   webhook failures, provider quota, circuit state, and unusual spend.

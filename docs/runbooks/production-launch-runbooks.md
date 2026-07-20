@@ -86,6 +86,16 @@ pnpm jobs:retention   # schedule daily (purges expired jobs + idempotency/verifi
 `helm-release.yml` runs `db:deploy` then deploys. Deploy web / `jobs:worker` /
 `outbox:worker` / cron as **separate** Deployments/CronJobs.
 
+**Health probes (P1-OPS-010):** point the orchestrator's **liveness** probe at
+`GET /api/health/live` — it returns 200 with no DB or dependency call, so a
+transient DB/Redis blip never restarts a healthy pod. Point **readiness** and
+**startup** probes at `GET /api/health` — it checks DB (`SELECT 1`), job metrics,
+sidecars, and the runtime baseline, returning 503 until dependencies are up (give
+`startup` a generous `failureThreshold` for first-boot migrations). On Helm these
+map to the Deployment `livenessProbe` / `readinessProbe` / `startupProbe`; on
+Vercel (serverless, no pod lifecycle) use `/api/health` as the external
+uptime-monitor target.
+
 **Blue/green + rollback (P0-OPS-009):** use the platform's immutable deploys
 (Vercel promote/rollback, or Helm `helm rollback`). Document a **DB
 compatibility window** (only additive migrations between the two live versions)

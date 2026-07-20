@@ -7,7 +7,6 @@ vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(async () => null) }))
 
-// eslint-disable-next-line import/first
 import { db } from "@/lib/db"
 
 const suffix = Date.now().toString(36)
