@@ -1,3 +1,7 @@
+// CI-008: reads required data from the database — force dynamic rendering so
+// the DB is queried at request time, never at build (a DB failure can then
+// never be swallowed into a statically-generated page).
+export const dynamic = "force-dynamic"
 /**
  * Federated Learning — Admin Training Dashboard
  *
