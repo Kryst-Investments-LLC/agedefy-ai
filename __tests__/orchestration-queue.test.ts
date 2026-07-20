@@ -8,6 +8,7 @@ import {
   leaseAvailableOrchestrationJobs,
   releaseOrchestrationJob,
 } from "@/lib/jobs/queue"
+import { computeOldestQueuedJobAgeMs } from "@/lib/observability/job-queue-gauge"
 import { jobExecutionCounter } from "@/lib/observability/telemetry"
 
 async function cleanupTenant(tenantId: string) {
@@ -94,6 +95,41 @@ describe("orchestration queue", () => {
     expect(reLeased).toHaveLength(1)
     expect(reLeased[0]?.id).toBe(job.id)
     expect(reLeased[0]?.attempts).toBe(1)
+  })
+
+  it("reports the oldest due-and-queued job age for the job-age SLI tenant:jobs_age", async () => {
+    const tenantId = "jobs_age"
+    // No queued job yet → age is 0.
+    const baseline = await computeOldestQueuedJobAgeMs(db, new Date())
+    expect(baseline).toBeGreaterThanOrEqual(0)
+
+    const availableAt = new Date(Date.now() - 90_000) // due 90s ago
+    await enqueueOrchestrationJob({
+      tenantId,
+      queue: "AI",
+      jobType: "ai.governance.audit",
+      dedupeKey: `test:${tenantId}`,
+      availableAt,
+      payload: {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        route: "/api/ai/openai",
+        requestId: `req:${tenantId}`,
+        queryLength: 12,
+        tenantId,
+        outcome: "success",
+        actor: {},
+      },
+    })
+
+    const now = new Date()
+    const age = await computeOldestQueuedJobAgeMs(db, now)
+    // The gauge returns the age of the OLDEST due-and-queued job (max age). Our
+    // job has been due ~90s, so the oldest is at least that old — a deterministic
+    // lower bound even if another tenant has an older job in the shared test DB.
+    expect(age).toBeGreaterThanOrEqual(80_000)
+
+    await db.orchestrationJob.deleteMany({ where: { tenantId } })
   })
 
   it("dead-letters exhausted jobs tenant:jobs_deadletter", async () => {

@@ -71,7 +71,7 @@ groups:
 
       - alert: JobQueueStale
         expr: |
-          max(time() - orchestration_job_oldest_queued_timestamp) > 300
+          max(biozephyra_orchestration_job_oldest_queued_age_ms) > 300000
         for: 5m
         labels:
           severity: P2

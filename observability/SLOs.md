@@ -89,12 +89,12 @@ severity.
 
 | Field | Value |
 |-------|-------|
-| SLI | Age of the oldest still-queued orchestration job |
-| Metric | `orchestration_job_oldest_queued_timestamp` (gauge) ⚠️ |
-| Query | `max(time() - orchestration_job_oldest_queued_timestamp)` |
-| SLO | Oldest queued job ≤ 5 minutes |
-| Alert / sev | `JobQueueStale` (P2) — inert until the gauge is emitted |
-| Backed by | ⚠️ gap — emit an observable gauge from the queue (job execution **count** exists via `biozephyra_jobs_execution_count`, but not queue age) |
+| SLI | Age of the oldest due-and-queued orchestration job |
+| Metric | `biozephyra_orchestration_job_oldest_queued_age_ms` (observable gauge, 0 when empty) |
+| Query | `max(biozephyra_orchestration_job_oldest_queued_age_ms)` |
+| SLO | Oldest queued job ≤ 5 minutes (300000 ms) |
+| Alert / sev | `JobQueueStale` (P2) |
+| Backed by | ✅ emitted — registered at OTel init (`registerJobQueueAgeGauge`); callback runs a cheap indexed query on metric collection |
 
 ## Candidate workflow completion
 
@@ -119,7 +119,7 @@ severity.
 
 1. ~~`outbox_dispatch_latency_ms` histogram~~ — **done** (`biozephyra_outbox_dispatch_latency_ms`).
 2. ~~Stripe `outcome` label for the payments success SLO~~ — **done**.
-3. `orchestration_job_oldest_queued_timestamp` gauge (job-age SLO).
+3. ~~Job-queue-age gauge~~ — **done** (`biozephyra_orchestration_job_oldest_queued_age_ms`).
 4. `prisma_pool_active_connections` / `_max_connections` gauges (DB-pool alert).
 5. Candidate lifecycle transition counter + stage-latency histogram.
 6. Extend `withHttpMetrics` to non-AI routes via a shared route factory so the
