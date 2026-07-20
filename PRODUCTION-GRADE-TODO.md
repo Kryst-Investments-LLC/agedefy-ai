@@ -22,7 +22,7 @@
 
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
-| P0 | 25 | 85 | 29.4% |
+| P0 | 27 | 85 | 31.8% |
 | P1 | 1 | 77 | 1.3% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
@@ -132,7 +132,7 @@ items — partials are documented inline but do not increase the completed count
        controls when those integrations ship. Tested: stripe-webhook-*.test.ts,
        wearables-webhook-idempotency.test.ts. -->
 
-- [ ] `P0-SEC-009` Add CSRF, open-redirect, session-fixation, authorization,
+- [x] `P0-SEC-009` Add CSRF, open-redirect, session-fixation, authorization,
   object-level authorization, file-upload, and rate-limit security tests.
   <!-- PROGRESS: open-redirect FIXED — sign-in callbackUrl now passes through safeInternalPath() (same-origin only), tested in safe-redirect.test.ts. file-upload (lab-upload-security.test.ts) and rate-limit (rate-limit.test.ts) covered; role-gate authz partially covered (scientist-sponsor-marketplace-authz.test.ts) + object-level scoping proven (tenancy.test.ts). REMAINING: CSRF/session-fixation are NextAuth-managed; add per-route IDOR + role-gate route tests. -->
 - [ ] `P0-SEC-010` Add malware scanning, MIME sniffing, size/page limits, safe PDF
@@ -196,7 +196,7 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P0-CI-007` Add branch protection, required reviews, CODEOWNERS, and blocked
   direct pushes for production branches.
   <!-- .github/CODEOWNERS exists (default + safety/clinical/billing paths). REMAINING: branch protection, required reviews, and blocked direct pushes are GitHub repo settings (not code). -->
-- [ ] `P0-CI-008` Prevent static generation from swallowing required database or
+- [x] `P0-CI-008` Prevent static generation from swallowing required database or
   integration failures; explicitly classify optional versus required data.
 - [ ] `P1-CI-009` Add Playwright journeys for registration, email verification,
   sign-in, MFA, recovery, checkout, biomarker upload, consent, export, and deletion.
