@@ -18,17 +18,20 @@
 - Record an owner, target date, pull request, evidence, and residual risk for
   every P0/P1 item in the release tracker.
 
-## Implementation progress — 2026-07-19
+## Implementation progress — 2026-07-20
 
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
-| P0 | 11 | 89 | 12.4% |
-| P1 | 1 | 79 | 1.3% |
+| P0 | 22 | 85 | 25.9% |
+| P1 | 1 | 77 | 1.3% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
 
-Completion counts only fully satisfied checklist items. Partial implementation
-is documented below but does not increase the completed count.
+Totals count the discrete ID-tagged checklist items (`P0-SEC-001`, …) actually
+present in this file, verified by grep — 85 P0 / 77 P1 / 18 P2 / 3 P3. (The 6
+bare `P0` "Definition of production-ready" gate lines are tracked separately;
+including them makes the P0 total 91.) Completion counts only fully satisfied
+items — partials are documented inline but do not increase the completed count.
 
 - Dependency remediation: all high/critical production advisories removed;
   two moderate OpenTelemetry advisories remain through upstream Pub/Sub and
@@ -88,7 +91,7 @@ is documented below but does not increase the completed count.
 
 ## 1. Release blockers and security
 
-- [ ] `P0-SEC-001` Upgrade or override all vulnerable production dependencies.
+- [x] `P0-SEC-001` Upgrade or override all vulnerable production dependencies.
   - Remove all high/critical findings from `pnpm audit --prod`.
   - Upgrade Nodemailer to a non-vulnerable release and test every email path.
   - Upgrade `@grpc/grpc-js`, OpenTelemetry dependencies, and `protobufjs`.
@@ -98,7 +101,7 @@ is documented below but does not increase the completed count.
   - Store ciphertext, key version, and rotation metadata only.
   - Never serialize, log, trace, or return the decrypted value.
   - Migrate existing records and test key rotation and failed decryption.
-- [ ] `P0-SEC-003` Remove the tracked plaintext Kubernetes secret file.
+- [x] `P0-SEC-003` Remove the tracked plaintext Kubernetes secret file.
   - Rotate every credential that appeared in Git.
   - Use External Secrets, Sealed Secrets, or the cloud secret manager.
   - Decide with security counsel whether history rewriting is required.
@@ -115,7 +118,7 @@ is documented below but does not increase the completed count.
        REMAINING: per-route/per-table cross-tenant negative tests across
        read/write/export/search/jobs/streams, and the RLS decision. -->
 
-- [ ] `P0-SEC-007` Add SSRF protection to every user-configurable outbound URL.
+- [x] `P0-SEC-007` Add SSRF protection to every user-configurable outbound URL.
   - Block loopback, link-local, private, metadata-service, and DNS-rebinding targets.
   - Allowlist schemes and ports; revalidate after redirects and DNS resolution.
 - [x] `P0-SEC-008` Verify signature, timestamp, replay, and idempotency controls for
@@ -216,7 +219,7 @@ is documented below but does not increase the completed count.
   locks, shared caches, and ephemeral coordination where appropriate.
 - [ ] `P0-OPS-007` Deploy web, job workers, outbox dispatcher, cron jobs, and science
   sidecars as separately scalable workloads.
-- [ ] `P0-OPS-008` Protect every scheduled route with `CRON_SECRET`, least privilege,
+- [x] `P0-OPS-008` Protect every scheduled route with `CRON_SECRET`, least privilege,
   replay protection where needed, and alerting on failures.
 - [ ] `P0-OPS-009` Define blue/green or canary deployment, automatic rollback,
   database compatibility windows, and a tested manual rollback runbook.
@@ -270,7 +273,7 @@ is documented below but does not increase the completed count.
   research, compound, coaching, telemedicine, and marketplace output.
   - Fail closed when required rules are unavailable.
   - Record rule version, jurisdiction source, decision, and audit event.
-- [ ] `P0-GOV-005` Enforce post-generation claim validation in addition to prompt rules.
+- [x] `P0-GOV-005` Enforce post-generation claim validation in addition to prompt rules.
   - Reject diagnostic, prescriptive, treatment, therapy, cure, and dosing claims.
   - Require candidate/lead/hypothesis wording and a validation disclaimer.
 - [ ] `P0-GOV-006` Require evidence tier and source provenance for every material
