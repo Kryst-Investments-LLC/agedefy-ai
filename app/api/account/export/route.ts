@@ -31,7 +31,38 @@ export async function GET() {
       },
       clinicianTasks: { orderBy: { createdAt: "desc" }, take: 5000 },
       partnerDataRecords: { orderBy: { createdAt: "desc" }, take: 5000 },
+      // Health / genomics / clinical data — GDPR Art. 15/20 right of access &
+      // portability. Serialized as stored (the subject's own data). Security
+      // credentials (API keys, wearable tokens, screening secrets) and other
+      // users' data (reviewer actions, marketplace audit) are deliberately
+      // excluded — access rights do not require dumping secrets.
+      biologicalAgeSnapshots: { take: 2000 },
+      medications: { take: 2000 },
+      labOrders: { take: 2000 },
+      consultations: { take: 2000 },
+      adverseEventReports: { take: 2000 },
+      omicsSamples: { take: 500 },
+      polygenicScores: { take: 500 },
+      mrFindings: { take: 500 },
+      tumorProfiles: { take: 500 },
+      transcriptomicSignatures: { take: 500 },
+      nofOneTrials: { take: 500 },
+      physiologicalSnapshots: { take: 500 },
+      protocolOutcomes: { take: 2000 },
+      reflectionReports: { take: 2000 },
+      loopCycles: { take: 2000 },
+      reminders: { take: 2000 },
+      timelineEntries: { take: 5000 },
+      interventionOutcomes: { take: 2000 },
+      pkProfiles: { take: 500 },
+      privacyBudget: true,
+      federationConsents: true,
     },
+  })
+
+  // Consent history (the user's own grants) is a 1:1 record, not a User relation.
+  const consentGrant = await db.userConsentGrant.findUnique({
+    where: { userId: session.user.id },
   })
 
   if (!user) {
@@ -65,8 +96,18 @@ export async function GET() {
           biologicalSex: user.profile.biologicalSex,
           longevityGoal: user.profile.longevityGoal,
           riskTolerance: user.profile.riskTolerance,
+          healthConditions: user.profile.healthConditions,
+          supplementStack: user.profile.supplementStack,
+          healthGoals: user.profile.healthGoals,
+          primaryMotivation: user.profile.primaryMotivation,
+          dietaryPattern: user.profile.dietaryPattern,
+          activityLevel: user.profile.activityLevel,
+          sleepQuality: user.profile.sleepQuality,
+          stressLevel: user.profile.stressLevel,
+          onboardingCompletedAt: user.profile.onboardingCompletedAt?.toISOString() ?? null,
         }
       : null,
+    consent: consentGrant,
     subscriptions: user.subscriptions.map((s) => ({
       plan: s.plan,
       status: s.status,
@@ -136,6 +177,28 @@ export async function GET() {
       payload: r.payload,
       receivedAt: r.receivedAt.toISOString(),
     })),
+    // Health, genomics, and clinical records — serialized as stored.
+    biologicalAgeSnapshots: user.biologicalAgeSnapshots,
+    medications: user.medications,
+    labOrders: user.labOrders,
+    consultations: user.consultations,
+    adverseEventReports: user.adverseEventReports,
+    omicsSamples: user.omicsSamples,
+    polygenicScores: user.polygenicScores,
+    mendelianRandomizationFindings: user.mrFindings,
+    tumorProfiles: user.tumorProfiles,
+    transcriptomicSignatures: user.transcriptomicSignatures,
+    nofOneTrials: user.nofOneTrials,
+    physiologicalSnapshots: user.physiologicalSnapshots,
+    protocolOutcomes: user.protocolOutcomes,
+    reflectionReports: user.reflectionReports,
+    loopCycles: user.loopCycles,
+    reminders: user.reminders,
+    timelineEntries: user.timelineEntries,
+    interventionOutcomes: user.interventionOutcomes,
+    pkProfiles: user.pkProfiles,
+    privacyBudget: user.privacyBudget,
+    federationConsents: user.federationConsents,
   }
 
   return NextResponse.json(exportData)
