@@ -113,14 +113,14 @@ severity.
 |--------|--------|-------------|-----------|
 | Circuit breaker opened | `biozephyra_circuit_breaker_state_change_count{state="open"}` | `CircuitBreakerOpen` (P1) | ✅ emitted |
 | Rate-limit abuse | `biozephyra_rate_limit_abuse_count` | `RateLimitAbuseDetected` (P3) | ✅ emitted |
-| DB pool saturation | `prisma_pool_active_connections / prisma_pool_max_connections` | `DbPoolHighUtilization` (P1) | ⚠️ gap — emit pool gauges |
+| DB pool saturation | `biozephyra_db_client_queries_wait` (>0 = queries queuing for a connection); pool gauges `biozephyra_db_pool_connections_{open,busy,idle}`, `biozephyra_db_client_queries_active` | `DbPoolSaturated` (P1) | ✅ emitted — bridged from Prisma `$metrics` at OTel init (`registerDbPoolGauges`) |
 
 ## Instrumentation gaps to close (OBS follow-ups)
 
 1. ~~`outbox_dispatch_latency_ms` histogram~~ — **done** (`biozephyra_outbox_dispatch_latency_ms`).
 2. ~~Stripe `outcome` label for the payments success SLO~~ — **done**.
 3. ~~Job-queue-age gauge~~ — **done** (`biozephyra_orchestration_job_oldest_queued_age_ms`).
-4. `prisma_pool_active_connections` / `_max_connections` gauges (DB-pool alert).
+4. ~~DB-pool gauges~~ — **done** (bridged from Prisma `$metrics`; saturation via `biozephyra_db_client_queries_wait`).
 5. Candidate lifecycle transition counter + stage-latency histogram.
 6. Extend `withHttpMetrics` to non-AI routes via a shared route factory so the
    API-success/latency SLOs cover the whole surface, not just the AI routes.

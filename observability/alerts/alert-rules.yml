@@ -98,12 +98,15 @@ groups:
         annotations:
           summary: "Rate limit abuse detected from {{ $labels.ip }}"
 
-      - alert: DbPoolHighUtilization
+      - alert: DbPoolSaturated
+        # Prisma exposes no pool-max gauge; sustained queries_wait > 0 means every
+        # pooled connection is busy and queries are queuing for one (true saturation).
         expr: |
-          prisma_pool_active_connections / prisma_pool_max_connections > 0.80
+          max(biozephyra_db_client_queries_wait) > 0
         for: 2m
         labels:
           severity: P1
           slo: db-pool
         annotations:
-          summary: "Database connection pool utilization exceeds 80%"
+          summary: "DB pool saturated: queries waiting for a connection for 2m"
+          description: "Waiting queries: {{ $value }}; consider raising connection_limit or reducing long transactions"

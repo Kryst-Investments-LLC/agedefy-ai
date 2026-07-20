@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Exposes db.$metrics (pool/connection/query gauges) for the DB-pool SLO (OBS-004).
+  previewFeatures = ["metrics"]
 }
 
 datasource db {
