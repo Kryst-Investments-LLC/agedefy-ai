@@ -1,7 +1,7 @@
 import { Prisma, ReviewSeverity, ReviewStatus } from "@prisma/client"
 
 import { db } from "@/lib/db"
-import { computeEntryHash, getLatestHash } from "@/lib/audit-integrity"
+import { computeEntryHash, getLatestHash, serializeAuditDetails } from "@/lib/audit-integrity"
 import { logger } from "@/lib/logger"
 import { getFallbackTenantId, resolveStoredTenantContextForUser } from "@/lib/tenancy"
 
@@ -31,7 +31,7 @@ async function writeAuditEntry(input: AuditLogInput) {
     ? (await resolveStoredTenantContextForUser(input.actorUserId)).tenantId
     : getFallbackTenantId())
 
-  const detailsStr = typeof input.details === "string" ? input.details : input.details ? JSON.stringify(input.details) : null
+  const detailsStr = serializeAuditDetails(input.details)
 
   // Serialize the read-then-write of the hash chain inside a transaction.
   // Retry on serialization conflicts so the chain stays consistent under
@@ -80,11 +80,7 @@ export async function logAuditInTransactionOrThrow(
   tx: Prisma.TransactionClient,
   input: AuditLogInput & { tenantId: string },
 ) {
-  const detailsStr = typeof input.details === "string"
-    ? input.details
-    : input.details
-      ? JSON.stringify(input.details)
-      : null
+  const detailsStr = serializeAuditDetails(input.details)
   const prevHash = await getLatestHash(input.tenantId, tx)
   const id = crypto.randomUUID()
   const entryHash = computeEntryHash({

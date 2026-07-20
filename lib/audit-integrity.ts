@@ -2,6 +2,18 @@ import crypto from 'crypto'
 import { db } from '@/lib/db'
 
 /**
+ * Canonical serialization of an audit entry's `details` for hashing. BOTH the
+ * write path (lib/audit.ts) and the verify path MUST use this so the chain hash
+ * is reproducible. A string is stored/returned as-is by Prisma's Json column, so
+ * it must be hashed as-is — re-running JSON.stringify on the round-tripped value
+ * re-quotes it and breaks verification for every entry that carries details.
+ */
+export function serializeAuditDetails(details: unknown): string | null {
+  if (details == null) return null
+  return typeof details === 'string' ? details : JSON.stringify(details)
+}
+
+/**
  * Compute SHA-256 hash of an audit log entry (for chain integrity).
  */
 export function computeEntryHash(entry: {
@@ -86,7 +98,7 @@ export async function verifyAuditChain(tenantId?: string): Promise<{
       action: entry.action,
       entityType: entry.entityType,
       entityId: entry.entityId,
-      details: entry.details != null ? JSON.stringify(entry.details) : null,
+      details: serializeAuditDetails(entry.details),
       prevHash: entry.prevHash,
     })
 
