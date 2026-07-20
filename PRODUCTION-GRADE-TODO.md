@@ -285,6 +285,7 @@ items — partials are documented inline but do not increase the completed count
   signed decisions, expiry, and re-review triggers.
 - [ ] `P0-GOV-008` Complete data inventory, classification, lawful-purpose mapping,
   consent versioning, retention, export, correction, deletion, and backup handling.
+  <!-- PROGRESS (code parts done): data EXPORT covers all health/PII tables + consent (account/export); CONSENT is versioned; DELETION/erasure now purges IdempotencyRecord PHI and strips AuditLog.actorEmail while preserving the tamper-evident chain (lib/account/erasure.ts, tested account-erasure-pg.test.ts). REMAINING: data inventory/classification/lawful-purpose mapping (governance docs), retention job (P0-SEC-011/M3), rectification/correction UX, and backup handling (infra). -->
 - [x] `P0-GOV-009` Enforce age eligibility and explicit sensitive-data consent.
   <!-- Sensitive-data consent captured at onboarding (data-processing required,
        ai-health-info optional) and enforced on PHI intake. Age eligibility:
