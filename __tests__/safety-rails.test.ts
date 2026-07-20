@@ -72,9 +72,13 @@ describe("safety rails (CI guard — must never regress)", () => {
 
   it("Rail 4: the forbidden discovery-agent is not imported by any production code", () => {
     const files = [...walk("app"), ...walk("lib")]
+    // Match ANY import whose path ends in discovery-agent — absolute
+    // (@/lib/agents/discovery-agent) OR relative (./discovery-agent). The
+    // previous pattern only matched paths containing "agents/", so a relative
+    // import from within lib/agents slipped past the guard.
     const importsForbidden = (src: string) =>
-      /from\s+["'][^"']*agents\/discovery-agent["']/.test(src) ||
-      /import\s*\(\s*["'][^"']*agents\/discovery-agent["']/.test(src)
+      /from\s+["'][^"']*discovery-agent["']/.test(src) ||
+      /import\s*\(\s*["'][^"']*discovery-agent["']/.test(src)
 
     const offenders = files.filter(
       (f) => !f.endsWith("discovery-agent.ts") && importsForbidden(read(f)),

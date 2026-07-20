@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 
 import { runClinicalPlanningAgent } from './clinical-planning-agent'
-import { DiscoveryAgent } from './discovery-agent'
 import { ExplainabilityAgent } from './explainability-agent'
 import { PerceptionAgent } from './perception-agent'
 import { createPlan, revisePlan, createPlanFromInvestigation } from './planner'
@@ -59,9 +58,13 @@ export class SupervisorAgent {
   constructor(userId: string, tenantId: string) {
     this.userId = userId
     this.tenantId = tenantId
+    // NOTE: The 'discovery' agent (lib/agents/discovery-agent.ts) is a FORBIDDEN
+    // PATH — it turns a biomarker profile into compound suggestions, which must
+    // never be routed to consumers. It is intentionally NOT registered here.
+    // Any plan step with agentClass 'discovery' fails closed ("No agent
+    // registered") rather than producing consumer-facing compound advice.
     this.agents = new Map<AgentClass, BioAgentInterface>([
       ['perception', new PerceptionAgent()],
-      ['discovery', new DiscoveryAgent()],
       ['protocol', new ProtocolAgent()],
       ['safety', new SafetyAgent()],
       ['explainability', new ExplainabilityAgent()],
