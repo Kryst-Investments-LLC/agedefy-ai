@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
+import { requireGdprConsent } from '@/lib/consent'
 import { db } from '@/lib/db'
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency'
 import { applyRateLimit } from '@/lib/rate-limit'
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const consentBlocked = await requireGdprConsent(session.user.id, ['data-processing'])
+  if (consentBlocked) return consentBlocked
 
   const body = await request.json().catch(() => null)
   const parsed = medicationCreateSchema.safeParse(body)

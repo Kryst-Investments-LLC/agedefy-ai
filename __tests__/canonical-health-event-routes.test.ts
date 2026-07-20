@@ -95,6 +95,26 @@ async function ensureUser(role: UserRole = 'MEMBER') {
   })
 }
 
+// Grant GDPR data-processing consent for the current user. Call in tests that
+// exercise consent-gated PHI-intake routes (biomarker/medication writes). Kept
+// OUT of ensureUser so tests that assert on consent creation start clean.
+async function grantTestConsent() {
+  const grantedConsents = [
+    { category: 'data-processing', granted: true },
+    { category: 'ai-health-info', granted: true },
+  ]
+  await db.userConsentGrant.upsert({
+    where: { userId: currentSession.user.id },
+    update: { status: 'active', gdprConsents: grantedConsents },
+    create: {
+      userId: currentSession.user.id,
+      status: 'active',
+      scopes: ['data-processing', 'ai-health-info'],
+      gdprConsents: grantedConsents,
+    },
+  })
+}
+
 async function cleanupUserData() {
   await db.canonicalHealthEventOutboxRecord.deleteMany({ where: { tenantId: 'default' } })
   await db.canonicalHealthEventRecord.deleteMany({ where: { tenantId: 'default' } })
@@ -151,6 +171,7 @@ describe('canonical health event API routes', () => {
   })
 
   it('writes biomarker event and outbox records from POST /api/biomarkers', async () => {
+    await grantTestConsent() // biomarker POST is gated by requireGdprConsent
     const { POST } = await import('@/app/api/biomarkers/route')
 
     const response = await POST(buildRequest('/api/biomarkers', 'POST', {

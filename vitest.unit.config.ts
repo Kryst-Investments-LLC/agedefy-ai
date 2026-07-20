@@ -26,6 +26,7 @@ export default defineConfig({
       '__tests__/scientist-sponsor-marketplace-integration.test.ts',
       // PostgreSQL integration tests (real Prisma client or DB-backed route dependencies):
       '__tests__/audit-chain-integrity-pg.test.ts',
+      '__tests__/consent-flow-pg.test.ts',
       '__tests__/ai-credits.test.ts',
       '__tests__/ai-provider-orchestration-routes.test.ts',
       '__tests__/canonical-health-event-routes.test.ts',

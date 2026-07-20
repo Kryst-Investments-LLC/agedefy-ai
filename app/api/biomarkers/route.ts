@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 
 import { logAudit } from "@/lib/audit"
 import { authOptions } from "@/lib/auth"
+import { requireGdprConsent } from "@/lib/consent"
 import { db } from "@/lib/db"
 import { buildApiCanonicalEventContext } from "@/lib/events/api-context"
 import { biomarkerRecordToEvent } from "@/lib/events/ingestion"
@@ -19,6 +20,11 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  // Health-data processing requires an active consent grant (captured at
+  // onboarding). Returns 403 CONSENT_REQUIRED if the user has not consented.
+  const consentBlocked = await requireGdprConsent(session.user.id, ["data-processing"])
+  if (consentBlocked) return consentBlocked
 
   const payload = await request.json()
   const parsedPayload = biomarkerSchema.safeParse(payload)

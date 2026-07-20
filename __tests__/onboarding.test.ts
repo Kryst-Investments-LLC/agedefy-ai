@@ -90,6 +90,7 @@ describe('onboarding validators', () => {
       step2: { healthGoals: ['cardiovascular'], primaryMotivation: 'Heart health', riskTolerance: 'low' },
       step3: { healthConditions: ['Hypertension'], supplementStack: ['CoQ10'] },
       step4: { dietaryPattern: 'omnivore', activityLevel: 'moderate', sleepQuality: 3, stressLevel: 3 },
+      consent: { dataProcessing: true, aiHealthInfo: true },
     })
     expect(result.success).toBe(true)
   })

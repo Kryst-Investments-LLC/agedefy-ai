@@ -28,11 +28,23 @@ export const onboardingStep4Schema = z.object({
   stressLevel: z.number().int().min(1).max(5),
 })
 
+// Explicit, granular consent captured at onboarding — the point where health
+// data collection begins. data-processing is REQUIRED to proceed (lawful basis
+// for processing special-category health data); ai-health-info is optional.
+export const onboardingConsentSchema = z.object({
+  dataProcessing: z.literal(true, {
+    errorMap: () => ({ message: "You must consent to health-data processing to continue" }),
+  }),
+  aiHealthInfo: z.boolean().default(false),
+  policyVersion: z.string().min(1).max(50).optional(),
+})
+
 export const onboardingCompleteSchema = z.object({
   step1: onboardingStep1Schema,
   step2: onboardingStep2Schema,
   step3: onboardingStep3Schema,
   step4: onboardingStep4Schema,
+  consent: onboardingConsentSchema,
 })
 
 export type OnboardingData = z.infer<typeof onboardingCompleteSchema>
