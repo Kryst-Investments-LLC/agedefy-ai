@@ -365,8 +365,15 @@ is documented below but does not increase the completed count.
   RESEARCHER/CLINICIAN/ADMIN roles; never expose them directly to consumers.
 - [x] `P0-CMP-003` Do not modify or route into the forbidden
   `lib/agents/discovery-agent.ts` path.
-- [ ] `P0-CMP-004` Prevent any candidate from automatically becoming a protocol,
+- [x] `P0-CMP-004` Prevent any candidate from automatically becoming a protocol,
   recommendation, product, listing, advertisement, or purchasable item.
+  <!-- Invariant holds and is now locked by safety-rails Rail 5: the
+       experiment-candidate lifecycle is research-only (no promotion status;
+       terminal FED_BACK can't auto-advance), protocol creation is user-authored
+       (never ingests a candidate), and the candidate validation-listing is an
+       explicit owner-/status-gated action (not automatic). Candidate transitions
+       are RESEARCHER/CLINICIAN/ADMIN-gated. -->
+
 
 ### Stage 0: capture and provenance
 
