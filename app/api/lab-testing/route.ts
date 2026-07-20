@@ -8,21 +8,27 @@ import { db } from "@/lib/db"
 import { buildApiCanonicalEventContext } from "@/lib/events/api-context"
 import { labOrderRecordToEvent } from "@/lib/events/ingestion"
 import { PrismaTransactionalHealthEventIngestionService } from "@/lib/events/transactional-ingestion-service"
+import { listPageHeaders, overfetchTake, parseListPageParams, splitOverfetch } from "@/lib/http/pagination"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 
-// GET: List available lab test panels
+// GET: List available lab test panels (paginated: ?limit=&offset=, X-Page-* headers)
 export async function GET(request: NextRequest) {
   const blocked = await applyRateLimit(request)
   if (blocked) return blocked
 
-  const panels = await db.labTestPanel.findMany({
+  const { searchParams } = new URL(request.url)
+  const { limit, offset } = parseListPageParams(searchParams, { defaultLimit: 100, maxLimit: 500 })
+  const rows = await db.labTestPanel.findMany({
     where: { status: "AVAILABLE" },
     orderBy: { category: "asc" },
+    skip: offset,
+    take: overfetchTake(limit),
   })
+  const { items, hasMore } = splitOverfetch(rows, limit)
 
-  return NextResponse.json(panels)
+  return NextResponse.json(items, { headers: listPageHeaders({ limit, offset, hasMore }) })
 }
 
 // POST: Place a lab order

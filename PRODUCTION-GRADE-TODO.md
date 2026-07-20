@@ -387,13 +387,18 @@ items — partials are documented inline but do not increase the completed count
        JSON body stays a plain array so existing clients keep working. Unit-tested
        (__tests__/pagination.test.ts, 7 cases). Applied to the clear unbounded
        case, /api/model-confidence-scores (append-only time series that returned
-       the whole table unfiltered). SCOPING of the remaining 17 unbounded findMany
-       in app/api: most are ownership-scoped (reminders, referrals, pk-profile —
-       a user's own rows) or curated catalogs (lab-testing panels, telemedicine
-       providers, governance policies, protocol templates) that are admin-bounded;
-       lower risk but should still adopt the helper. REMAINING: apply to those
-       catalog/list endpoints and add cursor streaming to any genuinely large
-       admin/experiment collections (pilot-metrics). -->
+       the whole table unfiltered). Helper now also adopted on the clean list
+       endpoints: /api/lab-testing (available panels), /api/telemedicine
+       (providers), and /api/agents/pk-profile/[userId] (a user's fitted PK
+       profiles) — all backward-compatible, end-to-end verified on real Postgres
+       (list-pagination-pg.test.ts: bounded page + X-Page-Has-More/-Next-Offset).
+       SCOPING of the rest: /api/referrals derives stats from the full array so
+       pagination needs DB aggregation first (ownership-bounded, deferred);
+       /api/reminders is a user's PENDING reminders ({reminders} shape, tiny);
+       /api/admin/governance/policies and /api/protocols/templates are small
+       curated/reference sets. REMAINING: aggregation-backed pagination for
+       referrals and cursor streaming for any genuinely large admin/experiment
+       collections (pilot-metrics). -->
 
 - [ ] `P2-PERF-010` Add PWA/offline support only for explicitly safe encrypted/local
   data, with clear logout and cache-clearing behavior.
