@@ -247,14 +247,7 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P0-OBS-004` Define SLIs/SLOs for authentication, payments, API success,
   AI latency, job age, data ingestion, and candidate workflow completion.
-  <!-- PROGRESS: previously-declared-but-unemitted metrics are now emitted so the
-       SLOs become measurable — jobExecutionCounter (status=succeeded/failed/
-       dead_letter) in lib/jobs/queue.ts, and a new authFailureCounter
-       (reason-labeled) in lib/auth.ts (credential-stuffing signal). AI latency,
-       payments, rate-limit, circuit-breaker are already emitted. REMAINING:
-       httpRequestDurationHistogram needs a shared route wrapper (API
-       success/latency), and alert-rules.yml / slos.md metric names must be
-       reconciled with the emitted OTel names. -->
+  <!-- PROGRESS: jobExecutionCounter + authFailureCounter now emitted; the last unemitted metric httpRequestDurationHistogram is emitted via lib/observability/with-http-metrics.ts#withHttpMetrics (tested) — adopted on /api/ai/openai as the canonical example. alert-rules.yml reconciled to the exported OTel names (biozephyra_http_request_duration_ms_*, biozephyra_circuit_breaker_state_change_count) and fixed state="open" casing. REMAINING: adopt withHttpMetrics across the remaining routes (ideally via a shared route factory) and emit the gauge metrics some alerts reference (job-queue age, outbox latency, prisma pool). -->
 
 - [ ] `P1-OBS-005` Alert on error rate, latency, saturation, queue age, dead letters,
   webhook failures, provider quota, circuit state, and unusual spend.

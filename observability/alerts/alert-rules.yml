@@ -5,9 +5,9 @@ groups:
       - alert: ApiErrorRateHigh
         expr: |
           (
-            sum(rate(http_request_duration_ms_count{http_status_code=~"5.."}[5m]))
+            sum(rate(biozephyra_http_request_duration_ms_count{http_status_code=~"5.."}[5m]))
             /
-            sum(rate(http_request_duration_ms_count[5m]))
+            sum(rate(biozephyra_http_request_duration_ms_count[5m]))
           ) > 0.01
         for: 5m
         labels:
@@ -20,9 +20,9 @@ groups:
       - alert: ErrorBudgetBurnFast
         expr: |
           (
-            sum(increase(http_request_duration_ms_count{http_status_code=~"5.."}[1h]))
+            sum(increase(biozephyra_http_request_duration_ms_count{http_status_code=~"5.."}[1h]))
             /
-            sum(increase(http_request_duration_ms_count[1h]))
+            sum(increase(biozephyra_http_request_duration_ms_count[1h]))
           ) > 0.1
         for: 5m
         labels:
@@ -36,7 +36,7 @@ groups:
     rules:
       - alert: ApiLatencyP99High
         expr: |
-          histogram_quantile(0.99, rate(http_request_duration_ms_bucket{route!~"/api/ai/.*|/api/health"}[10m])) > 500
+          histogram_quantile(0.99, rate(biozephyra_http_request_duration_ms_bucket{route!~"/api/ai/.*|/api/health"}[10m])) > 500
         for: 10m
         labels:
           severity: P2
@@ -61,7 +61,7 @@ groups:
     rules:
       - alert: CircuitBreakerOpen
         expr: |
-          increase(circuit_breaker_state_change_count{state="OPEN"}[5m]) > 0
+          increase(biozephyra_circuit_breaker_state_change_count{state="open"}[5m]) > 0
         for: 0m
         labels:
           severity: P1
