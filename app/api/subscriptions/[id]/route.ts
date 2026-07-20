@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -133,6 +134,8 @@ export async function DELETE(request: Request, context: RouteContext) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { id } = await context.params
 

@@ -10,6 +10,7 @@ import { getPricingPlanDefinition } from "@/lib/pricing"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -56,6 +57,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const impersonationBlock = await blockWriteDuringImpersonation(authResult.user.id)
   if (impersonationBlock) return impersonationBlock

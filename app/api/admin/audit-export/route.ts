@@ -5,12 +5,16 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { requireAuthWithRole } from "@/lib/rbac"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const url = request.nextUrl
   const entityType = url.searchParams.get("entityType") ?? undefined

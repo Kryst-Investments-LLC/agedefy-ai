@@ -5,6 +5,7 @@ import { createClinicalSignature } from '@/lib/agents/clinical-signature'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 /**
  * GET /api/clinician/review-queue
@@ -98,6 +99,8 @@ export async function PATCH(request: NextRequest) {
   if (!user || (user.role !== 'CLINICIAN' && user.role !== 'ADMIN')) {
     return NextResponse.json({ error: 'Forbidden — clinician access required' }, { status: 403 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = (await request.json()) as {
     ids?: string[]

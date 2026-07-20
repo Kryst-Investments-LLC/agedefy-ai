@@ -5,6 +5,7 @@ import { getAICreditBalanceSnapshot } from "@/lib/ai-credits"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -12,6 +13,9 @@ export async function GET() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },

@@ -9,6 +9,7 @@ const transactionMock = vi.fn()
 
 vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }))
 vi.mock("@/lib/auth", () => ({ authOptions: {} }))
+vi.mock("@/lib/security/recent-mfa", () => ({ requireRecentMfa: vi.fn(async () => null) }))
 vi.mock("@/lib/audit", () => ({
   logAuditInTransactionOrThrow: auditInTransactionMock,
 }))

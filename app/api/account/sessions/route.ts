@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { authOptions } from '@/lib/auth'
 import { listActiveSessions, revokeAllSessions, revokeSession } from '@/lib/session-governance'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 /**
  * GET /api/account/sessions
@@ -27,6 +28,8 @@ export async function DELETE(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { searchParams } = new URL(request.url)
   const sessionId = searchParams.get('sessionId')

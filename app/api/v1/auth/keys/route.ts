@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { generateAPIKey, listAPIKeys, revokeAPIKey, rotateAPIKey } from '@/lib/api-keys/manager'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 async function requireKeyManagerSession() {
   const session = await getServerSession(authOptions)
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
 
   const session = await requireKeyManagerSession()
   if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: unknown
   try {
@@ -103,6 +106,8 @@ export async function DELETE(request: NextRequest) {
 
   const session = await requireKeyManagerSession()
   if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: { keyId?: string }
   try {
@@ -134,6 +139,8 @@ export async function PATCH(request: NextRequest) {
 
   const session = await requireKeyManagerSession()
   if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: { keyId?: string }
   try {

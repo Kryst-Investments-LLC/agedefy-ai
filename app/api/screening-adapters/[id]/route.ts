@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { encryptExternalSecret } from '@/lib/external-secret-crypto'
 import { logger } from '@/lib/logger'
 import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 import { updateAdapterSchema } from '@/lib/validators/external-screening'
 
 const SAFE_SELECT = {
@@ -68,6 +69,9 @@ export async function PATCH(
   const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
 
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
+
   const { id } = await params
 
   let body: unknown
@@ -126,6 +130,9 @@ export async function DELETE(
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { id } = await params
 

@@ -8,6 +8,7 @@ import { db } from "@/lib/db"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const payload = (await request.json()) as {
     title?: string

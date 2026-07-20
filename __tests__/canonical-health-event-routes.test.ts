@@ -80,6 +80,19 @@ async function ensureUser(role: UserRole = 'MEMBER') {
       passwordHash: 'hashed-password',
     },
   })
+  // Record a recent second-factor challenge so routes gated by step-up reauth
+  // (requireRecentMfa — e.g. clinician telemedicine mutations) treat the actor
+  // as freshly verified within the allowed window.
+  await db.userMfaSecret.upsert({
+    where: { userId: currentSession.user.id },
+    update: { verified: true, lastVerifiedAt: new Date() },
+    create: {
+      userId: currentSession.user.id,
+      secret: 'test-mfa-secret',
+      verified: true,
+      lastVerifiedAt: new Date(),
+    },
+  })
 }
 
 async function cleanupUserData() {

@@ -7,6 +7,7 @@ import { logAuditInTransactionOrThrow } from "@/lib/audit"
 import { applyHealthGuardrail } from "@/lib/ai/health-guardrail"
 import { db } from "@/lib/db"
 import { requireAuthWithRole } from "@/lib/rbac"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 const reviewSchema = z.object({
   status: z.enum(["IN_REVIEW", "APPROVED", "REJECTED", "SUSPENDED"]),
@@ -35,6 +36,9 @@ export async function PATCH(
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const parsed = reviewSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {

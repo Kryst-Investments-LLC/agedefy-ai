@@ -15,6 +15,7 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 import { requireAuthWithRole } from "@/lib/middleware/auth-role"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 import { fitPkProfile, getPkProfile } from "@/lib/agents/pk-fitter"
 
@@ -77,6 +78,8 @@ export async function POST(
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
   if (authError instanceof NextResponse) return authError
+  const mfaRequired = await requireRecentMfa(authError.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: z.infer<typeof fitBodySchema>
   try {

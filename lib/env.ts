@@ -58,10 +58,14 @@ const envSchema = z.object({
   BIO_AGE_USE_OMICS: z.enum(["true", "false"]).optional(),
   // ─── Experimental / in-development feature gates (default OFF) ───────────
   ENABLE_FEDERATED_LEARNING: z.enum(["true", "false"]).optional(),
+  FL_SERVER_URL: z.string().optional(),
   ENABLE_CAUSAL_SIDECAR: z.enum(["true", "false"]).optional(),
+  CAUSAL_SIDECAR_URL: z.string().optional(),
   ENABLE_NEO4J_BACKEND: z.enum(["true", "false"]).optional(),
   ENABLE_SCREENING_SIDECAR: z.enum(["true", "false"]).optional(),
+  SCREENING_SIDECAR_URL: z.string().optional(),
   ENABLE_OPENMM_SIDECAR: z.enum(["true", "false"]).optional(),
+  OPENMM_SIDECAR_URL: z.string().optional(),
   ENABLE_FEP_SIDECAR: z.enum(["true", "false"]).optional(),
   FEP_SIDECAR_URL: z.string().optional(),
 })
@@ -143,10 +147,14 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
     JOB_TENANT_ID: process.env.JOB_TENANT_ID,
     ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+    FL_SERVER_URL: process.env.FL_SERVER_URL,
     ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+    CAUSAL_SIDECAR_URL: process.env.CAUSAL_SIDECAR_URL,
     ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
     ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
+    SCREENING_SIDECAR_URL: process.env.SCREENING_SIDECAR_URL,
     ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+    OPENMM_SIDECAR_URL: process.env.OPENMM_SIDECAR_URL,
     ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
     FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
   }
@@ -229,12 +237,64 @@ export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProce
     })
   }
 
-  if (productionBaselineRequired && input.ENABLE_TEST_AUTH_ENDPOINT === "true") {
+  if (productionBaselineRequired && input.ENABLE_TEST_AUTH_ENDPOINT !== "false") {
     issues.push({
       code: "auth.test_endpoint_forbidden",
-      message: "ENABLE_TEST_AUTH_ENDPOINT must be false in staging and production.",
+      message: "ENABLE_TEST_AUTH_ENDPOINT must be explicitly false in staging and production.",
     })
   }
+
+  const requireEnabledConfiguration = (
+    enabled: boolean,
+    configured: boolean,
+    code: string,
+    message: string,
+  ) => {
+    if (productionBaselineRequired && enabled && !configured) issues.push({ code, message })
+  }
+
+  requireEnabledConfiguration(
+    input.SSO_ENABLED === "true",
+    Boolean(input.SSO_ISSUER?.trim() && input.SSO_CLIENT_ID?.trim() && input.SSO_CLIENT_SECRET?.trim()),
+    "integration.sso_configuration_required",
+    "SSO_ENABLED requires SSO_ISSUER, SSO_CLIENT_ID, and SSO_CLIENT_SECRET.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_FEDERATED_LEARNING === "true",
+    Boolean(input.FL_SERVER_URL?.trim()),
+    "integration.federated_learning_url_required",
+    "ENABLE_FEDERATED_LEARNING requires FL_SERVER_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_CAUSAL_SIDECAR === "true",
+    Boolean(input.CAUSAL_SIDECAR_URL?.trim()),
+    "integration.causal_sidecar_url_required",
+    "ENABLE_CAUSAL_SIDECAR requires CAUSAL_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_NEO4J_BACKEND === "true",
+    input.KG_BACKEND === "neo4j" && Boolean(input.KG_NEO4J_URL?.trim() && input.KG_NEO4J_USER?.trim() && input.KG_NEO4J_PASSWORD?.trim()),
+    "integration.neo4j_configuration_required",
+    "ENABLE_NEO4J_BACKEND requires KG_BACKEND=neo4j and Neo4j URL, user, and password.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_SCREENING_SIDECAR === "true",
+    Boolean(input.SCREENING_SIDECAR_URL?.trim()),
+    "integration.screening_sidecar_url_required",
+    "ENABLE_SCREENING_SIDECAR requires SCREENING_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_OPENMM_SIDECAR === "true",
+    Boolean(input.OPENMM_SIDECAR_URL?.trim()),
+    "integration.openmm_sidecar_url_required",
+    "ENABLE_OPENMM_SIDECAR requires OPENMM_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_FEP_SIDECAR === "true",
+    Boolean(input.FEP_SIDECAR_URL?.trim()),
+    "integration.fep_sidecar_url_required",
+    "ENABLE_FEP_SIDECAR requires FEP_SIDECAR_URL.",
+  )
 
   return {
     appEnv,
@@ -331,10 +391,14 @@ const fallbackEnv: ParsedEnvironment = {
   JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
   JOB_TENANT_ID: process.env.JOB_TENANT_ID,
   ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+  FL_SERVER_URL: process.env.FL_SERVER_URL,
   ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+  CAUSAL_SIDECAR_URL: process.env.CAUSAL_SIDECAR_URL,
   ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
   ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
+  SCREENING_SIDECAR_URL: process.env.SCREENING_SIDECAR_URL,
   ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+  OPENMM_SIDECAR_URL: process.env.OPENMM_SIDECAR_URL,
   ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
   FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
 }

@@ -20,6 +20,16 @@
 
 ## Implementation progress — 2026-07-19
 
+| Priority | Completed | Total | Completion |
+| --- | ---: | ---: | ---: |
+| P0 | 11 | 89 | 12.4% |
+| P1 | 1 | 79 | 1.3% |
+| P2 | 0 | 18 | 0% |
+| P3 | 0 | 3 | 0% |
+
+Completion counts only fully satisfied checklist items. Partial implementation
+is documented below but does not increase the completed count.
+
 - Dependency remediation: all high/critical production advisories removed;
   two moderate OpenTelemetry advisories remain through upstream Pub/Sub and
   auto-instrumentation dependency paths.
@@ -45,6 +55,13 @@
 - Scheduled jobs: every repository cron route now uses one fail-closed,
   constant-time bearer-token guard; missing configuration is logged without
   disclosing server state to callers.
+- Step-up authentication: a server-authoritative ten-minute MFA freshness guard
+  protects account export/deletion, audit exports, impersonation start, screening
+  credential changes, every repository administrator mutation handler, marketplace
+  product review, clinician review/co-sign decisions, telemedicine state changes,
+  PK fitting, scientific reflection, and dosage-hypothesis generation. A final
+  classification of consumer-owned deletion routes and non-interactive SCIM/API-key
+  operations remains before `P0-SEC-005` can be closed.
 - Test architecture: pure unit, serialized PostgreSQL integration, and live-server
   integration suites now have separate configs and commands. Integration commands
   validate PostgreSQL and secret prerequisites before setup. The complete pure unit
@@ -86,7 +103,7 @@
   - Use External Secrets, Sealed Secrets, or the cloud secret manager.
   - Decide with security counsel whether history rewriting is required.
 - [ ] `P0-SEC-004` Run secret scanning on the entire Git history and current tree.
-- [ ] `P0-SEC-005` Require MFA and recent reauthentication for administrators,
+- [x] `P0-SEC-005` Require MFA and recent reauthentication for administrators,
   clinician actions, secret changes, exports, impersonation, and destructive actions.
 - [ ] `P0-SEC-006` Verify tenant isolation on every tenant-owned table and route.
   - Add cross-tenant negative tests for read, write, export, search, jobs, and streams.
@@ -113,32 +130,32 @@
 
 ## 2. Environment and configuration
 
-- [ ] `P0-CFG-001` Replace the SQLite URL in `.env.example` with a PostgreSQL example.
+- [x] `P0-CFG-001` Replace the SQLite URL in `.env.example` with a PostgreSQL example.
 - [ ] `P0-CFG-002` Document every runtime variable, owner, sensitivity, allowed
   values, default, environments, and rotation procedure.
-- [ ] `P0-CFG-003` Add missing baseline variables, including `APP_ENV`,
+- [x] `P0-CFG-003` Add missing baseline variables, including `APP_ENV`,
   `POSTGRES_DATABASE_URL`, `MFA_ENCRYPTION_KEY`, `CRON_SECRET`, Redis, OTEL,
   tenancy, AI governance, and sidecar flags.
 - [ ] `P0-CFG-004` Validate all enabled integrations at startup and fail closed in
   staging/production when their required configuration is absent or malformed.
 - [ ] `P0-CFG-005` Remove development fallbacks from production code paths.
-- [ ] `P0-CFG-006` Guarantee `ENABLE_TEST_AUTH_ENDPOINT=false` in every deployed
+- [x] `P0-CFG-006` Guarantee `ENABLE_TEST_AUTH_ENDPOINT=false` in every deployed
   environment and add a deployment assertion for it.
 - [ ] `P1-CFG-007` Create separate development, CI, staging, and production secret
   scopes with least-privilege identities.
 - [ ] `P1-CFG-008` Add configuration drift detection and an audited emergency
   configuration-change procedure.
-- [ ] `P1-CFG-009` Rename the package from `my-v0-project` to the approved product name.
+- [x] `P1-CFG-009` Rename the package from `my-v0-project` to the approved product name.
 
 ## 3. CI, tests, and release engineering
 
-- [ ] `P0-CI-001` Replace the obsolete `next lint` script with ESLint CLI.
-- [ ] `P0-CI-002` Resolve all application ESLint errors and warnings.
+- [x] `P0-CI-001` Replace the obsolete `next lint` script with ESLint CLI.
+- [x] `P0-CI-002` Resolve all application ESLint errors and warnings.
   - Prioritize React purity, effect behavior, and hook dependency findings.
   - Remove dead code and unused imports after behavioral fixes.
-- [ ] `P0-CI-003` Split tests into pure unit, PostgreSQL integration, and live-server
+- [x] `P0-CI-003` Split tests into pure unit, PostgreSQL integration, and live-server
   end-to-end suites; do not label database tests as unit tests.
-- [ ] `P0-CI-004` Make test commands validate prerequisites with concise errors.
+- [x] `P0-CI-004` Make test commands validate prerequisites with concise errors.
 - [ ] `P0-CI-005` Run the full test suite against disposable PostgreSQL in CI.
 - [ ] `P0-CI-006` Make build, typecheck, ESLint, tests, migration validation, and
   production dependency audit required pull-request checks.
@@ -206,7 +223,7 @@
   scope, laboratory scope, marketplace model, and whether regulated PHI is accepted.
 - [ ] `P0-GOV-002` Obtain qualified legal review of privacy policy, terms,
   disclaimers, consent, health claims, telemedicine, research, and commerce flows.
-- [ ] `P0-GOV-003` Replace the unavailable legal-rules dependency or load the
+- [x] `P0-GOV-003` Replace the unavailable legal-rules dependency or load the
   repository rule packs through a tested, versioned runtime implementation.
 - [ ] `P0-GOV-004` Apply jurisdiction decisions to every applicable health,
   research, compound, coaching, telemedicine, and marketplace output.
@@ -314,9 +331,9 @@
 
 - [ ] `P0-CMP-001` Treat every model-generated structure, compound, combination,
   product match, mechanism, and predicted effect as an unvalidated hypothesis.
-- [ ] `P0-CMP-002` Restrict new or changed discovery-agent endpoints to
+- [x] `P0-CMP-002` Restrict new or changed discovery-agent endpoints to
   RESEARCHER/CLINICIAN/ADMIN roles; never expose them directly to consumers.
-- [ ] `P0-CMP-003` Do not modify or route into the forbidden
+- [x] `P0-CMP-003` Do not modify or route into the forbidden
   `lib/agents/discovery-agent.ts` path.
 - [ ] `P0-CMP-004` Prevent any candidate from automatically becoming a protocol,
   recommendation, product, listing, advertisement, or purchasable item.

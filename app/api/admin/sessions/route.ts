@@ -6,6 +6,7 @@ import { blockWriteDuringImpersonation } from '@/lib/admin/impersonation'
 import { db } from '@/lib/db'
 import { logAudit } from '@/lib/audit'
 import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 /**
  * GET /api/admin/sessions
@@ -47,6 +48,8 @@ export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const impersonationBlock = await blockWriteDuringImpersonation(authResult.user.id)
   if (impersonationBlock) return impersonationBlock

@@ -13,6 +13,7 @@
     "db:push:outbox": "node scripts/build-outbox-prisma-schema.mjs && prisma db push --accept-data-loss --config prisma.outbox.config.ts",
     "db:seed": "npx tsx prisma/seed.ts",
     "secrets:migrate:screening-adapters": "tsx scripts/migrate-screening-adapter-secrets.ts",
+    "deploy:assert-env": "tsx scripts/assert-deployment-env.ts",
     "outbox:smoke": "tsx scripts/outbox-smoke.ts",
     "outbox:seed:biomarker": "tsx scripts/seed-outbox-biomarker.ts",
     "outbox:dispatch": "tsx scripts/outbox-dispatch.ts",

@@ -17,6 +17,7 @@ import { requireAuthWithRole } from "@/lib/rbac"
 import { runReflectionAgent, REFLECTION_DISCLAIMER } from "@/lib/agents/reflection-agent"
 import { writeProtocolOutcome } from "@/lib/loop/outcome-writer"
 import { db } from "@/lib/db"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 const bodySchema = z.object({
   loopCycleId: z.string().min(1),
@@ -26,6 +27,8 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = await request.json().catch(() => null)
   const parsed = bodySchema.safeParse(body)

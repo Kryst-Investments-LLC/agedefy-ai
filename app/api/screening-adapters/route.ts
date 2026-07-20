@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { requireAuthWithRole } from '@/lib/rbac'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 import {
   createAdapterSchema,
   listAdaptersQuerySchema,
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: session.user, request })
   if (!tenantContext) {

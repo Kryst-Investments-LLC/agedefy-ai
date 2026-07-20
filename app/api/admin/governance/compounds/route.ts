@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 async function requireAdmin(userId: string) {
   const user = await db.user.findUnique({
@@ -88,6 +89,8 @@ export async function PATCH(request: NextRequest) {
   if (!session?.user?.id || !(await requireAdmin(session.user.id))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = (await request.json()) as {
     updates?: { id: string; riskCategory: string }[]

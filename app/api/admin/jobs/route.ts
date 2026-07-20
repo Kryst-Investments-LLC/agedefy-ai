@@ -9,6 +9,7 @@ import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { orchestrationJobAdminQuerySchema } from "@/lib/validators/enterprise"
 import { adminEnqueueOrchestrationJobSchema } from "@/lib/validators/jobs"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 function buildAdminManagedJobPayload(
   parsed: typeof adminEnqueueOrchestrationJobSchema._type,
@@ -92,6 +93,8 @@ export async function POST(request: NextRequest) {
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: authResult.user, request })
   if (!tenantContext) return NextResponse.json({ error: "Forbidden: invalid tenant" }, { status: 403 })

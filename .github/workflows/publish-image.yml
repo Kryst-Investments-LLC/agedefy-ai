@@ -20,6 +20,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.3
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Assert deployment safety flags
+        run: pnpm deploy:assert-env
+        env:
+          APP_ENV: production
+          NODE_ENV: production
+          RUNTIME_REQUIREMENTS_ENFORCED: "true"
+          ENABLE_TEST_AUTH_ENDPOINT: "false"
+          DATABASE_URL: postgresql://deployment-assertion.invalid/agedefy
+          POSTGRES_DATABASE_URL: postgresql://deployment-assertion.invalid/agedefy
+          NEXTAUTH_URL: https://deployment-assertion.invalid
+          NEXTAUTH_SECRET: deployment-assertion-nextauth-secret-material
+          MFA_ENCRYPTION_KEY: deployment-assertion-mfa-key-material
+          SCREENING_ADAPTER_ENCRYPTION_KEY: deployment-assertion-screening-key-material
+          CRON_SECRET: deployment-assertion-cron-secret-material
+          REDIS_URL: https://deployment-assertion.invalid
+          REDIS_TOKEN: deployment-assertion-token
+          OTEL_SERVICE_NAME: agedefy
+          OTEL_EXPORTER_OTLP_ENDPOINT: https://deployment-assertion.invalid/v1/traces
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

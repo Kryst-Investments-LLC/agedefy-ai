@@ -18,6 +18,7 @@ const dbMock = {
 vi.mock('next-auth', () => ({ getServerSession: getServerSessionMock }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 vi.mock('@/lib/rate-limit', () => ({ applyRateLimit: applyRateLimitMock }))
+vi.mock('@/lib/security/recent-mfa', () => ({ requireRecentMfa: vi.fn(async () => null) }))
 vi.mock('@/lib/tenancy', () => ({ deriveTenantContextWithValidation: deriveTenantMock }))
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/logger', () => ({
