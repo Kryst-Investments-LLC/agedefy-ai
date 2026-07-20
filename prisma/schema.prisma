@@ -3264,8 +3264,9 @@ model ExternalScreeningAdapter {
   endpointUrl String
   authHeader  String   @default("Authorization")
   authScheme  String   @default("Bearer")
-  // Token sent to the external endpoint in the auth header.
-  // TODO: encrypt with SCREENING_ADAPTER_ENC_KEY before storing in production.
+  // Token sent to the external endpoint in the auth header. Stored ENCRYPTED
+  // (AES-256-GCM ciphertext) — the routes encrypt via lib/external-secret-crypto
+  // (encryptExternalSecret) on write and never persist or return plaintext.
   secret      String
   timeoutMs   Int      @default(15000)
   enabled     Boolean  @default(true)

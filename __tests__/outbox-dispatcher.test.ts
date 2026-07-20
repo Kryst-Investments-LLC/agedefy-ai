@@ -102,8 +102,15 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
     const outbox = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
 
     expect(result).toEqual({ processed: 1, published: 0, failed: 1, skipped: 0 })
-    expect(outbox?.status).toBe('failed')
+    expect(outbox?.status).toBe('dead_letter')
     expect(outbox?.lastError).toContain('broker unavailable')
     expect(outbox?.attemptCount).toBe(1)
+
+    // Regression: a dead-lettered record must NOT be re-selected on the next
+    // cycle (previously terminal 'failed' + availableAt=now looped forever).
+    const secondRun = await dispatcher.dispatchAvailable({ tenantId, maxAttempts: 1 })
+    expect(secondRun).toEqual({ processed: 0, published: 0, failed: 0, skipped: 0 })
+    const afterSecond = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
+    expect(afterSecond?.attemptCount).toBe(1) // unchanged — not retried again
   })
 })

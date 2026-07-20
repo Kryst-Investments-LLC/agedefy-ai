@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
+import { reportClientError } from "@/lib/observability/report-client-error"
 
 export default function Error({
   error,
@@ -12,8 +13,9 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log to structured logger when available; console.error for now
-    console.error("[app-error]", error.message, error.digest)
+    // Report to the server so the error is actually captured (the message below
+    // promises the team is notified — this makes that true).
+    reportClientError(error, "app")
   }, [error])
 
   return (
