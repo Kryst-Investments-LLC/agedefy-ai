@@ -199,6 +199,34 @@ export function shouldEnforceRuntimeRequirements(input: Partial<ParsedEnvironmen
   return input.RUNTIME_REQUIREMENTS_ENFORCED === "true" || ["staging", "production"].includes(resolveAppEnvironment(input))
 }
 
+/**
+ * P0-CFG-004 / P0-CFG-005 — fail closed on the development fallbacks in a
+ * production runtime. Independent of APP_ENV (so a deploy that sets only the
+ * conventional NODE_ENV=production is still protected), and cheap enough to run
+ * at build time: NEXTAUTH_SECRET and the database URL are present in both the
+ * build and runtime environments of a real deploy, so this never trips a
+ * correctly-configured build — only a misconfiguration that would otherwise
+ * boot with a publicly-known session secret or SQLite.
+ */
+export function assertNoDevFallbacksInProduction(
+  input: Partial<ParsedEnvironment>,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): void {
+  if (nodeEnv !== "production") return
+
+  const secret = input.NEXTAUTH_SECRET?.trim()
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "NEXTAUTH_SECRET must be set to a real secret of at least 32 characters when NODE_ENV=production (refusing the development fallback).",
+    )
+  }
+  if (!getEffectiveDatabaseUrl(input)) {
+    throw new Error(
+      "DATABASE_URL or POSTGRES_DATABASE_URL must be set when NODE_ENV=production (refusing the SQLite fallback).",
+    )
+  }
+}
+
 export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProcessEnvironment()): RuntimeBaseline {
   const appEnv = resolveAppEnvironment(input)
   const productionBaselineRequired = shouldEnforceRuntimeRequirements(input)
@@ -324,6 +352,8 @@ const runtimeBaseline = getRuntimeBaseline(runtimeEnvInput)
 if (resolvedAppEnvironment !== "test" && !runtimeEnvInput.MFA_ENCRYPTION_KEY?.trim()) {
   throw new Error("Invalid environment configuration: MFA_ENCRYPTION_KEY is required outside tests.")
 }
+
+assertNoDevFallbacksInProduction(runtimeEnvInput)
 
 if (
   shouldEnforceRuntimeRequirements(runtimeEnvInput) &&

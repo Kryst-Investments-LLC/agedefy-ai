@@ -136,9 +136,13 @@ is documented below but does not increase the completed count.
 - [x] `P0-CFG-003` Add missing baseline variables, including `APP_ENV`,
   `POSTGRES_DATABASE_URL`, `MFA_ENCRYPTION_KEY`, `CRON_SECRET`, Redis, OTEL,
   tenancy, AI governance, and sidecar flags.
-- [ ] `P0-CFG-004` Validate all enabled integrations at startup and fail closed in
+- [x] `P0-CFG-004` Validate all enabled integrations at startup and fail closed in
   staging/production when their required configuration is absent or malformed.
-- [ ] `P0-CFG-005` Remove development fallbacks from production code paths.
+- [x] `P0-CFG-005` Remove development fallbacks from production code paths.
+  <!-- assertNoDevFallbacksInProduction() in lib/env.ts refuses the committed dev
+       NEXTAUTH_SECRET and the SQLite DATABASE_URL fallback whenever
+       NODE_ENV=production, independent of APP_ENV. Tested in runtime-baseline.test.ts. -->
+
 - [x] `P0-CFG-006` Guarantee `ENABLE_TEST_AUTH_ENDPOINT=false` in every deployed
   environment and add a deployment assertion for it.
 - [ ] `P1-CFG-007` Create separate development, CI, staging, and production secret
@@ -204,8 +208,12 @@ is documented below but does not increase the completed count.
 
 - [ ] `P0-OBS-001` Export OpenTelemetry traces and metrics to the selected backend.
 - [ ] `P0-OBS-002` Add exception monitoring with source maps and release identifiers.
-- [ ] `P0-OBS-003` Remove secrets, health data, identifiers, prompts, and document
+- [x] `P0-OBS-003` Remove secrets, health data, identifiers, prompts, and document
   contents from logs by default; add automated redaction tests.
+  <!-- lib/logger.ts applies a depth-bounded key-name redaction pass
+       (email/token/secret/password/cookie/authorization/api-key/…); covered by
+       automated tests in __tests__/logger.test.ts. -->
+
 - [ ] `P0-OBS-004` Define SLIs/SLOs for authentication, payments, API success,
   AI latency, job age, data ingestion, and candidate workflow completion.
 - [ ] `P1-OBS-005` Alert on error rate, latency, saturation, queue age, dead letters,
