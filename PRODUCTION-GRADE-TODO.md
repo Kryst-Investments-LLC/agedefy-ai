@@ -108,6 +108,13 @@ is documented below but does not increase the completed count.
 - [ ] `P0-SEC-006` Verify tenant isolation on every tenant-owned table and route.
   - Add cross-tenant negative tests for read, write, export, search, jobs, and streams.
   - Decide whether PostgreSQL row-level security is a required second boundary.
+  <!-- PROGRESS: the central guard is now proven — tenancy.test.ts asserts
+       deriveTenantContextWithValidation() rejects a header-supplied tenant the
+       user is not a member of (403) and allows the user's own tenant. Owned-
+       resource routes additionally scope by userId (findFirst {id,userId}).
+       REMAINING: per-route/per-table cross-tenant negative tests across
+       read/write/export/search/jobs/streams, and the RLS decision. -->
+
 - [ ] `P0-SEC-007` Add SSRF protection to every user-configurable outbound URL.
   - Block loopback, link-local, private, metadata-service, and DNS-rebinding targets.
   - Allowlist schemes and ports; revalidate after redirects and DNS resolution.
