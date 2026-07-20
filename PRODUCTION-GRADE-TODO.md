@@ -22,7 +22,7 @@
 
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
-| P0 | 22 | 85 | 25.9% |
+| P0 | 25 | 85 | 29.4% |
 | P1 | 1 | 77 | 1.3% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
@@ -105,7 +105,7 @@ items — partials are documented inline but do not increase the completed count
   - Rotate every credential that appeared in Git.
   - Use External Secrets, Sealed Secrets, or the cloud secret manager.
   - Decide with security counsel whether history rewriting is required.
-- [ ] `P0-SEC-004` Run secret scanning on the entire Git history and current tree.
+- [x] `P0-SEC-004` Run secret scanning on the entire Git history and current tree.
 - [x] `P0-SEC-005` Require MFA and recent reauthentication for administrators,
   clinician actions, secret changes, exports, impersonation, and destructive actions.
 - [ ] `P0-SEC-006` Verify tenant isolation on every tenant-owned table and route.
@@ -187,11 +187,13 @@ items — partials are documented inline but do not increase the completed count
 - [x] `P0-CI-003` Split tests into pure unit, PostgreSQL integration, and live-server
   end-to-end suites; do not label database tests as unit tests.
 - [x] `P0-CI-004` Make test commands validate prerequisites with concise errors.
-- [ ] `P0-CI-005` Run the full test suite against disposable PostgreSQL in CI.
+- [x] `P0-CI-005` Run the full test suite against disposable PostgreSQL in CI.
 - [ ] `P0-CI-006` Make build, typecheck, ESLint, tests, migration validation, and
   production dependency audit required pull-request checks.
+  <!-- The quality-gates.yml workflow runs pnpm install --frozen-lockfile, db:generate/deploy, typecheck, lint, test:unit/postgres/integration, build, and audit --prod on every PR. REMAINING: mark these as REQUIRED via GitHub branch protection (repo setting, not code). -->
 - [ ] `P0-CI-007` Add branch protection, required reviews, CODEOWNERS, and blocked
   direct pushes for production branches.
+  <!-- .github/CODEOWNERS exists (default + safety/clinical/billing paths). REMAINING: branch protection, required reviews, and blocked direct pushes are GitHub repo settings (not code). -->
 - [ ] `P0-CI-008` Prevent static generation from swallowing required database or
   integration failures; explicitly classify optional versus required data.
 - [ ] `P1-CI-009` Add Playwright journeys for registration, email verification,
@@ -233,7 +235,7 @@ items — partials are documented inline but do not increase the completed count
 
 ## 5. Observability and reliability
 
-- [ ] `P0-OBS-001` Export OpenTelemetry traces and metrics to the selected backend.
+- [x] `P0-OBS-001` Export OpenTelemetry traces and metrics to the selected backend.
 - [ ] `P0-OBS-002` Add exception monitoring with source maps and release identifiers.
 - [x] `P0-OBS-003` Remove secrets, health data, identifiers, prompts, and document
   contents from logs by default; add automated redaction tests.
