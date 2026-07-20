@@ -202,6 +202,31 @@ export async function leaseAvailableOrchestrationJobs(
   return leased
 }
 
+/**
+ * Return a leased-but-unstarted job to the queue for immediate handoff to
+ * another worker (graceful shutdown / job lease handoff, P1-OPS-011). Resets the
+ * lease and undoes the attempt increment applied at lease time, since the job
+ * never actually ran, so a rolling deploy never burns a retry. No-op if the job
+ * is no longer LEASED (already completed/failed/reclaimed). Returns the number of
+ * jobs released (0 or 1).
+ */
+export async function releaseOrchestrationJob(
+  jobId: string,
+  client: PrismaClientLike = db,
+): Promise<number> {
+  const released = await client.orchestrationJob.updateMany({
+    where: { id: jobId, status: "LEASED" },
+    data: {
+      status: "QUEUED",
+      availableAt: new Date(),
+      leasedAt: null,
+      leaseExpiresAt: null,
+      attempts: { decrement: 1 },
+    },
+  })
+  return released.count
+}
+
 export async function completeOrchestrationJob(
   jobId: string,
   result: Prisma.InputJsonValue | undefined,

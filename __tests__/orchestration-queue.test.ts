@@ -6,6 +6,7 @@ import {
   enqueueOrchestrationJob,
   failOrchestrationJob,
   leaseAvailableOrchestrationJobs,
+  releaseOrchestrationJob,
 } from "@/lib/jobs/queue"
 import { jobExecutionCounter } from "@/lib/observability/telemetry"
 
@@ -49,6 +50,50 @@ describe("orchestration queue", () => {
     expect(completed.status).toBe("SUCCEEDED")
     expect(counterSpy).toHaveBeenCalledWith(1, expect.objectContaining({ status: "succeeded" }))
     counterSpy.mockRestore()
+  })
+
+  it("releases a leased job for handoff and undoes the attempt increment tenant:jobs_release", async () => {
+    const tenantId = "jobs_release"
+    const job = await enqueueOrchestrationJob({
+      tenantId,
+      queue: "AI",
+      jobType: "ai.governance.audit",
+      dedupeKey: `test:${tenantId}`,
+      payload: {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        route: "/api/ai/openai",
+        requestId: `req:${tenantId}`,
+        queryLength: 12,
+        tenantId,
+        outcome: "success",
+        actor: {},
+      },
+    })
+
+    const leased = await leaseAvailableOrchestrationJobs({ tenantId, batchSize: 5, leaseMs: 60_000 })
+    expect(leased).toHaveLength(1)
+    expect(leased[0]?.status).toBe("LEASED")
+    expect(leased[0]?.attempts).toBe(1)
+
+    // Graceful-shutdown handoff: return the unstarted job to the queue.
+    const releasedCount = await releaseOrchestrationJob(job.id)
+    expect(releasedCount).toBe(1)
+
+    const afterRelease = await db.orchestrationJob.findUniqueOrThrow({ where: { id: job.id } })
+    expect(afterRelease.status).toBe("QUEUED")
+    expect(afterRelease.attempts).toBe(0) // lease increment undone — no burned retry
+    expect(afterRelease.leaseExpiresAt).toBeNull()
+    expect(afterRelease.leasedAt).toBeNull()
+
+    // Immediately re-leasable by another worker (no wait for lease expiry).
+    const releasedAgain = await releaseOrchestrationJob(job.id)
+    expect(releasedAgain).toBe(0) // no-op when not LEASED
+
+    const reLeased = await leaseAvailableOrchestrationJobs({ tenantId, batchSize: 5, leaseMs: 60_000 })
+    expect(reLeased).toHaveLength(1)
+    expect(reLeased[0]?.id).toBe(job.id)
+    expect(reLeased[0]?.attempts).toBe(1)
   })
 
   it("dead-letters exhausted jobs tenant:jobs_deadletter", async () => {

@@ -244,7 +244,22 @@ items — partials are documented inline but do not increase the completed count
        503 when deps/baseline are unmet. Probe path wiring (liveness→/api/health/live,
        readiness/startup→/api/health) documented in the deploy runbook. -->
 
-- [ ] `P1-OPS-011` Add graceful shutdown and job lease handoff for all workers.
+- [x] `P1-OPS-011` Add graceful shutdown and job lease handoff for all workers.
+  <!-- Both long-lived workers handle SIGTERM/SIGINT: the first signal drains,
+       a second forces exit (for a job/batch that hangs past the k8s grace
+       period). ORCHESTRATION (scripts/orchestration-worker.ts): on drain it
+       finishes the in-flight job, then releases the rest of the leased batch via
+       lib/jobs/queue.ts#releaseOrchestrationJob — returns each unstarted job to
+       QUEUED/available-now and UNDOES the lease-time attempt increment so a
+       rolling deploy never burns a retry; a surviving worker re-leases
+       immediately instead of waiting out the lease. Tested (tenant:jobs_release
+       in orchestration-queue.test.ts): released job -> QUEUED, attempts back to
+       0, lease fields null, immediately re-leasable, and release() is a no-op on
+       a non-LEASED job. OUTBOX (scripts/outbox-worker.ts): finishes the current
+       dispatch batch then exits cleanly; interrupted events are marked in the
+       outbox and reclaimed on lease expiry. The retention script (jobs:retention)
+       is a one-shot cron, not a long-lived worker, so it runs to completion. -->
+
 - [ ] `P1-OPS-012` Configure CDN, WAF, DDoS controls, TLS, DNS failover, and domain
   ownership monitoring.
 - [ ] `P1-OPS-013` Create staging parity rules and a sanitized production-like dataset.
