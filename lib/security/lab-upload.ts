@@ -1,6 +1,18 @@
 export const MAX_LAB_UPLOAD_BYTES = 8 * 1024 * 1024
 export const MAX_LAB_PDF_PAGES = 50
 
+// P0-SEC-010 — active/executable content markers that must never appear in an
+// uploaded lab report. A lab report is a static document; embedded JavaScript,
+// launch actions, embedded files, and rich media are never legitimately needed
+// and are the primary PDF malware vectors, so their presence fails the upload.
+export const PDF_ACTIVE_CONTENT_MARKERS = [
+  "/JavaScript",
+  "/JS",
+  "/Launch",
+  "/EmbeddedFile",
+  "/RichMedia",
+] as const
+
 export class UnsafeLabUploadError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message)
@@ -41,6 +53,14 @@ export function validateLabUploadBytes(bytes: Uint8Array, declaredMimeType: stri
     const pageCount = ascii.match(/\/Type\s*\/Page\b/g)?.length ?? 0
     if (pageCount > MAX_LAB_PDF_PAGES) {
       throw new UnsafeLabUploadError(`PDF exceeds ${MAX_LAB_PDF_PAGES} pages`, 413)
+    }
+
+    const activeMarker = PDF_ACTIVE_CONTENT_MARKERS.find((marker) => ascii.includes(marker))
+    if (activeMarker) {
+      throw new UnsafeLabUploadError(
+        `PDF contains disallowed active content (${activeMarker})`,
+        415,
+      )
     }
   }
 }

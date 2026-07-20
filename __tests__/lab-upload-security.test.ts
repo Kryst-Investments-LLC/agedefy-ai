@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   MAX_LAB_PDF_PAGES,
+  PDF_ACTIVE_CONTENT_MARKERS,
   UnsafeLabUploadError,
   validateLabUploadBytes,
 } from "@/lib/security/lab-upload"
@@ -35,5 +36,21 @@ describe("lab upload validation", () => {
 
   it("rejects empty uploads", () => {
     expect(() => validateLabUploadBytes(new Uint8Array(), "image/png")).toThrow("Empty upload")
+  })
+
+  it("rejects PDFs carrying active/executable content (malware vectors)", () => {
+    for (const marker of PDF_ACTIVE_CONTENT_MARKERS) {
+      const pdf = `%PDF-1.7\n/Type /Page\n<< /S ${marker} (payload) >>\n`
+      expect(() =>
+        validateLabUploadBytes(new TextEncoder().encode(pdf), "application/pdf"),
+      ).toThrow(/active content/)
+    }
+  })
+
+  it("accepts a clean single-page PDF", () => {
+    const pdf = `%PDF-1.7\n/Type /Page\nHbA1c 5.4%\n%%EOF`
+    expect(() =>
+      validateLabUploadBytes(new TextEncoder().encode(pdf), "application/pdf"),
+    ).not.toThrow()
   })
 })

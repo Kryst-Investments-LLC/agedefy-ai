@@ -117,6 +117,14 @@ is documented below but does not increase the completed count.
   object-level authorization, file-upload, and rate-limit security tests.
 - [ ] `P0-SEC-010` Add malware scanning, MIME sniffing, size/page limits, safe PDF
   parsing, and isolated storage for uploaded laboratory documents.
+  <!-- DONE (code): lib/security/lab-upload.ts enforces magic-byte MIME sniffing
+       (content vs declared type), an 8MB size cap, a 50-page PDF limit, and now
+       rejects PDFs with active/executable content (JavaScript/JS/Launch/
+       EmbeddedFile/RichMedia) — the safe-PDF-parsing control. Uploads are parsed
+       to text and not persisted as raw files. REMAINING (infra): external AV
+       (e.g. ClamAV) scan hook and isolated object storage if raw files are ever
+       persisted. -->
+
 - [ ] `P0-SEC-011` Define retention and redaction policies for logs, traces, prompts,
   model outputs, uploaded files, audit logs, and database backups.
 - [ ] `P1-SEC-012` Add CAPTCHA/bot protection to registration, password recovery,
