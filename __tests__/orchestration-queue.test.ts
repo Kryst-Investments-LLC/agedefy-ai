@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { db } from "@/lib/db"
 import {
@@ -7,6 +7,7 @@ import {
   failOrchestrationJob,
   leaseAvailableOrchestrationJobs,
 } from "@/lib/jobs/queue"
+import { jobExecutionCounter } from "@/lib/observability/telemetry"
 
 async function cleanupTenant(tenantId: string) {
   await db.orchestrationJob.deleteMany({ where: { tenantId } })
@@ -43,8 +44,11 @@ describe("orchestration queue", () => {
     expect(leased).toHaveLength(1)
     expect(leased[0]?.id).toBe(job.id)
 
+    const counterSpy = vi.spyOn(jobExecutionCounter, "add")
     const completed = await completeOrchestrationJob(job.id, { ok: true })
     expect(completed.status).toBe("SUCCEEDED")
+    expect(counterSpy).toHaveBeenCalledWith(1, expect.objectContaining({ status: "succeeded" }))
+    counterSpy.mockRestore()
   })
 
   it("dead-letters exhausted jobs tenant:jobs_deadletter", async () => {
@@ -64,8 +68,11 @@ describe("orchestration queue", () => {
     })
 
     await leaseAvailableOrchestrationJobs({ tenantId, batchSize: 5, leaseMs: 60_000 })
+    const counterSpy = vi.spyOn(jobExecutionCounter, "add")
     const failed = await failOrchestrationJob(job.id, new Error("synthetic failure"))
     expect(failed.status).toBe("DEAD_LETTER")
     expect(failed.lastError).toContain("synthetic failure")
+    expect(counterSpy).toHaveBeenCalledWith(1, expect.objectContaining({ status: "dead_letter" }))
+    counterSpy.mockRestore()
   })
 })

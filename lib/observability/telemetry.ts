@@ -48,6 +48,10 @@ export const rateLimitAbuseCounter = meter.createCounter("biozephyra.rate_limit.
   description: "Detected rate-limit abuse events (repeated blocks from same source)",
 })
 
+export const authFailureCounter = meter.createCounter("biozephyra.auth.failure.count", {
+  description: "Failed credential authentication attempts, labeled by reason (credential stuffing signal)",
+})
+
 // ─── Span Helpers ────────────────────────────────────────────
 
 export function startSpan(name: string, attributes?: Record<string, string | number | boolean>) {

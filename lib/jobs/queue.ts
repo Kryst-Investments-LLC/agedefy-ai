@@ -4,6 +4,7 @@ import { createReviewItem, logAudit } from "@/lib/audit"
 import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
+import { jobExecutionCounter } from "@/lib/observability/telemetry"
 
 const ORCHESTRATION_QUEUES: OrchestrationJobQueue[] = ["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE", "LOOP"]
 const BACKLOG_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]
@@ -206,7 +207,7 @@ export async function completeOrchestrationJob(
   result: Prisma.InputJsonValue | undefined,
   client: PrismaClientLike = db,
 ): Promise<OrchestrationJob> {
-  return client.orchestrationJob.update({
+  const updated = await client.orchestrationJob.update({
     where: { id: jobId },
     data: {
       status: "SUCCEEDED",
@@ -217,6 +218,8 @@ export async function completeOrchestrationJob(
       lastError: null,
     },
   })
+  jobExecutionCounter.add(1, { status: "succeeded", queue: updated.queue, jobType: updated.jobType })
+  return updated
 }
 
 export async function failOrchestrationJob(
@@ -245,6 +248,12 @@ export async function failOrchestrationJob(
       leasedAt: null,
       completedAt: terminalFailure ? new Date() : null,
     },
+  })
+
+  jobExecutionCounter.add(1, {
+    status: terminalFailure ? "dead_letter" : "failed",
+    queue: updated.queue,
+    jobType: updated.jobType,
   })
 
   if (terminalFailure) {

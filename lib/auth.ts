@@ -10,6 +10,7 @@ import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { getFallbackTenantId, resolveStoredTenantContextForUser } from "@/lib/tenancy"
 import { isConfiguredAdminEmail } from "@/lib/admin"
+import { authFailureCounter } from "@/lib/observability/telemetry"
 import { getNonPasswordAuthHash, isLegacyEmptyPasswordHash, isPasswordLoginAllowed } from "@/lib/auth-password"
 import { loginSchema } from "@/lib/validators/auth"
 import { getMfaVerifiedAt, isMfaEnabled, isMfaRequired } from "@/lib/mfa"
@@ -69,6 +70,7 @@ export const authOptions: NextAuthOptions = {
         const parsedCredentials = loginSchema.safeParse(credentials)
 
         if (!parsedCredentials.success) {
+          authFailureCounter.add(1, { reason: "invalid_payload" })
           return null
         }
 
@@ -77,16 +79,19 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          authFailureCounter.add(1, { reason: "user_not_found" })
           return null
         }
 
         if (!isPasswordLoginAllowed(user.passwordHash)) {
+          authFailureCounter.add(1, { reason: "password_login_disabled" })
           return null
         }
 
         const isValidPassword = await bcrypt.compare(parsedCredentials.data.password, user.passwordHash)
 
         if (!isValidPassword) {
+          authFailureCounter.add(1, { reason: "invalid_password" })
           return null
         }
 
