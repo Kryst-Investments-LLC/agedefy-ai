@@ -119,4 +119,45 @@ describe("AI credit allowance handling", () => {
     expect(storedReservation?.aiCreditSource).toBe(AICreditSource.SUBSCRIPTION_ALLOWANCE)
     expect(storedReservation?.status).toBe(BillingRecordStatus.PENDING)
   })
+
+  it("prevents overspend under concurrent reservations (per-user advisory lock)", async () => {
+    const userId = await createTestUser("concurrent")
+
+    await db.subscription.create({
+      data: {
+        userId,
+        plan: "Enterprise",
+        status: SubscriptionStatus.ACTIVE,
+        priceCents: 0,
+        billingCycle: "custom",
+        monthlyAICreditAllowance: 100,
+      },
+    })
+
+    // Two concurrent 60-credit reservations against a 100-credit balance.
+    // Without the advisory lock both would read balance=100 and both reserve 60
+    // (total 120 > 100 — overspend). With the lock they serialize: one wins, the
+    // other sees the reduced balance and throws AICreditLimitError (rolled back).
+    const reserve = () =>
+      reserveAICredits({
+        userId,
+        tenantId: "default",
+        requestedCredits: 60,
+        operation: "openai-query",
+        route: "/api/ai/openai",
+        description: "concurrent reservation",
+      })
+
+    const results = await Promise.allSettled([reserve(), reserve()])
+
+    const fulfilled = results.filter((r) => r.status === "fulfilled")
+    expect(fulfilled).toHaveLength(1)
+
+    const pending = await db.billingRecord.findMany({
+      where: { userId, status: BillingRecordStatus.PENDING },
+    })
+    const totalReserved = pending.reduce((sum, r) => sum + Math.abs(r.aiCreditsDelta ?? 0), 0)
+    expect(totalReserved).toBe(60)
+    expect(totalReserved).toBeLessThanOrEqual(100)
+  })
 })
