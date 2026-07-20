@@ -134,6 +134,7 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P0-SEC-009` Add CSRF, open-redirect, session-fixation, authorization,
   object-level authorization, file-upload, and rate-limit security tests.
+  <!-- PROGRESS: open-redirect FIXED — sign-in callbackUrl now passes through safeInternalPath() (same-origin only), tested in safe-redirect.test.ts. file-upload (lab-upload-security.test.ts) and rate-limit (rate-limit.test.ts) covered; role-gate authz partially covered (scientist-sponsor-marketplace-authz.test.ts) + object-level scoping proven (tenancy.test.ts). REMAINING: CSRF/session-fixation are NextAuth-managed; add per-route IDOR + role-gate route tests. -->
 - [ ] `P0-SEC-010` Add malware scanning, MIME sniffing, size/page limits, safe PDF
   parsing, and isolated storage for uploaded laboratory documents.
   <!-- DONE (code): lib/security/lab-upload.ts enforces magic-byte MIME sniffing

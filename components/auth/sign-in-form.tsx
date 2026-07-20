@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { safeInternalPath } from "@/lib/security/safe-redirect"
 
 type SignInFormProps = {
   callbackUrl: string
@@ -39,7 +40,8 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
       return
     }
 
-    router.push(result.url ?? callbackUrl)
+    // Validate the redirect target to a same-origin path (open-redirect guard).
+    router.push(safeInternalPath(result.url ?? callbackUrl, window.location.origin))
     router.refresh()
   }
 
