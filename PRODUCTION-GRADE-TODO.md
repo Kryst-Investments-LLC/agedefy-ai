@@ -147,6 +147,7 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P0-SEC-011` Define retention and redaction policies for logs, traces, prompts,
   model outputs, uploaded files, audit logs, and database backups.
+  <!-- PROGRESS: REDACTION done (logger key-name redaction, tested). RETENTION: lib/retention/data-retention.ts#purgeExpiredTransientData purges past-expiry IdempotencyRecords + VerificationTokens (zero-policy, driven by each record's own expiresAt), wired into the retention cron/job and tested (data-retention-pg.test.ts). REMAINING: documented retention WINDOWS for PHI/health data (biomarkers, agent sessions, traces), log/trace/prompt/backup retention config — these are governance/legal + infra decisions, not code defaults. -->
 - [ ] `P1-SEC-012` Add CAPTCHA/bot protection to registration, password recovery,
   credential verification, and other abuse-prone public endpoints.
 - [ ] `P1-SEC-013` Perform an independent penetration test and remediate all
