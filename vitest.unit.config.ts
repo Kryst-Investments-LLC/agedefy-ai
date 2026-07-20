@@ -29,6 +29,7 @@ export default defineConfig({
       '__tests__/consent-flow-pg.test.ts',
       '__tests__/account-erasure-pg.test.ts',
       '__tests__/data-retention-pg.test.ts',
+      '__tests__/object-level-authz-pg.test.ts',
       '__tests__/ai-credits.test.ts',
       '__tests__/ai-provider-orchestration-routes.test.ts',
       '__tests__/canonical-health-event-routes.test.ts',
