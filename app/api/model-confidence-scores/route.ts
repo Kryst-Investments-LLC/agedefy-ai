@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getApiRequestUserId } from '@/lib/api-auth';
 import { db } from '@/lib/db';
+import { listPageHeaders, overfetchTake, parseListPageParams, splitOverfetch } from '@/lib/http/pagination';
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency';
 
-// GET /api/model-confidence-scores?entityType=Hypothesis&entityId=abc
+// GET /api/model-confidence-scores?entityType=Hypothesis&entityId=abc&limit=100&offset=0
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const entityType = searchParams.get('entityType');
@@ -13,12 +14,18 @@ export async function GET(req: NextRequest) {
   const where: Prisma.ModelConfidenceScoreWhereInput = {};
   if (entityType) where.entityType = entityType;
   if (entityId) where.entityId = entityId;
-  const scores = await db.modelConfidenceScore.findMany({
+  // Bound the query (P1-PERF-009): this is an append-only time series, so an
+  // unfiltered fetch would otherwise return the whole table.
+  const { limit, offset } = parseListPageParams(searchParams, { defaultLimit: 100, maxLimit: 500 });
+  const rows = await db.modelConfidenceScore.findMany({
     where,
     include: { mechanisticModel: true },
     orderBy: { createdAt: 'desc' },
+    skip: offset,
+    take: overfetchTake(limit),
   });
-  return NextResponse.json(scores);
+  const { items, hasMore } = splitOverfetch(rows, limit);
+  return NextResponse.json(items, { headers: listPageHeaders({ limit, offset, hasMore }) });
 }
 
 // POST /api/model-confidence-scores

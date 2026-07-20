@@ -379,6 +379,22 @@ items — partials are documented inline but do not increase the completed count
        or unstable_cache tags) — a perf optimization, not a PHI-leak risk. -->
 
 - [ ] `P1-PERF-009` Add pagination or cursor streaming to every unbounded collection.
+  <!-- PROGRESS: reusable, backward-compatible pagination helper added
+       (lib/http/pagination.ts): parseListPageParams clamps ?limit to a maxLimit
+       so no caller can request an unbounded page; over-fetch by one row
+       (overfetchTake/splitOverfetch) detects a next page without a COUNT and
+       NEVER truncates silently (X-Page-Has-More/-Next-Offset headers), and the
+       JSON body stays a plain array so existing clients keep working. Unit-tested
+       (__tests__/pagination.test.ts, 7 cases). Applied to the clear unbounded
+       case, /api/model-confidence-scores (append-only time series that returned
+       the whole table unfiltered). SCOPING of the remaining 17 unbounded findMany
+       in app/api: most are ownership-scoped (reminders, referrals, pk-profile —
+       a user's own rows) or curated catalogs (lab-testing panels, telemedicine
+       providers, governance policies, protocol templates) that are admin-bounded;
+       lower risk but should still adopt the helper. REMAINING: apply to those
+       catalog/list endpoints and add cursor streaming to any genuinely large
+       admin/experiment collections (pilot-metrics). -->
+
 - [ ] `P2-PERF-010` Add PWA/offline support only for explicitly safe encrypted/local
   data, with clear logout and cache-clearing behavior.
 
