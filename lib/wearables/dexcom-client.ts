@@ -100,6 +100,7 @@ export async function exchangeCodeForTokens(code: string): Promise<DexcomTokenRe
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -124,6 +125,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<DexcomTo
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -145,6 +147,7 @@ export async function fetchEgv(
   const params = new URLSearchParams({ startDate, endDate })
   const res = await fetch(`${c.host}/v3/users/self/egvs?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(15_000),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')

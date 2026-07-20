@@ -44,6 +44,7 @@ export async function searchClinicalTrials(
 
       const response = await fetch(`${CT_GOV_BASE}/studies?${params.toString()}`, {
         next: { revalidate: 600 },
+        signal: AbortSignal.timeout(10_000),
       })
 
       if (!response.ok) {
