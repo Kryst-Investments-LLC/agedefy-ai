@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
-import { outboxDispatchCounter } from '@/lib/observability/telemetry'
+import { outboxDispatchCounter, outboxDispatchLatencyHistogram } from '@/lib/observability/telemetry'
 import { healthEventEnvelopeSchema } from '@/lib/validators/canonical-health-events'
 import type { HealthEventEnvelope } from '@/types/canonical-health-events'
 
@@ -184,6 +184,10 @@ export class CanonicalHealthEventOutboxDispatcher {
         })
 
         outboxDispatchCounter.add(1, { status: 'published', topic: record.topic })
+        // Dispatch lag: creation → successful publish (data-ingestion SLO).
+        outboxDispatchLatencyHistogram.record(Math.max(0, now.getTime() - record.createdAt.getTime()), {
+          topic: record.topic,
+        })
         result.published += 1
       } catch (error) {
         const nextAttemptCount = record.attemptCount + 1

@@ -68,22 +68,22 @@ severity.
 | Field | Value |
 |-------|-------|
 | SLI | Stripe webhook processing success rate |
-| Metric | `biozephyra_stripe_webhook_count` (labels `event_type`, `livemode`) — **counts received webhooks by type; no success/failure label** |
-| Query | success ratio needs an `outcome`/`status` label the counter does not emit today; processing status currently lives in the webhook-idempotency record (PENDING/COMPLETED/FAILED) in the DB |
-| SLO | ≥ 99.5% of received webhooks processed (persisted + side-effects) without a terminal failure |
+| Metric | `biozephyra_stripe_webhook_count` (labels `event_type`, `livemode`, `outcome` = success/failed/duplicate) |
+| Query | `sum(rate(…{outcome="success"}[15m])) / sum(rate(…{outcome=~"success|failed"}[15m]))` (duplicates excluded) |
+| SLO | ≥ 99.5% of processed webhooks succeed (persisted + side-effects) without a terminal failure |
 | Alert / sev | (to add) P1 on success ratio < 0.99 for 15m |
-| Backed by | ⚠️ gap — add an `outcome` label to `stripeWebhookCounter` (the route already distinguishes complete vs. fail via webhook idempotency) so success can be measured from metrics rather than the DB |
+| Backed by | ✅ emitted — counter now records the terminal `outcome` per webhook at each return path |
 
 ## Data ingestion (canonical event outbox)
 
 | Field | Value |
 |-------|-------|
 | SLI | Outbox dispatch throughput/success, and dispatch lag |
-| Metric | `biozephyra_outbox_dispatch_count` (labels `status` = published/retry/dead_letter, `topic`) ✅; dispatch **latency** ⚠️ |
-| Query | success ratio `sum(rate(…{status="published"}[15m])) / sum(rate(…[15m]))`; lag P95 requires `outbox_dispatch_latency_ms` |
+| Metric | `biozephyra_outbox_dispatch_count` (labels `status` = published/retry/dead_letter, `topic`); `biozephyra_outbox_dispatch_latency_ms_bucket` (label `topic`, creation→publish) |
+| Query | success ratio `sum(rate(…count{status="published"}[15m])) / sum(rate(…count[15m]))`; lag `histogram_quantile(0.95, rate(…latency_ms_bucket[15m]))` |
 | SLO | ≥ 99% dispatched successfully; P95 dispatch lag ≤ 60s |
-| Alert / sev | `OutboxDispatchDelayed` (P2) — inert until the latency histogram is emitted |
-| Backed by | ✅ emitted for success ratio; ⚠️ gap for lag — add an `outbox_dispatch_latency_ms` histogram |
+| Alert / sev | `OutboxDispatchDelayed` (P2) |
+| Backed by | ✅ emitted (count + latency histogram) |
 
 ## Job age (orchestration queue)
 
@@ -117,9 +117,10 @@ severity.
 
 ## Instrumentation gaps to close (OBS follow-ups)
 
-1. `outbox_dispatch_latency_ms` histogram (data-ingestion lag SLO).
-2. `orchestration_job_oldest_queued_timestamp` gauge (job-age SLO).
-3. `prisma_pool_active_connections` / `_max_connections` gauges (DB-pool alert).
-4. Candidate lifecycle transition counter + stage-latency histogram.
-5. Extend `withHttpMetrics` to non-AI routes via a shared route factory so the
+1. ~~`outbox_dispatch_latency_ms` histogram~~ — **done** (`biozephyra_outbox_dispatch_latency_ms`).
+2. ~~Stripe `outcome` label for the payments success SLO~~ — **done**.
+3. `orchestration_job_oldest_queued_timestamp` gauge (job-age SLO).
+4. `prisma_pool_active_connections` / `_max_connections` gauges (DB-pool alert).
+5. Candidate lifecycle transition counter + stage-latency histogram.
+6. Extend `withHttpMetrics` to non-AI routes via a shared route factory so the
    API-success/latency SLOs cover the whole surface, not just the AI routes.

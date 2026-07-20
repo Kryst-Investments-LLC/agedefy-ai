@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { GenericHealthEventBrokerPublisher, CanonicalHealthEventOutboxDispatcher } from '@/lib/events/outbox-dispatcher'
 import { PrismaTransactionalHealthEventIngestionService } from '@/lib/events/transactional-ingestion-service'
 import { getCanonicalTopicForEventType } from '@/lib/events/topics'
+import { outboxDispatchLatencyHistogram } from '@/lib/observability/telemetry'
 
 async function cleanupTenant(tenantId: string) {
   await db.canonicalHealthEventOutboxRecord.deleteMany({ where: { tenantId } })
@@ -50,6 +51,7 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
       },
     })
 
+    const latencySpy = vi.spyOn(outboxDispatchLatencyHistogram, 'record')
     const dispatcher = new CanonicalHealthEventOutboxDispatcher(new GenericHealthEventBrokerPublisher(publishSpy), db)
     const result = await dispatcher.dispatchAvailable({ tenantId })
     const outbox = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
@@ -58,6 +60,13 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
     expect(publishSpy).toHaveBeenCalledTimes(1)
     expect(outbox?.status).toBe('published')
     expect(outbox?.publishedAt).not.toBeNull()
+    // Dispatch-lag SLI (OBS-004): a non-negative latency recorded with the topic.
+    expect(latencySpy).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.objectContaining({ topic: getCanonicalTopicForEventType('protocol.event') }),
+    )
+    expect(latencySpy.mock.calls[0]?.[0]).toBeGreaterThanOrEqual(0)
+    latencySpy.mockRestore()
   })
 
   it('marks terminal failures after max attempts tenant:outbox_fail', async () => {

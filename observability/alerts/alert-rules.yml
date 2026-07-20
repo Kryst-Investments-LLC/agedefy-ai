@@ -81,7 +81,7 @@ groups:
 
       - alert: OutboxDispatchDelayed
         expr: |
-          histogram_quantile(0.95, rate(outbox_dispatch_latency_ms_bucket[15m])) > 60000
+          histogram_quantile(0.95, rate(biozephyra_outbox_dispatch_latency_ms_bucket[15m])) > 60000
         for: 15m
         labels:
           severity: P2

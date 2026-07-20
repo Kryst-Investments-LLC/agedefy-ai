@@ -32,6 +32,11 @@ export const outboxDispatchCounter = meter.createCounter("biozephyra.outbox.disp
   description: "Outbox dispatch operations",
 })
 
+export const outboxDispatchLatencyHistogram = meter.createHistogram("biozephyra.outbox.dispatch.latency_ms", {
+  description: "Outbox dispatch lag: time from event creation to successful publish",
+  unit: "ms",
+})
+
 export const jobExecutionCounter = meter.createCounter("biozephyra.jobs.execution.count", {
   description: "Orchestration job executions",
 })

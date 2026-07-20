@@ -150,7 +150,9 @@ export async function POST(request: Request) {
     details: { livemode: event.livemode },
   })
 
-  stripeWebhookCounter.add(1, { event_type: event.type, livemode: String(event.livemode) })
+  // Emitted once per webhook at its terminal outcome (duplicate/failed/success)
+  // so the payments success SLO is measurable from metrics (OBS-004).
+  const webhookMetricLabels = { event_type: event.type, livemode: String(event.livemode) }
 
   // Idempotency guard: Stripe retries deliveries; refuse to re-execute side effects.
   const claim = await claimWebhookDelivery({
@@ -164,6 +166,7 @@ export async function POST(request: Request) {
       entityType: event.type,
       entityId: event.id,
     })
+    stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "duplicate" })
     return NextResponse.json({ received: true, duplicate: true })
   }
 
@@ -330,6 +333,7 @@ export async function POST(request: Request) {
     const message = err instanceof Error ? err.message : String(err)
     await failWebhookDelivery({ provider: "stripe", route: "/api/stripe/webhook", eventId: event.id, errorMessage: message })
     logger.error("Stripe webhook handler failed", { eventId: event.id, eventType: event.type, error: message })
+    stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "failed" })
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
   }
 
@@ -337,5 +341,6 @@ export async function POST(request: Request) {
   // retries are correctly recognized as duplicates.
   await completeWebhookDelivery({ provider: "stripe", route: "/api/stripe/webhook", eventId: event.id })
 
+  stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "success" })
   return NextResponse.json({ received: true })
 }
