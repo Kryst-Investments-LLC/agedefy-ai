@@ -351,6 +351,18 @@ items — partials are documented inline but do not increase the completed count
   hydration payloads, duplicated fetches, and browser-side secrets/configuration.
 - [ ] `P1-PERF-008` Define caching rules per route: private/no-store for health data;
   revalidation/tagged cache for public compounds, pathways, learning, and metadata.
+  <!-- PROGRESS (PHI half done + verified): next.config.mjs headers() sets
+       Cache-Control: private, no-store as the secure DEFAULT for /api/* — verified
+       empirically that next.config headers override a handler's own Cache-Control,
+       so PHI cannot leak by forgetting a header (fail-safe). A negative-lookahead
+       source excludes the routes where no-store would regress: the public
+       /api/v1/openapi.json spec, /api/v1/credentials/:id/status, and the two SSE
+       streams (need no-cache/no-transform). Pages already emit no-store via
+       Next's dynamic-render default (confirmed on / and the force-dynamic PHI
+       pages). REMAINING: opt public catalog routes (compounds, pathways, learning,
+       metadata) INTO revalidation/tagged caching (s-maxage/stale-while-revalidate
+       or unstable_cache tags) — a perf optimization, not a PHI-leak risk. -->
+
 - [ ] `P1-PERF-009` Add pagination or cursor streaming to every unbounded collection.
 - [ ] `P2-PERF-010` Add PWA/offline support only for explicitly safe encrypted/local
   data, with clear logout and cache-clearing behavior.
