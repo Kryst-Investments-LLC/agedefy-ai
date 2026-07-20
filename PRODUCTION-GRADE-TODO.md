@@ -246,7 +246,12 @@ is documented below but does not increase the completed count.
   signed decisions, expiry, and re-review triggers.
 - [ ] `P0-GOV-008` Complete data inventory, classification, lawful-purpose mapping,
   consent versioning, retention, export, correction, deletion, and backup handling.
-- [ ] `P0-GOV-009` Enforce age eligibility and explicit sensitive-data consent.
+- [x] `P0-GOV-009` Enforce age eligibility and explicit sensitive-data consent.
+  <!-- Sensitive-data consent captured at onboarding (data-processing required,
+       ai-health-info optional) and enforced on PHI intake. Age eligibility:
+       onboarding rejects DOB under MIN_ELIGIBLE_AGE_YEARS (18) server-side, with
+       client-side feedback. Tested in onboarding-consent-validator.test.ts. -->
+
 - [ ] `P1-GOV-010` Publish subprocessors and establish DPAs/BAAs where applicable.
 - [ ] `P1-GOV-011` Add prompt/model/data-card versioning with rollback and audit trails.
 - [ ] `P1-GOV-012` Build adversarial evaluations for unsafe health claims,

@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
 
+import { ageInYears, MIN_ELIGIBLE_AGE_YEARS } from "@/lib/validators/onboarding"
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -232,10 +234,14 @@ export function OnboardingWizard() {
 
   const [onboardingComplete, setOnboardingComplete] = useState(false)
 
+  // P0-GOV-009 — the platform is adults-only; a valid, eligible DOB is required.
+  const dobAge = /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) ? ageInYears(dateOfBirth) : null
+  const isEligibleAge = dobAge !== null && dobAge >= MIN_ELIGIBLE_AGE_YEARS && dobAge < 130
+
   const canNext = (): boolean => {
     switch (step) {
       case 0:
-        return !!dateOfBirth && !!biologicalSex
+        return !!dateOfBirth && !!biologicalSex && isEligibleAge
       case 1:
         return healthGoals.length > 0 && primaryMotivation.length >= 3 && !!riskTolerance
       case 2:
@@ -334,6 +340,11 @@ export function OnboardingWizard() {
               onChange={(e) => setDateOfBirth(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
+            {dobAge !== null && !isEligibleAge && (
+              <p className="mt-1.5 text-xs text-destructive">
+                You must be at least {MIN_ELIGIBLE_AGE_YEARS} years old to use this platform.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Biological Sex</label>
