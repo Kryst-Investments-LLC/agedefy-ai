@@ -118,8 +118,17 @@ is documented below but does not increase the completed count.
 - [ ] `P0-SEC-007` Add SSRF protection to every user-configurable outbound URL.
   - Block loopback, link-local, private, metadata-service, and DNS-rebinding targets.
   - Allowlist schemes and ports; revalidate after redirects and DNS resolution.
-- [ ] `P0-SEC-008` Verify signature, timestamp, replay, and idempotency controls for
+- [x] `P0-SEC-008` Verify signature, timestamp, replay, and idempotency controls for
   Stripe, wearable, laboratory, and partner webhooks.
+  <!-- Two webhook routes exist. Stripe: constructEvent signature verification
+       (+ SDK timestamp tolerance), claim-PENDING -> complete idempotency, 5xx +
+       leave-PENDING on failure. Wearable (Terra): HMAC signature (fail-closed
+       401), body-hash idempotency with claim -> complete (fixed to complete on
+       success / leave PENDING + 500 on error / skip duplicates), replay covered
+       by the dedup. No laboratory/partner webhook routes exist yet — add these
+       controls when those integrations ship. Tested: stripe-webhook-*.test.ts,
+       wearables-webhook-idempotency.test.ts. -->
+
 - [ ] `P0-SEC-009` Add CSRF, open-redirect, session-fixation, authorization,
   object-level authorization, file-upload, and rate-limit security tests.
 - [ ] `P0-SEC-010` Add malware scanning, MIME sniffing, size/page limits, safe PDF
