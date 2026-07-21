@@ -17,12 +17,14 @@ const nextConfig = {
         // Cache-Control (verified empirically), so this fails safe — a PHI route
         // cannot leak by forgetting a header. The negative lookahead excludes the
         // few routes that must NOT be no-store: the public OpenAPI spec, the
-        // public credential-status endpoint, and the two SSE streams (which need
-        // no-cache/no-transform to stream through proxies). Add any new
-        // intentionally-cacheable or streaming API route to this exclusion list.
-        // Pages already get Next.js's dynamic-render no-store default.
+        // public credential-status endpoint, the two SSE streams (which need
+        // no-cache/no-transform), and the user-agnostic public catalogs
+        // (compounds, pathways, learn) which set their own public/revalidate
+        // caching (PUBLIC_CATALOG_CACHE_CONTROL). Add any new intentionally-
+        // cacheable or streaming API route here — and ONLY if it has no per-user
+        // or PHI content. Pages already get Next.js's dynamic-render no-store default.
         source:
-          "/api/((?!v1/openapi\\.json$|v1/credentials/[^/]+/status$|agents/session/[^/]+/stream$|aeonforge/candidates/[^/]+/stream$).*)",
+          "/api/((?!v1/openapi\\.json$|v1/credentials/[^/]+/status$|agents/session/[^/]+/stream$|aeonforge/candidates/[^/]+/stream$|compounds$|pathways$|pathways/[^/]+$|learn$|learn/[^/]+$).*)",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {

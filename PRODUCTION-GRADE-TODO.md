@@ -377,19 +377,21 @@ items — partials are documented inline but do not increase the completed count
   other heavy client modules only on routes that need them.
 - [ ] `P1-PERF-007` Use server components by default and minimize client boundaries,
   hydration payloads, duplicated fetches, and browser-side secrets/configuration.
-- [ ] `P1-PERF-008` Define caching rules per route: private/no-store for health data;
+- [x] `P1-PERF-008` Define caching rules per route: private/no-store for health data;
   revalidation/tagged cache for public compounds, pathways, learning, and metadata.
-  <!-- PROGRESS (PHI half done + verified): next.config.mjs headers() sets
-       Cache-Control: private, no-store as the secure DEFAULT for /api/* — verified
-       empirically that next.config headers override a handler's own Cache-Control,
-       so PHI cannot leak by forgetting a header (fail-safe). A negative-lookahead
-       source excludes the routes where no-store would regress: the public
-       /api/v1/openapi.json spec, /api/v1/credentials/:id/status, and the two SSE
-       streams (need no-cache/no-transform). Pages already emit no-store via
-       Next's dynamic-render default (confirmed on / and the force-dynamic PHI
-       pages). REMAINING: opt public catalog routes (compounds, pathways, learning,
-       metadata) INTO revalidation/tagged caching (s-maxage/stale-while-revalidate
-       or unstable_cache tags) — a perf optimization, not a PHI-leak risk. -->
+  <!-- BOTH HALVES DONE + empirically verified (next start + curl). PHI half:
+       next.config.mjs headers() sets Cache-Control: private, no-store as the secure
+       DEFAULT for /api/* (next.config headers override a handler's own, so PHI
+       cannot leak by forgetting a header — fail-safe). PUBLIC half: the
+       user-agnostic catalog GETs (/api/compounds, /api/pathways, /api/pathways/[id],
+       /api/learn, /api/learn/[slug]) are excluded from the no-store default via the
+       negative-lookahead source AND set PUBLIC_CATALOG_CACHE_CONTROL
+       (lib/http/cache-control.ts: public, max-age=60, s-maxage=300,
+       stale-while-revalidate=600). Each was confirmed session-free before caching
+       (no cross-user leak). Also excluded: openapi.json, credentials/:id/status,
+       and the two SSE streams. Probe confirmed catalogs -> public/s-maxage and
+       health/biomarkers/medications -> private,no-store (no regression). Pages
+       already emit no-store via Next's dynamic-render default. -->
 
 - [ ] `P1-PERF-009` Add pagination or cursor streaming to every unbounded collection.
   <!-- PROGRESS: reusable, backward-compatible pagination helper added

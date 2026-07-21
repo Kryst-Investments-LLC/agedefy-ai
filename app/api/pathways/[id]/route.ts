@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { db } from "@/lib/db"
+import { PUBLIC_CATALOG_CACHE_CONTROL } from "@/lib/http/cache-control"
 import { applyRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
@@ -35,5 +36,5 @@ export async function GET(
     return NextResponse.json({ error: "Pathway not found" }, { status: 404 })
   }
 
-  return NextResponse.json(pathway)
+  return NextResponse.json(pathway, { headers: { "Cache-Control": PUBLIC_CATALOG_CACHE_CONTROL } })
 }

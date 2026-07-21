@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { PUBLIC_CATALOG_CACHE_CONTROL } from "@/lib/http/cache-control"
 import { logAudit } from "@/lib/audit"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { applyRateLimit } from "@/lib/rate-limit"
@@ -41,7 +42,10 @@ export async function GET(request: NextRequest) {
     db.learnArticle.count({ where }),
   ])
 
-  return NextResponse.json({ articles, total, page, limit })
+  return NextResponse.json(
+    { articles, total, page, limit },
+    { headers: { "Cache-Control": PUBLIC_CATALOG_CACHE_CONTROL } },
+  )
 }
 
 /**
