@@ -1,7 +1,7 @@
 'use client'
 
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
-import { AiServiceBanner } from '@/components/ai-service-banner'
+import { ServiceStatusBanner } from '@/components/service-status-banner'
 import { AppSidebar } from '@/components/app-sidebar'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -31,8 +31,8 @@ export function AppShell({ children, pageTitle }: AppShellProps) {
           </div>
         </header>
 
-        {/* Honest AI-outage banner (INT-008) — renders only when degraded */}
-        <AiServiceBanner />
+        {/* Honest service-outage banner (INT-008) — renders only when degraded */}
+        <ServiceStatusBanner />
 
         {/* Page content */}
         <div className="flex-1 overflow-auto">

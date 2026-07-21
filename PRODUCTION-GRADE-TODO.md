@@ -371,18 +371,20 @@ items — partials are documented inline but do not increase the completed count
   VC signing, mechanistic modeling, screening, OpenMM, and FEP ship in V1.
 - [ ] `P1-INT-007` Remove or relabel unavailable capabilities in navigation,
   marketing, pricing, developer docs, and API documentation.
-- [ ] `P1-INT-008` Define provider outage behavior and show honest degraded-state UI.
-  <!-- AI PROVIDERS DONE: outage behavior is the circuit breaker
-       (executeWithCircuitBreaker) — the AI routes already return 503 + Retry-After
-       when a provider's breaker is open, and each 429 increments the quota metric.
-       Honest UI added: GET /api/ai/status reports each provider's breaker state
-       (getCircuitStates: OPEN=unavailable, HALF_OPEN/none=available; tested
-       ai-status-route-pg.test.ts, 3 cases) and components/ai-service-banner.tsx
-       polls it (60s) to render an amber outage banner app-wide via AppShell —
-       rendering nothing in normal operation and auto-clearing on recovery.
-       REMAINING: extend the same honest degraded UI to non-AI providers
-       (email/Stripe/wearables) whose breakers also exist, and per-feature inline
-       degraded states beyond the global banner. -->
+- [x] `P1-INT-008` Define provider outage behavior and show honest degraded-state UI.
+  <!-- OUTAGE BEHAVIOR: the circuit breaker (executeWithCircuitBreaker) — routes
+       return 503 + Retry-After when a dependency's breaker is open. HONEST UI:
+       lib/dependency-status.ts groups all breaker-protected dependencies into
+       user-meaningful categories (AI features / Payments / Compound & structure
+       data) and getDependencyStatus reports per-category availability from the
+       breaker states (OPEN=unavailable, HALF_OPEN/none=available). GET /api/status
+       exposes it; components/service-status-banner.tsx polls it (60s) and renders
+       an amber banner naming the degraded categories app-wide via AppShell —
+       nothing in normal operation, auto-clears on recovery. Tests: status-route-pg
+       (payments + research-data + HALF_OPEN cases) and the AI-specific
+       /api/ai/status (ai-status-route-pg). REMAINING (follow-ups, non-blocking):
+       per-feature inline degraded states beyond the global banner, and breakers
+       for the non-breaker providers (email/wearables) so they can surface too. -->
 
 
 ## 8. Performance and scale additions
