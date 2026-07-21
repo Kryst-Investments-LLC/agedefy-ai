@@ -378,6 +378,39 @@ export async function retryOrchestrationJob(
   })
 }
 
+/**
+ * Bulk dead-letter replay (P1-PERF-015): return DEAD_LETTER jobs to the queue
+ * with a FRESH retry budget (attempts reset to 0) — for replaying after the
+ * root cause is fixed. Unlike retryOrchestrationJob (a single manual retry that
+ * keeps attempts, giving one more shot), this restores the full maxAttempts.
+ * Scoped to a tenant; optionally narrowed to a queue or a specific job list.
+ * Returns the number of jobs replayed.
+ */
+export async function replayDeadLetterJobs(
+  options: { tenantId: string; queue?: OrchestrationJobQueue; jobIds?: string[]; now?: Date },
+  client: PrismaClientLike = db,
+): Promise<number> {
+  const now = options.now ?? new Date()
+  const result = await client.orchestrationJob.updateMany({
+    where: {
+      status: "DEAD_LETTER",
+      tenantId: options.tenantId,
+      ...(options.queue ? { queue: options.queue } : {}),
+      ...(options.jobIds ? { id: { in: options.jobIds } } : {}),
+    },
+    data: {
+      status: "QUEUED",
+      attempts: 0,
+      availableAt: now,
+      leasedAt: null,
+      leaseExpiresAt: null,
+      completedAt: null,
+      lastError: null,
+    },
+  })
+  return result.count
+}
+
 export async function cancelOrchestrationJob(
   jobId: string,
   tenantId: string,

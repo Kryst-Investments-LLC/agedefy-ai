@@ -7,6 +7,7 @@ import {
   failOrchestrationJob,
   leaseAvailableOrchestrationJobs,
   releaseOrchestrationJob,
+  replayDeadLetterJobs,
 } from "@/lib/jobs/queue"
 import { computeOldestQueuedJobAgeMs } from "@/lib/observability/job-queue-gauge"
 import { jobExecutionCounter } from "@/lib/observability/telemetry"
@@ -198,5 +199,19 @@ describe("orchestration queue", () => {
     expect(failed.lastError).toContain("synthetic failure")
     expect(counterSpy).toHaveBeenCalledWith(1, expect.objectContaining({ status: "dead_letter" }))
     counterSpy.mockRestore()
+
+    // Bulk replay restores a fresh retry budget and makes the job leasable again.
+    const replayed = await replayDeadLetterJobs({ tenantId })
+    expect(replayed).toBe(1)
+    const afterReplay = await db.orchestrationJob.findUniqueOrThrow({ where: { id: job.id } })
+    expect(afterReplay.status).toBe("QUEUED")
+    expect(afterReplay.attempts).toBe(0) // full budget restored (unlike single retry)
+    expect(afterReplay.lastError).toBeNull()
+
+    const releasable = await leaseAvailableOrchestrationJobs({ tenantId, batchSize: 5, leaseMs: 60_000 })
+    expect(releasable.map((j) => j.id)).toContain(job.id)
+
+    // Replaying again when nothing is dead-lettered is a no-op.
+    expect(await replayDeadLetterJobs({ tenantId })).toBe(0)
   })
 })

@@ -499,8 +499,13 @@ items — partials are documented inline but do not increase the completed count
        per-tenant headroom while claiming so a batch never exceeds the cap. A capped
        tenant's excess jobs stay QUEUED for a later cycle so one tenant's backlog can't
        starve the shared pool. Tested (tenant:cap_fair in orchestration-queue.test.ts:
-       3 available -> 2 leased -> 0 on the next call -> 1 still QUEUED). REMAINING:
-       explicit quota rejection at enqueue time and a dead-letter replay endpoint. -->
+       3 available -> 2 leased -> 0 on the next call -> 1 still QUEUED). DEAD-LETTER
+       REPLAY added: replayDeadLetterJobs({tenantId, queue?, jobIds?}) returns
+       DEAD_LETTER jobs to QUEUED with a FRESH retry budget (attempts=0, unlike the
+       single retryOrchestrationJob which keeps attempts), exposed as ADMIN+MFA
+       POST /api/admin/jobs/replay-dead-letters; tested (dead-letter -> replay ->
+       attempts 0, leasable again, no-op when none). REMAINING: explicit quota
+       rejection at enqueue time (producer-side backpressure). -->
 
 - [ ] `P2-PERF-016` Add materialized views/read models for dashboards, knowledge-graph
   traversals, aggregate outcomes, and marketplace metrics.
