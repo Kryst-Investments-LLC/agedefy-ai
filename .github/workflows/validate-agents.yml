@@ -1,4 +1,4 @@
-﻿name: Validate AI Agents
+name: Validate AI Agents
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
   yaml-and-schema:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install yamllint
         run: pip install yamllint==1.35.1

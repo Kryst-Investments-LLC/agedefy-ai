@@ -9,7 +9,7 @@ jobs:
   freshness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install powershell-yaml
         shell: pwsh
         run: Install-Module powershell-yaml -Scope CurrentUser -Force
