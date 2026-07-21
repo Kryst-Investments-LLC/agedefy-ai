@@ -507,6 +507,16 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P1-PERF-013` Add connection pooling and define pool sizes for web, workers,
   migrations, serverless concurrency, and sidecars.
+  <!-- POOLING: Prisma pools per process (connection_limit on the DB URL). Pool
+       SIZES DEFINED in .env.example per workload (web ?connection_limit=5&pool_
+       timeout=10, workers 20, migration/cron 2) so many instances don't exhaust
+       Postgres max_connections. Guard added: instrumentation.ts warns at startup
+       in production if DATABASE_URL has no connection_limit (lib/db-pool.ts
+       parseConnectionLimit/isConnectionLimitUnset, unit-tested db-pool.test.ts).
+       Pool health is already observable via biozephyra_db_pool_connections_* (see
+       OBS-004). REMAINING: set the actual per-workload connection_limit at deploy
+       (RB-3) and tune against the managed PG's max_connections. -->
+
 - [ ] `P1-PERF-014` Move expensive aggregation, document parsing, evidence retrieval,
   docking, screening, FEP, and AI fan-out to durable asynchronous jobs.
 - [x] `P1-PERF-015` Add job priorities, quotas, backpressure, cancellation,
