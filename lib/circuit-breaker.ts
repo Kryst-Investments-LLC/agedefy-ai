@@ -1,4 +1,4 @@
-import { DependencyCircuitBreakerState } from "@prisma/client"
+import { DependencyCircuitBreakerState, type PrismaClient } from "@prisma/client"
 
 import { db } from "@/lib/db"
 import { recordCacheEviction, recordCacheHit, recordCacheMiss } from "@/lib/observability/cache-metrics"
@@ -177,4 +177,31 @@ export async function executeWithCircuitBreaker<T>({
  */
 export function resetCircuitBreakerCache() {
   cbCache.clear()
+}
+
+export type DependencyAvailability = {
+  dependency: string
+  state: DependencyCircuitBreakerState
+  available: boolean
+}
+
+/**
+ * Read the current circuit state for a set of dependencies (for honest
+ * degraded-state UI, INT-008). A dependency with no row has never tripped and
+ * is treated as available/CLOSED; OPEN means unavailable; HALF_OPEN is probing
+ * and treated as available (a request is allowed through to test recovery).
+ */
+export async function getCircuitStates(
+  dependencies: string[],
+  client: Pick<PrismaClient, "dependencyCircuitBreaker"> = db,
+): Promise<DependencyAvailability[]> {
+  const rows = await client.dependencyCircuitBreaker.findMany({
+    where: { dependency: { in: dependencies } },
+    select: { dependency: true, state: true },
+  })
+  const byDep = new Map(rows.map((r) => [r.dependency, r.state]))
+  return dependencies.map((dependency) => {
+    const state = byDep.get(dependency) ?? DependencyCircuitBreakerState.CLOSED
+    return { dependency, state, available: state !== DependencyCircuitBreakerState.OPEN }
+  })
 }

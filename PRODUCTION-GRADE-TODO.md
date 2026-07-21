@@ -372,6 +372,18 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P1-INT-007` Remove or relabel unavailable capabilities in navigation,
   marketing, pricing, developer docs, and API documentation.
 - [ ] `P1-INT-008` Define provider outage behavior and show honest degraded-state UI.
+  <!-- AI PROVIDERS DONE: outage behavior is the circuit breaker
+       (executeWithCircuitBreaker) — the AI routes already return 503 + Retry-After
+       when a provider's breaker is open, and each 429 increments the quota metric.
+       Honest UI added: GET /api/ai/status reports each provider's breaker state
+       (getCircuitStates: OPEN=unavailable, HALF_OPEN/none=available; tested
+       ai-status-route-pg.test.ts, 3 cases) and components/ai-service-banner.tsx
+       polls it (60s) to render an amber outage banner app-wide via AppShell —
+       rendering nothing in normal operation and auto-clearing on recovery.
+       REMAINING: extend the same honest degraded UI to non-AI providers
+       (email/Stripe/wearables) whose breakers also exist, and per-feature inline
+       degraded states beyond the global banner. -->
+
 
 ## 8. Performance and scale additions
 

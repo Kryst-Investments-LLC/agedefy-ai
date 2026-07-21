@@ -5,6 +5,7 @@ export const postgresTestFiles = [
   "__tests__/audit-chain-integrity-pg.test.ts",
   "__tests__/consent-flow-pg.test.ts",
   "__tests__/account-erasure-pg.test.ts",
+  "__tests__/ai-status-route-pg.test.ts",
   "__tests__/api-usage-summary-pg.test.ts",
   "__tests__/db-pool-metrics-pg.test.ts",
   "__tests__/external-screening-backfill-pg.test.ts",
