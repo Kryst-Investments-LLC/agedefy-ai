@@ -13,6 +13,12 @@
 import path from 'path'
 import { defineConfig } from 'vitest/config'
 
+// Single source of truth for the PostgreSQL-backed tests so this exclude list
+// can never drift from vitest.postgres.config.ts (a new *-pg test added there is
+// automatically excluded here — otherwise it silently runs under `test:unit`
+// without a DB and only "passes" when DATABASE_URL happens to be set).
+import { postgresTestFiles } from './vitest.postgres.config'
+
 export default defineConfig({
   test: {
     environment: 'node',
@@ -24,23 +30,8 @@ export default defineConfig({
       '__tests__/jwt-for-tests-integration.test.ts',
       '__tests__/mechanistic-models-api.test.ts',
       '__tests__/scientist-sponsor-marketplace-integration.test.ts',
-      // PostgreSQL integration tests (real Prisma client or DB-backed route dependencies):
-      '__tests__/audit-chain-integrity-pg.test.ts',
-      '__tests__/consent-flow-pg.test.ts',
-      '__tests__/account-erasure-pg.test.ts',
-      '__tests__/data-retention-pg.test.ts',
-      '__tests__/object-level-authz-pg.test.ts',
-      '__tests__/ai-credits.test.ts',
-      '__tests__/ai-provider-orchestration-routes.test.ts',
-      '__tests__/canonical-health-event-routes.test.ts',
-      '__tests__/circuit-breaker.test.ts',
-      '__tests__/idempotency.test.ts',
-      '__tests__/moat-db-integration.test.ts',
-      '__tests__/orchestration-queue.test.ts',
-      '__tests__/outbox-dispatcher.test.ts',
-      '__tests__/prisma-health-event-store.test.ts',
-      '__tests__/tenancy.test.ts',
-      '__tests__/transactional-health-event-ingestion-service.test.ts',
+      // PostgreSQL integration tests (real Prisma client / DB-backed routes):
+      ...postgresTestFiles,
     ],
     globals: true,
     // No globalSetup — unit tests mock all I/O.
