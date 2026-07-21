@@ -6,6 +6,7 @@
  */
 
 import { db } from '@/lib/db'
+import { fetchWithTimeout } from '@/lib/http/fetch-with-timeout'
 import { logger } from '@/lib/logger'
 
 const PUBCHEM_BASE = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
@@ -33,7 +34,7 @@ export async function fetchCompoundByName(
 ): Promise<PubChemCompound | null> {
   const url = `${PUBCHEM_BASE}/compound/name/${encodeURIComponent(name)}/property/IUPACName,MolecularFormula,MolecularWeight,IsomericSMILES,InChI/JSON`
 
-  const res = await fetch(url)
+  const res = await fetchWithTimeout(url)
   if (!res.ok) {
     if (res.status === 404) return null
     logger.warn('PubChem lookup failed', { name, status: res.status })
@@ -53,7 +54,7 @@ export async function fetchCompoundByCID(
 ): Promise<PubChemCompound | null> {
   const url = `${PUBCHEM_BASE}/compound/cid/${cid}/property/IUPACName,MolecularFormula,MolecularWeight,IsomericSMILES,InChI/JSON`
 
-  const res = await fetch(url)
+  const res = await fetchWithTimeout(url)
   if (!res.ok) {
     if (res.status === 404) return null
     logger.warn('PubChem CID lookup failed', { cid, status: res.status })
