@@ -152,16 +152,34 @@ export async function sendPlatformEmail(payload: EmailPayload): Promise<boolean>
     port: Number(smtpPort) || 587,
     secure: (Number(smtpPort) || 587) === 465,
     auth: { user: smtpUser, pass: smtpPass },
+    // Fail fast instead of hanging the request/worker — nodemailer's defaults are
+    // 2 min (connection) and 10 min (socket), long enough to pin a handler.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   })
 
-  await transporter.sendMail({
-    from: emailFrom,
-    to: payload.to,
-    subject: payload.subject,
-    html: payload.html,
-  })
-
-  return true
+  try {
+    await transporter.sendMail({
+      from: emailFrom,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html,
+    })
+    return true
+  } catch (error) {
+    // Delivery failures (timeout, auth, connection) are logged and reported as a
+    // boolean so best-effort callers (welcome email, notifications) don't crash;
+    // callers that must guarantee delivery check the return value.
+    logger.error("Email delivery failed", {
+      to: payload.to,
+      subject: payload.subject,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return false
+  } finally {
+    transporter.close()
+  }
 }
 
 // ─── Email templates ─────────────────────────────────────────
