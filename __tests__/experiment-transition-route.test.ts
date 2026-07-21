@@ -8,6 +8,7 @@ const txMock = {
 }
 const dbMock = {
   experimentCandidate: { findFirst: vi.fn() },
+  experimentCandidateEvent: { findFirst: vi.fn() },
   $transaction: vi.fn(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock)),
 }
 
@@ -42,6 +43,8 @@ const BASE_CANDIDATE = {
 beforeEach(() => {
   vi.resetAllMocks()
   dbMock.experimentCandidate.findFirst.mockResolvedValue(BASE_CANDIDATE)
+  // The route reads the entering-status event timestamp for the stage-latency metric.
+  dbMock.experimentCandidateEvent.findFirst.mockResolvedValue({ createdAt: new Date(Date.now() - 1000) })
   txMock.experimentCandidate.update.mockResolvedValue({ ...BASE_CANDIDATE, status: 'SCREENED' })
   txMock.experimentCandidateEvent.create.mockResolvedValue({})
   dbMock.$transaction.mockImplementation(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock))

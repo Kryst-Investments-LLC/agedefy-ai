@@ -101,11 +101,11 @@ severity.
 | Field | Value |
 |-------|-------|
 | SLI | Fraction of candidates that progress through the research lifecycle without stalling; time-in-stage |
-| Metric | ⚠️ not emitted — no per-stage transition counter/histogram today |
-| Query | (pending) transition counter labelled by `from_status`/`to_status` + a stage-latency histogram |
-| SLO | ≥ 95% of candidates advance past triage within the target stage SLA; no stage stalls > N days |
-| Alert / sev | (pending instrumentation) |
-| Backed by | ⚠️ gap — add candidate lifecycle metrics (pairs with OBS-009 tracing) |
+| Metric | `biozephyra_candidate_transition_count` (labels `from_status`, `to_status`); `biozephyra_candidate_stage_duration_ms_bucket` (label `stage`) |
+| Query | throughput `sum(rate(…transition_count[1h])) by (to_status)`; stage time `histogram_quantile(0.95, rate(…stage_duration_ms_bucket[1d])) by (stage)` |
+| SLO | ≥ 95% of candidates advance past triage within the target stage SLA; no stage P95 stalls beyond its window |
+| Alert / sev | (to add) P2 on a stage P95 exceeding its SLA window |
+| Backed by | ✅ emitted — `recordCandidateTransition` at the canonical transition endpoint (with stage latency from the entering-status event) and at creation (null→PROPOSED). Auxiliary event sites (feedback/lab) adopt the same helper incrementally. |
 
 ## Supporting reliability signals (not user SLOs, but alerted)
 
@@ -121,7 +121,8 @@ severity.
 2. ~~Stripe `outcome` label for the payments success SLO~~ — **done**.
 3. ~~Job-queue-age gauge~~ — **done** (`biozephyra_orchestration_job_oldest_queued_age_ms`).
 4. ~~DB-pool gauges~~ — **done** (bridged from Prisma `$metrics`; saturation via `biozephyra_db_client_queries_wait`).
-5. Candidate lifecycle transition counter + stage-latency histogram.
+5. ~~Candidate lifecycle transition counter + stage-latency histogram~~ — **done**
+   (`recordCandidateTransition`; canonical transition endpoint + creation).
 6. ~~Extend `withHttpMetrics` to non-AI routes~~ — **done for the SLO-critical
    flows** (payments, ingestion, PHI intake). Whole-surface baseline latency/
    success is already covered by the auto-instrumented `http.server.duration`;

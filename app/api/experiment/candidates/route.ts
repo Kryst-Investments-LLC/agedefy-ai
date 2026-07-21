@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { recordCandidateTransition } from '@/lib/observability/telemetry'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { requireAuthWithRole } from '@/lib/rbac'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
       },
       include: { events: true },
     })
+
+    recordCandidateTransition({ fromStatus: null, toStatus: 'PROPOSED' })
 
     logger.info('Experiment candidate created', {
       candidateId: candidate.id,

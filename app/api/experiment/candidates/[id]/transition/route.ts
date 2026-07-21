@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { recordCandidateTransition } from '@/lib/observability/telemetry'
 import { requireAuthWithRole } from '@/lib/rbac'
 import {
   isValidTransition,
@@ -91,6 +92,14 @@ export async function PATCH(
       )
     }
 
+    // When did the candidate enter its current status? (the latest event whose
+    // toStatus is the current status) — used for the stage-latency SLI.
+    const enteredCurrentAt = await db.experimentCandidateEvent.findFirst({
+      where: { candidateId: id, toStatus: candidate.status },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    })
+
     const updated = await db.$transaction(async (tx) => {
       const c = await tx.experimentCandidate.update({
         where: { id },
@@ -109,6 +118,12 @@ export async function PATCH(
       })
 
       return c
+    })
+
+    recordCandidateTransition({
+      fromStatus: candidate.status,
+      toStatus,
+      stageDurationMs: enteredCurrentAt ? Date.now() - enteredCurrentAt.createdAt.getTime() : undefined,
     })
 
     logger.info('Experiment candidate transitioned', {

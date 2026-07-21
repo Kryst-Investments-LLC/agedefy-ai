@@ -57,6 +57,35 @@ export const authFailureCounter = meter.createCounter("biozephyra.auth.failure.c
   description: "Failed credential authentication attempts, labeled by reason (credential stuffing signal)",
 })
 
+export const candidateTransitionCounter = meter.createCounter("biozephyra.candidate.transition.count", {
+  description: "Experiment candidate lifecycle transitions, labeled by from/to status",
+})
+
+export const candidateStageDurationHistogram = meter.createHistogram("biozephyra.candidate.stage.duration_ms", {
+  description: "Time a candidate spent in a lifecycle stage before advancing out of it",
+  unit: "ms",
+})
+
+/**
+ * Record a candidate lifecycle transition (OBS-004 candidate-workflow SLI): a
+ * transition counter labelled by from/to status, plus an optional stage-latency
+ * observation (time spent in `fromStatus` before this move). `fromStatus` is
+ * null for the initial creation into PROPOSED.
+ */
+export function recordCandidateTransition(args: {
+  fromStatus: string | null
+  toStatus: string
+  stageDurationMs?: number
+}): void {
+  candidateTransitionCounter.add(1, {
+    from_status: args.fromStatus ?? "none",
+    to_status: args.toStatus,
+  })
+  if (typeof args.stageDurationMs === "number" && args.stageDurationMs >= 0) {
+    candidateStageDurationHistogram.record(args.stageDurationMs, { stage: args.fromStatus ?? "none" })
+  }
+}
+
 // ─── Span Helpers ────────────────────────────────────────────
 
 export function startSpan(name: string, attributes?: Record<string, string | number | boolean>) {
