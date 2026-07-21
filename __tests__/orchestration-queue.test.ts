@@ -5,6 +5,7 @@ import {
   completeOrchestrationJob,
   enqueueOrchestrationJob,
   failOrchestrationJob,
+  JobQuotaExceededError,
   leaseAvailableOrchestrationJobs,
   releaseOrchestrationJob,
   replayDeadLetterJobs,
@@ -174,6 +175,46 @@ describe("orchestration queue", () => {
 
     // The third job stays QUEUED, waiting for headroom.
     expect(await db.orchestrationJob.count({ where: { tenantId, status: "QUEUED" } })).toBe(1)
+  })
+
+  it("rejects enqueue once a tenant hits its pending-job quota tenant:enqueue_quota", async () => {
+    const tenantId = "enqueue_quota"
+    const makeInput = (i: number) => ({
+      tenantId,
+      queue: "AI" as const,
+      jobType: "ai.governance.audit",
+      dedupeKey: `quota:${tenantId}:${i}`,
+      payload: {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        route: "/api/ai/openai",
+        requestId: `req:${tenantId}:${i}`,
+        queryLength: 12,
+        tenantId,
+        outcome: "success",
+        actor: {},
+      },
+    })
+
+    // Quota of 2: the first two enqueues succeed, the third is rejected.
+    await enqueueOrchestrationJob(makeInput(0), db, { maxPendingPerTenant: 2 })
+    await enqueueOrchestrationJob(makeInput(1), db, { maxPendingPerTenant: 2 })
+    await expect(enqueueOrchestrationJob(makeInput(2), db, { maxPendingPerTenant: 2 })).rejects.toBeInstanceOf(
+      JobQuotaExceededError,
+    )
+    expect(await db.orchestrationJob.count({ where: { tenantId } })).toBe(2)
+
+    // A duplicate (same dedupeKey) is a no-op that never counts against the quota.
+    const dup = await enqueueOrchestrationJob(makeInput(0), db, { maxPendingPerTenant: 2 })
+    expect(dup.dedupeKey).toBe(`quota:${tenantId}:0`)
+
+    // Terminal jobs don't count as pending — completing one frees quota headroom.
+    const leased = await leaseAvailableOrchestrationJobs({ tenantId, batchSize: 1, leaseMs: 60_000 })
+    await completeOrchestrationJob(leased[0].id, { ok: true })
+    const after = await enqueueOrchestrationJob(makeInput(3), db, { maxPendingPerTenant: 2 })
+    expect(after.id).toBeTruthy()
+
+    await db.orchestrationJob.deleteMany({ where: { tenantId } })
   })
 
   it("dead-letters exhausted jobs tenant:jobs_deadletter", async () => {

@@ -487,7 +487,7 @@ items — partials are documented inline but do not increase the completed count
   migrations, serverless concurrency, and sidecars.
 - [ ] `P1-PERF-014` Move expensive aggregation, document parsing, evidence retrieval,
   docking, screening, FEP, and AI fan-out to durable asynchronous jobs.
-- [ ] `P1-PERF-015` Add job priorities, quotas, backpressure, cancellation,
+- [x] `P1-PERF-015` Add job priorities, quotas, backpressure, cancellation,
   deduplication, dead-letter replay, and per-tenant fairness.
   <!-- PROGRESS: priorities (lease orderBy priority asc), cancellation
        (cancelOrchestrationJob), deduplication (tenantId_dedupeKey unique on enqueue),
@@ -504,8 +504,15 @@ items — partials are documented inline but do not increase the completed count
        DEAD_LETTER jobs to QUEUED with a FRESH retry budget (attempts=0, unlike the
        single retryOrchestrationJob which keeps attempts), exposed as ADMIN+MFA
        POST /api/admin/jobs/replay-dead-letters; tested (dead-letter -> replay ->
-       attempts 0, leasable again, no-op when none). REMAINING: explicit quota
-       rejection at enqueue time (producer-side backpressure). -->
+       attempts 0, leasable again, no-op when none). ENQUEUE QUOTA added
+       (producer-side backpressure): enqueueOrchestrationJob counts a tenant's
+       pending (non-terminal) jobs and throws JobQuotaExceededError once at/over
+       JOB_MAX_PENDING_PER_TENANT (default 50000; 0 disables) — checked after the
+       dedupe short-circuit so duplicates never count; POST /api/admin/jobs maps it
+       to 429. Tested (tenant:enqueue_quota: 2 ok -> 3rd rejected -> dup no-op ->
+       completing one frees headroom; admin route 429). All PERF-015 elements now
+       present: priorities, quotas, backpressure, cancellation, dedup, dead-letter
+       replay, per-tenant fairness. -->
 
 - [ ] `P2-PERF-016` Add materialized views/read models for dashboards, knowledge-graph
   traversals, aggregate outcomes, and marketplace metrics.

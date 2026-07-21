@@ -13,6 +13,22 @@ const RETRYABLE_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]
 
 type PrismaClientLike = PrismaClient | Prisma.TransactionClient
 
+/**
+ * Thrown by enqueueOrchestrationJob when a tenant already has too many pending
+ * (non-terminal) jobs — producer-side backpressure so a runaway producer can't
+ * grow the queue without bound (P1-PERF-015). Routes should map this to 429.
+ */
+export class JobQuotaExceededError extends Error {
+  constructor(
+    readonly tenantId: string,
+    readonly limit: number,
+    readonly pending: number,
+  ) {
+    super(`Job quota exceeded for tenant ${tenantId}: ${pending} pending >= ${limit}`)
+    this.name = "JobQuotaExceededError"
+  }
+}
+
 export type OrchestrationJobStatusCounts = Record<OrchestrationJobStatus, number>
 
 export type OrchestrationJobQueueSummary = {
@@ -107,6 +123,9 @@ export function getJobRuntimeConfig() {
     // Per-tenant fairness cap: max jobs a single tenant may hold LEASED at once,
     // so one tenant's backlog can't starve the shared worker pool. 0 disables it.
     maxConcurrentLeasesPerTenant: parseNumber(env.JOB_MAX_CONCURRENT_LEASES_PER_TENANT, 200),
+    // Producer-side backpressure: reject enqueue once a tenant has this many
+    // pending (non-terminal) jobs, bounding queue growth. 0 disables it.
+    maxPendingPerTenant: parseNumber(env.JOB_MAX_PENDING_PER_TENANT, 50_000),
     tenantId: env.JOB_TENANT_ID?.trim() || undefined,
   }
 }
@@ -114,6 +133,7 @@ export function getJobRuntimeConfig() {
 export async function enqueueOrchestrationJob(
   input: EnqueueOrchestrationJobInput,
   client: PrismaClientLike = db,
+  options: { maxPendingPerTenant?: number } = {},
 ): Promise<OrchestrationJob> {
   if (input.dedupeKey) {
     const existing = await client.orchestrationJob.findUnique({
@@ -127,6 +147,19 @@ export async function enqueueOrchestrationJob(
 
     if (existing) {
       return existing
+    }
+  }
+
+  // Producer-side backpressure (P1-PERF-015): cap a tenant's pending (non-terminal)
+  // jobs. Checked after the dedupe short-circuit so a duplicate never counts against
+  // the quota or raises an error.
+  const maxPending = options.maxPendingPerTenant ?? getJobRuntimeConfig().maxPendingPerTenant
+  if (maxPending > 0) {
+    const pending = await client.orchestrationJob.count({
+      where: { tenantId: input.tenantId, status: { notIn: TERMINAL_STATUSES } },
+    })
+    if (pending >= maxPending) {
+      throw new JobQuotaExceededError(input.tenantId, maxPending, pending)
     }
   }
 

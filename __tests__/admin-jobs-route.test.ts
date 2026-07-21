@@ -16,9 +16,21 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/security/recent-mfa", () => ({ requireRecentMfa: vi.fn(async () => null) }))
 
+class JobQuotaExceededError extends Error {
+  constructor(
+    readonly tenantId: string,
+    readonly limit: number,
+    readonly pending: number,
+  ) {
+    super("quota")
+    this.name = "JobQuotaExceededError"
+  }
+}
+
 vi.mock("@/lib/jobs/queue", () => ({
   listOrchestrationJobs: listJobsMock,
   enqueueOrchestrationJob: enqueueJobMock,
+  JobQuotaExceededError,
 }))
 
 vi.mock("@/lib/audit", () => ({
@@ -131,6 +143,25 @@ describe("/api/admin/jobs", () => {
       }),
     }))
     expect(logAuditMock).toHaveBeenCalled()
+  })
+
+  it("returns 429 when the tenant's pending-job quota is exceeded", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "admin_1", email: "admin@example.com", role: "ADMIN", tenantId: "tenant_1" } })
+    enqueueJobMock.mockRejectedValue(new JobQuotaExceededError("tenant_1", 2, 2))
+    const { POST } = await import("@/app/api/admin/jobs/route")
+
+    const response = await POST(new NextRequest("http://localhost:3000/api/admin/jobs", {
+      method: "POST",
+      headers: { "content-type": "application/json", "idempotency-key": "job-quota-1" },
+      body: JSON.stringify({
+        queue: "GOVERNANCE",
+        jobType: "governance.review.escalation",
+        payload: { title: "x", category: "background-jobs", severity: "HIGH", details: "y" },
+      }),
+    }))
+
+    expect(response.status).toBe(429)
+    expect((await response.json()).limit).toBe(2)
   })
 
   it("creates an AI governance audit job with tenant-scoped actor context", async () => {
