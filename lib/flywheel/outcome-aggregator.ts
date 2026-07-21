@@ -64,12 +64,25 @@ interface GdprConsentEntry {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Minimum k-anonymity for any published cohort statistic (P1-GOV-013): every
+ * equivalence class released from an aggregation must contain at least this many
+ * distinct users, so a cohort can never re-identify an individual. Callers may
+ * request a HIGHER k, never a lower one.
+ */
+export const MIN_COHORT_K = 50
+
+/** Clamp a requested k-anonymity threshold up to the GOV-013 floor of 50. */
+export function resolveCohortK(configuredK?: number): number {
+  return Math.max(MIN_COHORT_K, configuredK ?? MIN_COHORT_K)
+}
+
+/**
  * Run outcome aggregation for all consented users.
  */
 export async function runOutcomeAggregation(
   config: AggregationConfig,
 ): Promise<AggregationRunResult> {
-  const k = config.k ?? 5
+  const k = resolveCohortK(config.k)
   const epsilon = config.epsilon ?? 1.0
   const tenantId = config.tenantId ?? 'default'
 

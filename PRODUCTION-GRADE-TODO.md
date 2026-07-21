@@ -362,6 +362,16 @@ items — partials are documented inline but do not increase the completed count
   hallucinated citations, prompt injection, jurisdiction bypass, and data leakage.
 - [ ] `P1-GOV-013` Verify cohort queries retain k-anonymity of at least 50 and
   differential privacy under composition, retries, joins, and repeated queries.
+  <!-- k-ANONYMITY FLOOR ENFORCED: the cohort-query path (runOutcomeAggregation)
+       clamped every equivalence class to k>=50 via resolveCohortK (was a default
+       of 5); a class with <50 distinct users is suppressed, never published.
+       Constant MIN_COHORT_K=50, unit-tested (cohort-k-anonymity.test.ts). Callers
+       may request a stricter (higher) k but never lower. Differential-privacy
+       NOISE is already applied per statistic (addNoisyMean, epsilon default 1.0).
+       REMAINING: DP UNDER COMPOSITION — a per-tenant/subject privacy-budget ledger
+       that debits epsilon across repeated/retried/joined queries so the cumulative
+       leakage stays bounded (today each run is independently noised, not budgeted). -->
+
 - [ ] `P2-GOV-014` Establish quality-management procedures appropriate to the final
   product claims and regulatory classification.
 
