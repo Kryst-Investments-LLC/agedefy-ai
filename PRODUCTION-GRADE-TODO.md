@@ -631,6 +631,20 @@ items — partials are documented inline but do not increase the completed count
   tautomer policy, and known database identifiers.
 - [ ] `P0-CMP-013` Sign candidate results with the platform provenance mechanism.
 - [ ] `P0-CMP-014` Add immutable state transitions and reviewer-signed reasons.
+  <!-- IMMUTABLE + ATTRIBUTED (safe governance, no chemistry/claims): candidate
+       transitions already move forward-only through adjacent states
+       (isValidTransition) and are logged append-only (ExperimentCandidateEvent).
+       Now each transition also writes to the TAMPER-EVIDENT hash-chained audit log
+       in the SAME transaction via logAuditInTransactionOrThrow (action
+       candidate.transitioned, actor + reason + from/to) — so a transition cannot
+       commit without its immutable record, and the record can't be silently altered
+       (entryHash chained per tenant). Route stays RESEARCHER/CLINICIAN/ADMIN-gated;
+       unit-tested that the audit entry is written in-tx with an entryHash
+       (experiment-transition-route.test.ts). REMAINING (policy decision, contract
+       change): make the reviewer reason MANDATORY on transitions (today it is
+       captured when provided but optional), and extend the same in-tx audit to the
+       feedback/lab transition sites. -->
+
 
 ### Stage 1: identity and reality check
 

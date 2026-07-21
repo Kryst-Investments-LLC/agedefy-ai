@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { Prisma } from '@prisma/client'
 
+import { logAuditInTransactionOrThrow } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
@@ -115,6 +116,20 @@ export async function PATCH(
           notes: notes ?? null,
           metadata: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
         },
+      })
+
+      // Immutable, reviewer-attributed transition record (P0-CMP-014): written in
+      // the SAME transaction as the status change + event, into the tamper-evident
+      // hash-chained audit log — the transition cannot commit without its audit
+      // entry, and the entry cannot be silently altered later.
+      await logAuditInTransactionOrThrow(tx, {
+        actorUserId: session.user.id,
+        actorEmail: session.user.email ?? undefined,
+        tenantId: candidate.tenantId,
+        action: 'candidate.transitioned',
+        entityType: 'ExperimentCandidate',
+        entityId: id,
+        details: { fromStatus: candidate.status, toStatus, reason: notes ?? null },
       })
 
       return c
