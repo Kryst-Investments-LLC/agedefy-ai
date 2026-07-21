@@ -13,6 +13,7 @@ import { triggerLoopCycle } from '@/lib/loop/loop-trigger'
 import { promoteWearableMetrics } from '@/lib/wearables/biomarker-bridge'
 import { verifyWebhookSignature } from '@/lib/wearables/terra-client'
 import { normalizeTerraPayload } from '@/lib/wearables/normalizer'
+import { withHttpMetrics } from '@/lib/observability/with-http-metrics'
 
 /**
  * POST /api/wearables/webhook
@@ -22,7 +23,9 @@ import { normalizeTerraPayload } from '@/lib/wearables/normalizer'
  *
  * Terra sends: auth events, body, activity, sleep, daily, nutrition data.
  */
-export async function POST(request: NextRequest) {
+export const POST = withHttpMetrics('/api/wearables/webhook', wearablesWebhookHandler)
+
+async function wearablesWebhookHandler(request: NextRequest) {
   const rawBody = await request.text()
 
   // Verify webhook signature — reject if missing or invalid (fail-closed)

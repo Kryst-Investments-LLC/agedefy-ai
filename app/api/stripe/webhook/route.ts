@@ -13,6 +13,7 @@ import { logger } from "@/lib/logger"
 import { stripe } from "@/lib/stripe"
 import { claimWebhookDelivery, completeWebhookDelivery, failWebhookDelivery } from "@/lib/webhook-idempotency"
 import { confirmMarketplaceStripeCheckoutSession } from "@/scientist-sponsor-marketplace/backend/services/paymentLifecycleService"
+import { withHttpMetrics } from "@/lib/observability/with-http-metrics"
 
 export const runtime = "nodejs"
 
@@ -116,7 +117,9 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
   })
 }
 
-export async function POST(request: Request) {
+export const POST = withHttpMetrics("/api/stripe/webhook", stripeWebhookHandler)
+
+async function stripeWebhookHandler(request: Request) {
   if (!stripe || !env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Stripe webhook is not configured" }, { status: 500 })
   }

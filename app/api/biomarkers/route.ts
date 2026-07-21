@@ -13,8 +13,11 @@ import { triggerLoopCycle } from "@/lib/loop/loop-trigger"
 import { logger } from "@/lib/logger"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { biomarkerSchema } from "@/lib/validators/workspace"
+import { withHttpMetrics } from "@/lib/observability/with-http-metrics"
 
-export async function POST(request: Request) {
+export const POST = withHttpMetrics("/api/biomarkers", biomarkersPostHandler)
+
+async function biomarkersPostHandler(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {

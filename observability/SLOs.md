@@ -28,7 +28,7 @@ severity.
 | Query | `1 - sum(rate(…count{http_status_code=~"5.."}[5m])) / sum(rate(…count[5m]))` |
 | SLO | ≥ 99.0% success (≤ 1% 5xx) over 5m; monthly availability ≥ 99.5% |
 | Alert / sev | `ApiErrorRateHigh` (P1), `ErrorBudgetBurnFast` (P1) |
-| Backed by | ✅ emitted (`withHttpMetrics`; adopted on the AI routes, extend via a shared route factory) |
+| Backed by | ✅ emitted. Whole-surface baseline comes free from the auto-instrumented `http.server.duration` (`@opentelemetry/instrumentation-http`, every route). The route-templated `biozephyra_http_request_duration_ms` (via `withHttpMetrics`) is layered on the AI routes plus the SLO-critical flows — payments (`/api/stripe/webhook`), ingestion (`/api/wearables/webhook`), and PHI intake (`/api/biomarkers`, `/api/medications`) — for clean low-cardinality `route`/`http_status_code` labels the alerts query. |
 
 ## API latency
 
@@ -122,5 +122,9 @@ severity.
 3. ~~Job-queue-age gauge~~ — **done** (`biozephyra_orchestration_job_oldest_queued_age_ms`).
 4. ~~DB-pool gauges~~ — **done** (bridged from Prisma `$metrics`; saturation via `biozephyra_db_client_queries_wait`).
 5. Candidate lifecycle transition counter + stage-latency histogram.
-6. Extend `withHttpMetrics` to non-AI routes via a shared route factory so the
-   API-success/latency SLOs cover the whole surface, not just the AI routes.
+6. ~~Extend `withHttpMetrics` to non-AI routes~~ — **done for the SLO-critical
+   flows** (payments, ingestion, PHI intake). Whole-surface baseline latency/
+   success is already covered by the auto-instrumented `http.server.duration`;
+   remaining non-critical routes can adopt `withHttpMetrics` incrementally for
+   route-templated labels (the wrapper is already variadic — no per-route
+   boilerplate beyond the one-line wrap).
