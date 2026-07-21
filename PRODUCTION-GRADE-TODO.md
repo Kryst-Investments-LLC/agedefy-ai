@@ -101,6 +101,19 @@ items — partials are documented inline but do not increase the completed count
   - Store ciphertext, key version, and rotation metadata only.
   - Never serialize, log, trace, or return the decrypted value.
   - Migrate existing records and test key rotation and failed decryption.
+  <!-- CODE DONE: lib/external-secret-crypto.ts does app-boundary AES-256-GCM with
+       a random IV + auth tag and an `enc:v1:` scheme-version prefix; fail-closed in
+       production (throws if a stored value isn't encrypted). Routes encrypt on
+       create/update (screening-adapters + [id]) and NEVER return the secret —
+       it is `select`-excluded from every list/create/get/patch response;
+       decryptExternalSecret is used only server-side in lib/external-screening.ts.
+       Tested: external-secret-crypto.test.ts (round-trip + tamper/failed-decrypt).
+       Migration: lib/external-screening-backfill.ts#backfillEncryptScreeningSecrets
+       (idempotent, pnpm screening-secrets:backfill) encrypts any legacy plaintext
+       row; tested on real PG (external-screening-backfill-pg.test.ts). REMAINING
+       (infra, RB-8): back the key with KMS/HSM instead of an env-derived key, and
+       operational key-version rotation. -->
+
 - [x] `P0-SEC-003` Remove the tracked plaintext Kubernetes secret file.
   - Rotate every credential that appeared in Git.
   - Use External Secrets, Sealed Secrets, or the cloud secret manager.
