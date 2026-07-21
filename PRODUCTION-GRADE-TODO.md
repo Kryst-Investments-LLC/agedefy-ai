@@ -451,6 +451,16 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P1-PERF-011` Audit indexes using actual query plans and production-like volume.
 - [ ] `P1-PERF-012` Eliminate N+1 queries and over-fetching; use narrow `select`
   projections, bounded joins, batch loaders, and parallel independent queries.
+  <!-- PROGRESS: fixed a concrete N+1 in the SCIM Groups PATCH member-provisioning
+       path (app/api/scim/v2/Groups/[id]) — was a findUnique+create per added member
+       and a deleteMany per removed member (2N+N queries for a bulk membership sync);
+       now one createMany({skipDuplicates}) for adds (idempotent, replaces the
+       per-member existence check) and one deleteMany({userId:{in}}) for removes.
+       Tested on real PG (scim-groups-members-pg.test.ts: batch add, re-add idempotency,
+       batch remove). Also earlier: /api/referrals stats moved to DB aggregates
+       (groupBy+count) instead of loading the full array. REMAINING: broader N+1 sweep
+       (achievement-evaluator, aeonforge engine, supervisor) under query-plan review. -->
+
 - [ ] `P1-PERF-013` Add connection pooling and define pool sizes for web, workers,
   migrations, serverless concurrency, and sidecars.
 - [ ] `P1-PERF-014` Move expensive aggregation, document parsing, evidence retrieval,
