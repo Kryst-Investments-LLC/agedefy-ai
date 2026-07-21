@@ -15,7 +15,7 @@ const DockingViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[420px] items-center justify-center rounded-lg bg-[#0b1020]">
-        <p className="animate-pulse text-sm text-gray-400">Loading viewer…</p>
+        <p className="animate-pulse text-sm text-muted-foreground">Loading viewer…</p>
       </div>
     ),
   },

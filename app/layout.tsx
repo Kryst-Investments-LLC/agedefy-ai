@@ -53,7 +53,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers nonce={nonce}>{children}</Providers>
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{

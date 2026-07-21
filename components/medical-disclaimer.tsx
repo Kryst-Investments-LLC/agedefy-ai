@@ -37,8 +37,8 @@ export function MedicalDisclaimer({
         )}
         role="alert"
       >
-        <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-amber-200 leading-relaxed">
+        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-amber-700 dark:text-amber-200 leading-relaxed">
           {DISCLAIMER_TEXT}
         </p>
       </div>
@@ -49,13 +49,13 @@ export function MedicalDisclaimer({
   return (
     <div
       className={cn(
-        "rounded-md border border-gray-700 bg-gray-800/50 px-4 py-3",
+        "rounded-md border border-border bg-card/50 px-4 py-3",
         className
       )}
     >
       <div className="flex items-start gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-gray-400 leading-relaxed">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
           {DISCLAIMER_TEXT}
         </p>
       </div>

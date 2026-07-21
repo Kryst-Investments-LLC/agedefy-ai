@@ -4,6 +4,7 @@ import {
   type AICitation,
   type ProviderAIResponse,
 } from "@/lib/validators/ai"
+import { applyHealthGuardrail } from "./health-guardrail"
 
 const DEFAULT_PROVIDER_AI_DISCLAIMER =
   "Informational only. This response does not provide medical advice, diagnosis, or treatment recommendations."
@@ -101,13 +102,23 @@ export function buildProviderAIResponseEnvelope(args: {
   const structured = normalizeStructuredContent(args.rawContent)
   const content = structured?.answer?.trim() || args.rawContent.trim() || "No response generated"
   const citations = structured?.citations ?? []
-  const disclaimers = buildDisclaimers(citations, structured?.disclaimer)
+
+  // Output guardrail: scan the answer text before it reaches the user.
+  // If blocked, replace content with clinician-redirect and suppress citations.
+  const guardrail = applyHealthGuardrail(content, { surface: args.provider })
+  const finalContent = guardrail.blocked ? guardrail.content : content
+  const finalCitations = guardrail.blocked ? [] : citations
+
+  // Always prepend the persistent medical disclaimer; deduplicate if the AI
+  // also returned one.
+  const baseDisclaimers = buildDisclaimers(finalCitations, structured?.disclaimer)
+  const disclaimers = [...new Set([guardrail.disclaimer, ...baseDisclaimers])]
 
   return providerAIResponseSchema.parse({
-    content,
+    content: finalContent,
     disclaimer: disclaimers[0],
     disclaimers,
-    citations,
+    citations: finalCitations,
     provider: args.provider,
     model: args.model,
     cost: Math.round(args.cost * 10000) / 10000,

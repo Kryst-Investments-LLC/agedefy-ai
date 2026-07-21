@@ -3,6 +3,8 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { Separator } from '@/components/ui/separator'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/notification-bell'
 // Language switcher hidden for launch — the platform ships English-only for now.
 
 type AppShellProps = {
@@ -22,7 +24,10 @@ export function AppShell({ children, pageTitle }: AppShellProps) {
           {pageTitle && (
             <span className="text-sm font-medium">{pageTitle}</span>
           )}
-          <div className="ml-auto flex items-center gap-2" />
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Page content */}

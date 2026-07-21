@@ -17,10 +17,10 @@ interface UserRow {
 }
 
 const roleColors: Record<string, string> = {
-  ADMIN: "bg-red-600/20 text-red-300 border-red-500/20",
-  CLINICIAN: "bg-purple-600/20 text-purple-300 border-purple-500/20",
-  RESEARCHER: "bg-blue-600/20 text-blue-300 border-blue-500/20",
-  MEMBER: "bg-gray-600/20 text-gray-300 border-gray-500/20",
+  ADMIN: "bg-red-600/20 text-red-700 dark:text-red-300 border-red-500/20",
+  CLINICIAN: "bg-purple-600/20 text-purple-700 dark:text-purple-300 border-purple-500/20",
+  RESEARCHER: "bg-blue-600/20 text-blue-700 dark:text-blue-300 border-blue-500/20",
+  MEMBER: "bg-gray-600/20 text-muted-foreground border-gray-500/20",
 }
 
 export function AdminUserManagement({ users }: { users: UserRow[] }) {
@@ -63,12 +63,12 @@ export function AdminUserManagement({ users }: { users: UserRow[] }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or email…"
-          className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white w-64"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-64"
         />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
         >
           <option value="">All roles</option>
           <option value="MEMBER">Member</option>
@@ -76,12 +76,12 @@ export function AdminUserManagement({ users }: { users: UserRow[] }) {
           <option value="CLINICIAN">Clinician</option>
           <option value="RESEARCHER">Researcher</option>
         </select>
-        <span className="text-sm text-gray-500 self-center">{filtered.length} user{filtered.length !== 1 ? "s" : ""}</span>
+        <span className="text-sm text-muted-foreground self-center">{filtered.length} user{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-800">
+      <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-gray-950 text-gray-400">
+          <thead className="bg-background text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-left font-medium">User</th>
               <th className="px-4 py-3 text-left font-medium">Role</th>
@@ -96,10 +96,10 @@ export function AdminUserManagement({ users }: { users: UserRow[] }) {
           </thead>
           <tbody className="divide-y divide-gray-800">
             {filtered.map((u) => (
-              <tr key={u.id} className="bg-gray-900 hover:bg-gray-800/50">
+              <tr key={u.id} className="bg-background hover:bg-gray-800/50">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-white">{u.name || "—"}</p>
-                  <p className="text-xs text-gray-500">{u.email}</p>
+                  <p className="font-medium text-foreground">{u.name || "—"}</p>
+                  <p className="text-xs text-muted-foreground">{u.email}</p>
                 </td>
                 <td className="px-4 py-3">
                   <Badge className={roleColors[u.role] || roleColors.MEMBER} variant="outline">
@@ -108,16 +108,16 @@ export function AdminUserManagement({ users }: { users: UserRow[] }) {
                 </td>
                 <td className="px-4 py-3">
                   {u.emailVerified ? (
-                    <span className="text-green-400">✓</span>
+                    <span className="text-green-600 dark:text-green-400">✓</span>
                   ) : (
                     <span className="text-gray-600">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-gray-300">{u.biomarkerCount}</td>
-                <td className="px-4 py-3 text-right text-gray-300">{u.protocolCount}</td>
-                <td className="px-4 py-3 text-right text-gray-300">{u.labOrderCount}</td>
-                <td className="px-4 py-3 text-right text-gray-300">{u.subscriptionCount}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">
+                <td className="px-4 py-3 text-right text-muted-foreground">{u.biomarkerCount}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">{u.protocolCount}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">{u.labOrderCount}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">{u.subscriptionCount}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">
                   {new Date(u.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3">
@@ -125,7 +125,7 @@ export function AdminUserManagement({ users }: { users: UserRow[] }) {
                     value={u.role}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
                     disabled={updatingRole === u.id}
-                    className="rounded border border-gray-600 bg-gray-950 px-2 py-1 text-xs text-white disabled:opacity-50"
+                    className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground disabled:opacity-50"
                   >
                     <option value="MEMBER">Member</option>
                     <option value="CLINICIAN">Clinician</option>

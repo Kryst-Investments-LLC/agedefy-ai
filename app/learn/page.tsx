@@ -43,14 +43,14 @@ export default async function LearnPage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-4xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-4xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Evidence-based</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Evidence-based</p>
           <h1 className="mt-3 text-4xl font-bold flex items-center gap-3">
             <BookOpen className="h-9 w-9" /> Learning Center
           </h1>
-          <p className="mt-3 max-w-2xl text-gray-400">
+          <p className="mt-3 max-w-2xl text-muted-foreground">
             Curated articles on longevity science and related pathways. Source coverage and review depth can vary by article, so verify important claims against cited literature.
           </p>
         </div>

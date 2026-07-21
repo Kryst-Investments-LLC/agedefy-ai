@@ -50,17 +50,17 @@ export default function SecurityPage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-2xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-2xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">Account</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">Account</p>
           <h1 className="text-3xl font-bold">Security Settings</h1>
         </div>
 
         {mfaEnabled === null ? (
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         ) : mfaEnabled ? (
-          <Card className="border-gray-800 bg-gray-900 text-white">
+          <Card className="border-border bg-background text-foreground">
             <CardHeader>
               <CardTitle>Two-Factor Authentication</CardTitle>
               <CardDescription>MFA is currently enabled on your account.</CardDescription>
@@ -81,7 +81,7 @@ export default function SecurityPage() {
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
-                  {error ? <p className="text-sm text-red-400">{error}</p> : null}
+                  {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
                   <div className="flex gap-2">
                     <Button
                       onClick={handleDisable}

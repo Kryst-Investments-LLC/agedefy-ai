@@ -140,7 +140,7 @@ export function CommunityFeed() {
         <Card key={post.id}>
           <CardContent className="pt-6 space-y-2">
             <div className="flex items-center gap-2">
-              <Badge className={`${categoryColor[post.category] ?? "bg-gray-600"} text-white text-xs`}>
+              <Badge className={`${categoryColor[post.category] ?? "bg-gray-600"} text-foreground text-xs`}>
                 {post.category}
               </Badge>
               <h3 className="font-semibold flex-1">{post.title}</h3>

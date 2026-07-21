@@ -175,7 +175,7 @@ export function BiomarkerTrends() {
                   )}
                   <div className="mt-2">
                     <textarea
-                      className="w-full rounded border border-gray-700 bg-gray-900 p-1 text-xs text-white"
+                      className="w-full rounded border border-border bg-background p-1 text-xs text-foreground"
                       placeholder="Add annotation..."
                       value={annotations[n] ?? ""}
                       onChange={(e) => handleAnnotation(n, e.target.value)}

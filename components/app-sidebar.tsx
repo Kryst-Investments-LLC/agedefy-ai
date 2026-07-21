@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 
 import { GlobalSearch } from '@/components/global-search'
+import { isFeatureEnabled, type FeatureKey } from '@/lib/features'
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +51,8 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
   premium?: boolean
   badge?: string
+  /** When set, the item is hidden unless the feature flag is on (speculative). */
+  feature?: FeatureKey
 }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -73,9 +76,9 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: '3D Views',
     items: [
-      { name: '3D Body', href: '/body', icon: PersonStanding, badge: 'New' },
-      { name: 'Compound Board', href: '/compounds/board', icon: Boxes, badge: 'New' },
-      { name: 'Protein Docking', href: '/research/docking', icon: Atom, badge: 'New' },
+      { name: '3D Body', href: '/body', icon: PersonStanding, badge: 'New', feature: 'threeDBody' },
+      { name: 'Compound Board', href: '/compounds/board', icon: Boxes, badge: 'New', feature: 'compoundBoard' },
+      { name: 'Protein Docking', href: '/research/docking', icon: Atom, badge: 'New', feature: 'proteinDocking' },
     ],
   },
   {
@@ -92,7 +95,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { name: 'Marketplace', href: '/marketplace', icon: ShoppingCart },
       { name: 'Telemedicine', href: '/telemedicine', icon: Stethoscope },
-      { name: 'Scientist-Sponsor', href: '/scientist-sponsor', icon: Handshake, badge: 'Beta' },
+      { name: 'Scientist-Sponsor', href: '/scientist-sponsor', icon: Handshake, badge: 'Beta', feature: 'scientistSponsor' },
       { name: 'Community', href: '/community', icon: Users },
     ],
   },
@@ -106,7 +109,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-teal-400 to-blue-400">
-            <Shield className="h-5 w-5 text-white" />
+            <Shield className="h-5 w-5 text-foreground" />
           </div>
           <span className="text-lg font-bold group-data-[collapsible=icon]:hidden">
             Biozephyra
@@ -122,13 +125,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Navigation groups */}
-        {NAV_GROUPS.map((group) => (
+        {/* Navigation groups — speculative items are filtered out unless flagged on */}
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter((item) => !item.feature || isFeatureEnabled(item.feature))
+          if (items.length === 0) return null
+          return (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => {
+                {items.map((item) => {
                   const isActive =
                     item.href === '/'
                       ? pathname === '/'
@@ -164,7 +170,8 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ))}
+          )
+        })}
       </SidebarContent>
 
       <SidebarFooter>

@@ -37,12 +37,12 @@ export function AccountBillingActions({ hasStripeCustomer }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+    <div className="rounded-2xl border border-border bg-background p-6">
       <h2 className="text-lg font-semibold">Billing self-service</h2>
-      <p className="mt-2 text-sm text-gray-400">
+      <p className="mt-2 text-sm text-muted-foreground">
         Manage payment methods, view invoices, and update or cancel your subscription through the Stripe customer portal.
       </p>
-      {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button className="mt-4 bg-teal-600 hover:bg-teal-700" onClick={openPortal} disabled={loading}>
         {loading ? "Opening..." : "Open billing portal"}
       </Button>

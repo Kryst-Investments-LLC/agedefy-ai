@@ -55,7 +55,7 @@ function SaScoreBadge({ sa }: { sa: SaScoreResult }) {
 function RealityCheckBadge({ rc }: { rc: CandidateRealityCheck }) {
   if (rc.status === 'PENDING') {
     return (
-      <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+      <span className="flex items-center gap-1 text-xs text-muted-foreground dark:text-gray-500">
         <Loader2 className="h-3 w-3 animate-spin" />
         Verifying against PubChem / ChEMBL…
       </span>
@@ -70,7 +70,7 @@ function RealityCheckBadge({ rc }: { rc: CandidateRealityCheck }) {
           Known compound
         </Badge>
         {rc.confirmedName && (
-          <span className="text-gray-500 dark:text-gray-400 truncate max-w-[180px]" title={rc.confirmedName}>
+          <span className="text-muted-foreground dark:text-gray-400 truncate max-w-[180px]" title={rc.confirmedName}>
             {rc.confirmedName}
           </span>
         )}
@@ -80,13 +80,13 @@ function RealityCheckBadge({ rc }: { rc: CandidateRealityCheck }) {
           </Badge>
         )}
         {rc.pubchemCid && (
-          <span className="text-gray-400 dark:text-gray-500">CID {rc.pubchemCid}</span>
+          <span className="text-muted-foreground dark:text-gray-500">CID {rc.pubchemCid}</span>
         )}
         {rc.knownBioactivities != null && (
-          <span className="text-gray-400 dark:text-gray-500">{rc.knownBioactivities} bioactivities</span>
+          <span className="text-muted-foreground dark:text-gray-500">{rc.knownBioactivities} bioactivities</span>
         )}
         {rc.topTargets && rc.topTargets.length > 0 && (
-          <span className="text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+          <span className="text-muted-foreground dark:text-gray-500 truncate max-w-[200px]">
             Targets: {rc.topTargets.join(', ')}
           </span>
         )}
@@ -104,7 +104,7 @@ function RealityCheckBadge({ rc }: { rc: CandidateRealityCheck }) {
 
   // UNRESOLVABLE
   return (
-    <Badge variant="outline" className="text-gray-400 dark:text-gray-500 border-gray-200 dark:border-slate-700 text-xs">
+    <Badge variant="outline" className="text-muted-foreground dark:text-gray-500 border-gray-200 dark:border-slate-700 text-xs">
       Database lookup unavailable
     </Badge>
   )
@@ -229,7 +229,7 @@ export function SimulationResults({
           {/* Molecules Tab */}
           <TabsContent value="molecules" className="space-y-4">
             {molecules.length === 0 ? (
-              <p className="text-sm text-gray-500">No molecular candidates</p>
+              <p className="text-sm text-muted-foreground">No molecular candidates</p>
             ) : (
               <div className="space-y-3">
                 {molecules.slice(0, 5).map((mol, idx) => (
@@ -255,13 +255,13 @@ export function SimulationResults({
                             annotated={mol.estimatedHealthspanGainAnnotated}
                             format={(v) => `~${v.toFixed(0)}d`}
                           />
-                          <span className="text-xs text-gray-400 ml-1">(illustrative)</span>
+                          <span className="text-xs text-muted-foreground ml-1">(illustrative)</span>
                         </span>
                       ) : mol.estimatedHealthspanGain ? (
                         <Badge variant="outline" className="text-gray-600 dark:text-gray-400 border-gray-300 dark:border-slate-600">
                           ~{mol.estimatedHealthspanGain}d
                           <SourceBadge kind="llm" className="ml-1" />
-                          <span className="ml-1 text-gray-400">(illustrative)</span>
+                          <span className="ml-1 text-muted-foreground">(illustrative)</span>
                         </Badge>
                       ) : null}
                     </div>
@@ -296,7 +296,7 @@ export function SimulationResults({
                             }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {((1 - (mol.safetyProfile.toxicity || 0)) * 100).toFixed(0)}%
                         </span>
                         {mol.safetyProfileAnnotated?.toxicity ? (
@@ -307,7 +307,7 @@ export function SimulationResults({
                         ) : (
                           <SourceBadge kind="llm" />
                         )}
-                        <span className="text-xs text-gray-400">(illustrative)</span>
+                        <span className="text-xs text-muted-foreground">(illustrative)</span>
                       </div>
                     )}
 
@@ -335,7 +335,7 @@ export function SimulationResults({
           {/* Simulations Tab */}
           <TabsContent value="simulations" className="space-y-4">
             {simulations.length === 0 ? (
-              <p className="text-sm text-gray-500">No simulations available</p>
+              <p className="text-sm text-muted-foreground">No simulations available</p>
             ) : (
               <div className="space-y-3">
                 {simulations.map((sim, idx) => (
@@ -418,14 +418,14 @@ export function SimulationResults({
                                   {(value * 100).toFixed(0)}%
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">illustrative, not measured</p>
+                              <p className="text-xs text-muted-foreground dark:text-gray-500 mt-1">illustrative, not measured</p>
                             </div>
                           )
                         })}
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   No digital twin data available
                 </p>
               )}

@@ -89,7 +89,7 @@ export function GlobalSearch() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search compounds, articles, pathways…"
-          className="pl-9 pr-8 h-9 w-64 bg-gray-800 border-gray-700 text-sm"
+          className="pl-9 pr-8 h-9 w-64 bg-card border-border text-sm"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
@@ -105,7 +105,7 @@ export function GlobalSearch() {
       </div>
 
       {open && query.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-md border bg-gray-900 shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-md border bg-background shadow-lg max-h-96 overflow-y-auto">
           {loading && (
             <p className="px-3 py-4 text-sm text-muted-foreground">Searching…</p>
           )}

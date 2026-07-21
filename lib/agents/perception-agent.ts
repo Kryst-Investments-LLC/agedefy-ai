@@ -1,6 +1,7 @@
 import type { ClinicalContextBiomarker } from '@/lib/ai/clinical-context'
 
 import { parseLabReportText } from './lab-report-parser'
+import { emitEvidence } from './trace-evidence'
 import type {
   AgentExecutionContext,
   AgentMessage,
@@ -181,6 +182,30 @@ export class PerceptionAgent implements BioAgentInterface {
     }
 
     context.scratchpad.write('perception.snapshot', snapshot, 'perception')
+
+    // Capture the biomarker INPUTS this session reasons from as structured
+    // evidence — the root of the reasoning tree. Downstream protocol/safety
+    // conclusions can then be traced back to the exact values that drove them.
+    emitEvidence(context.emitTrace, {
+      agentClass: 'perception',
+      message: `Reasoning inputs: ${biomarkerSummary.length} biomarker(s), ${anomalies.length} anomal${anomalies.length === 1 ? 'y' : 'ies'}`,
+      evidence: {
+        inputs: {
+          biomarkers: biomarkerSummary.map((b) => ({
+            name: b.name,
+            value: b.latestValue,
+            unit: b.unit,
+            trend: b.trend,
+            isAnomaly: b.isAnomaly,
+          })),
+          anomalies: anomalies.map((a) => a.name),
+          wearableSources: Array.from(wearableSources),
+          uploadedLabReport: uploadedReport
+            ? { labName: uploadedReport.labName ?? null, valueCount: uploadedReport.values.length }
+            : undefined,
+        },
+      },
+    })
 
     if (anomalies.length > 0) {
       messages.push({

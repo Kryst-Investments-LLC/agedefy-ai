@@ -28,7 +28,7 @@ export default async function HomePage() {
 
   return (
     <AppShell pageTitle="Home">
-      <div className="dark min-h-full bg-background text-foreground">
+      <div className="min-h-full bg-background text-foreground">
 
       {/* Hero */}
       <div className="relative overflow-hidden">

@@ -138,23 +138,23 @@ const features = [
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Live":
-      return "bg-green-600/20 text-green-300 border-green-500/20"
+      return "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
     case "In progress":
-      return "bg-yellow-600/20 text-yellow-300 border-yellow-500/20"
+      return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30"
     case "Planned":
-      return "bg-gray-600/20 text-gray-300 border-gray-500/20"
+      return "bg-muted text-muted-foreground border-border"
     default:
-      return "bg-gray-600/20 text-gray-300 border-gray-500/20"
+      return "bg-muted text-muted-foreground border-border"
   }
 }
 
 export function Features() {
   return (
-    <section className="py-20 bg-gray-900">
+    <section className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white mb-4">What is actually built</h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+          <h2 className="text-4xl font-bold text-foreground mb-4">What is actually built</h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Every feature listed here is wired to real code, real APIs, and a real database. Nothing is simulated.
           </p>
         </div>
@@ -162,18 +162,18 @@ export function Features() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature) => (
             <Link key={feature.title} href={feature.href}>
-              <Card className="h-full bg-gray-800 border-gray-700 hover:border-teal-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-teal-500/10">
+              <Card className="h-full bg-card border-border hover:border-teal-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-teal-500/10">
                 <CardHeader>
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-500 transition-colors">
-                      <feature.icon className="h-5 w-5 text-white" />
+                      <feature.icon className="h-5 w-5 text-foreground" />
                     </div>
                     <Badge className={getStatusColor(feature.status)} variant="outline">
                       {feature.status}
                     </Badge>
                   </div>
-                  <CardTitle className="text-white text-lg">{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-400 text-sm">{feature.description}</CardDescription>
+                  <CardTitle className="text-foreground text-lg">{feature.title}</CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm">{feature.description}</CardDescription>
                 </CardHeader>
               </Card>
             </Link>
@@ -182,15 +182,15 @@ export function Features() {
 
         <div className="text-center mt-16">
           <div className="bg-gradient-to-r from-teal-600/20 to-blue-600/20 rounded-2xl p-8 border border-teal-500/20">
-            <h3 className="text-2xl font-bold text-white mb-4">Start building your longevity workspace</h3>
-            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-foreground mb-4">Start building your longevity workspace</h3>
+            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
               Create a real account, track real biomarkers, ingest real research, and manage billing — all backed by persistent storage and enterprise controls.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/sign-up" className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
                 Create account
               </Link>
-              <Link href="/dashboard" className="border border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-white px-8 py-3 rounded-lg font-medium transition-colors">
+              <Link href="/dashboard" className="border border-teal-500 text-teal-600 dark:text-teal-400 hover:bg-teal-500 hover:text-white px-8 py-3 rounded-lg font-medium transition-colors">
                 Open dashboard
               </Link>
             </div>

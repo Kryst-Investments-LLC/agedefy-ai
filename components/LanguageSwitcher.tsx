@@ -9,7 +9,7 @@ export function LanguageSwitcher() {
   return (
     <div className="flex items-center gap-1">
       <select
-        className="rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-300 hover:border-gray-500 transition-colors"
+        className="rounded border border-border bg-background px-2 py-1 text-sm text-muted-foreground hover:border-gray-500 transition-colors"
         value={locale}
         onChange={e => setLocale(e.target.value as Locale)}
       >

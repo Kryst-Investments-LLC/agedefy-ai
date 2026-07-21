@@ -22,7 +22,7 @@ export default async function ScientistSponsorMarketplacePage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-[linear-gradient(180deg,_#020617,_#0f172a_30%,_#111827_100%)] text-white">
+      <div className="min-h-full bg-[linear-gradient(180deg,_#020617,_#0f172a_30%,_#111827_100%)] text-foreground">
       <main className="mx-auto max-w-7xl px-4 py-10">
         <MarketplacePage initialSnapshot={initialSnapshot} />
       </main>

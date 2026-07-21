@@ -1,9 +1,10 @@
 /**
- * Standalone Biological Age Computation
+ * AI-Estimated Biological Age
  *
- * Aggregates a user's biomarkers and health data, calls AI to compute
- * a composite biological age with per-hallmark breakdown, and persists
- * the result as a BiologicalAgeSnapshot.
+ * Aggregates a user's biomarkers and health data and asks an LLM to
+ * produce an AI estimate of biological age with a per-hallmark breakdown.
+ * This is NOT a validated clinical score and does NOT implement GrimAge,
+ * PhenoAge, or Klemera-Doubal. Result is persisted as a BiologicalAgeSnapshot.
  */
 
 import { getAIConfig, isProviderEnabled } from '@/lib/config/ai-config'
@@ -16,6 +17,7 @@ import {
   omicsSummaryToPromptLines,
   summarizeOmicsForBioAge,
 } from './omics-input'
+import { applyHealthGuardrail } from '@/lib/ai/health-guardrail'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,13 +48,13 @@ export interface BioAgeResult {
 // System Prompt
 // ---------------------------------------------------------------------------
 
-const BIO_AGE_SYSTEM_PROMPT = `You are a computational gerontologist calculating a user's biological age.
-Given the user's chronological age and biomarker data, compute:
-1. An estimated biological age (in years, with 1 decimal precision)
+const BIO_AGE_SYSTEM_PROMPT = `You are an AI assistant producing an exploratory biological age estimate based on biomarker data.
+Given the user's chronological age and biomarker data, produce:
+1. An AI-estimated biological age (in years, with 1 decimal precision)
 2. Normalised scores (0–1) for each of the 9 hallmarks of aging (0 = excellent, 1 = poor)
 3. A confidence level (0–1) based on how many reliable biomarkers were provided
 
-Use established biological age algorithms (Klemera-Doubal, PhenoAge, GrimAge) as conceptual reference.
+Draw on established longevity science conceptually, but you are NOT implementing any specific validated clinical algorithm such as GrimAge, PhenoAge, or Klemera-Doubal. Your output is an AI estimate, not a validated clinical score.
 Be conservative and evidence-grounded.
 
 Output ONLY a JSON object with:
@@ -207,7 +209,9 @@ function fallbackResult(chronologicalAge: number): BioAgeResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Compute biological age for a user by aggregating their stored biomarkers.
+ * Produce an AI estimate of biological age for a user by aggregating their stored biomarkers.
+ * The returned value is an AI estimate, not a validated clinical score.
+ * It does not implement GrimAge, PhenoAge, or Klemera-Doubal.
  */
 export async function computeBiologicalAge(
   userId: string,
@@ -270,6 +274,18 @@ export async function computeBiologicalAge(
   const prompt = promptParts.join('\n')
 
   const rawResult = await callBioAgeAI(prompt)
+
+  // Output guardrail: bio-age responses are typically numeric JSON, but scan
+  // defensively in case the LLM embeds prescriptive text alongside the numbers.
+  const guardrail = applyHealthGuardrail(rawResult, { surface: 'bio-age' })
+  if (guardrail.blocked) {
+    logger.warn('Bio-age guardrail triggered — returning fallback result', {
+      userId,
+      category: guardrail.triggeredCategory,
+    })
+    return { ...fallbackResult(chronologicalAge), inputSummary }
+  }
+
   const result = parseResult(rawResult, chronologicalAge)
   result.inputSummary = inputSummary
 
@@ -286,7 +302,8 @@ export async function computeBiologicalAge(
 }
 
 /**
- * Compute and persist a biological age snapshot.
+ * Produce and persist an AI biological age estimate snapshot.
+ * The stored value is an AI estimate, not a validated clinical score.
  */
 export async function computeAndPersistBioAge(
   userId: string,

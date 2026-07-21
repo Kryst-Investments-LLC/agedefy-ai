@@ -128,13 +128,13 @@ export function DashboardWorkspace({ biomarkers, protocols }: DashboardWorkspace
 
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-2">
-      <section className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+      <section className="rounded-2xl border border-border bg-background p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold">Biomarkers</h2>
-            <p className="mt-1 text-sm text-gray-400">Store real measured biomarker values in your workspace.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Store real measured biomarker values in your workspace.</p>
           </div>
-          {isPending ? <span className="text-sm text-gray-500">Refreshing...</span> : null}
+          {isPending ? <span className="text-sm text-muted-foreground">Refreshing...</span> : null}
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={createBiomarker}>
@@ -188,7 +188,7 @@ export function DashboardWorkspace({ biomarkers, protocols }: DashboardWorkspace
             <Label htmlFor="biomarker-trend">Trend</Label>
             <select
               id="biomarker-trend"
-              className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+              className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               value={biomarkerForm.trend}
               onChange={(event) =>
                 setBiomarkerForm((current) => ({ ...current, trend: event.target.value as "UP" | "DOWN" | "STABLE" }))
@@ -200,38 +200,38 @@ export function DashboardWorkspace({ biomarkers, protocols }: DashboardWorkspace
             </select>
           </div>
 
-          {biomarkerError ? <p className="text-sm text-red-400">{biomarkerError}</p> : null}
+          {biomarkerError ? <p className="text-sm text-red-600 dark:text-red-400">{biomarkerError}</p> : null}
           <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Add biomarker</Button>
         </form>
 
         <div className="mt-6 space-y-3">
           {biomarkers.length ? (
             biomarkers.map((biomarker) => (
-              <div key={biomarker.id} className="rounded-xl border border-gray-800 p-4">
+              <div key={biomarker.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-medium">{biomarker.name}</p>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {biomarker.value} {biomarker.unit}
                       {biomarker.target !== null ? `, target ${biomarker.target} ${biomarker.unit}` : ""}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">{biomarker.trend}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{biomarker.trend}</p>
                   </div>
-                  <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={() => deleteBiomarker(biomarker.id)}>
+                  <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={() => deleteBiomarker(biomarker.id)}>
                     Delete
                   </Button>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No biomarker records yet.</p>
+            <p className="text-sm text-muted-foreground">No biomarker records yet.</p>
           )}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+      <section className="rounded-2xl border border-border bg-background p-6">
         <h2 className="text-xl font-semibold">Protocols</h2>
-        <p className="mt-1 text-sm text-gray-400">Create and manage real protocol records instead of simulated stacks.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Create and manage real protocol records instead of simulated stacks.</p>
 
         <form className="mt-6 space-y-4" onSubmit={createProtocol}>
           <div className="space-y-2">
@@ -248,7 +248,7 @@ export function DashboardWorkspace({ biomarkers, protocols }: DashboardWorkspace
             <Label htmlFor="protocol-status">Status</Label>
             <select
               id="protocol-status"
-              className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white"
+              className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               value={protocolForm.status}
               onChange={(event) => setProtocolForm((current) => ({ ...current, status: event.target.value }))}
             >
@@ -267,28 +267,28 @@ export function DashboardWorkspace({ biomarkers, protocols }: DashboardWorkspace
               placeholder="Track scope, intent, monitoring cadence, and clinical guardrails."
             />
           </div>
-          {protocolError ? <p className="text-sm text-red-400">{protocolError}</p> : null}
+          {protocolError ? <p className="text-sm text-red-600 dark:text-red-400">{protocolError}</p> : null}
           <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Create protocol</Button>
         </form>
 
         <div className="mt-6 space-y-3">
           {protocols.length ? (
             protocols.map((protocol) => (
-              <div key={protocol.id} className="rounded-xl border border-gray-800 p-4">
+              <div key={protocol.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-medium">{protocol.name}</p>
-                    <p className="mt-1 text-sm text-gray-400">{protocol.description ?? "No description"}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">{protocol.status}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{protocol.description ?? "No description"}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{protocol.status}</p>
                   </div>
-                  <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={() => deleteProtocol(protocol.id)}>
+                  <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={() => deleteProtocol(protocol.id)}>
                     Delete
                   </Button>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No protocol records yet.</p>
+            <p className="text-sm text-muted-foreground">No protocol records yet.</p>
           )}
         </div>
       </section>

@@ -4,6 +4,8 @@
 export const QED_HIT_THRESHOLD = 0.4 // documented drug-likeness cutoff (Bickerton 2012)
 export const FEEDBACK_HIT_THRESHOLD = 0.5 // feedbackScore >= 0.5 → "hit"
 export const CYCLE_TIME_MIN_N = 3 // minimum cohort size for percentile reporting
+export const FEP_TRIAGE_THRESHOLD = 0.55 // mirrors computeFepGateScore recommend threshold
+export const FEP_EDGE_COST_CENTS_DEFAULT = 10_000 // $100/edge — conservative GPU estimate
 
 // ─── Input row types (Prisma select shapes) ───────────────────────────────────
 
@@ -73,11 +75,41 @@ export interface ClassificationMetrics {
   falseNegativeRate: number | null
 }
 
+export interface FepTriageCandidateRow {
+  id: string
+  fepGateScore: number | null  // null-tolerant — route pre-filters, but mock may not
+  labResults: LabResultRow[]
+}
+
+export interface FepEconomicsMetrics {
+  /** Candidates with a fepGateScore set (triage has been run). */
+  triaged: number
+  /** Candidates where fepGateScore ≥ FEP_TRIAGE_THRESHOLD. */
+  triageRecommended: number
+  /** Candidates where fepGateScore < FEP_TRIAGE_THRESHOLD (or hard-gated to 0). */
+  triageRejectedCount: number
+  /** Hit rate among recommended candidates. Null when cohort < CYCLE_TIME_MIN_N. */
+  triageHitRate: number | null
+  /** Hit rate among rejected candidates (should stay low for a good gate). Null when cohort < CYCLE_TIME_MIN_N. */
+  triageRejectedHitRate: number | null
+  /** triageHitRate − triageRejectedHitRate — quality of the gate's discrimination. */
+  triageUplift: number | null
+  /** FEP cost-per-edge assumption used for the counterfactual (cents). */
+  fepEdgeCostCents: number
+  /** Estimated FEP spend if every triaged candidate had run FEP (no triage). */
+  counterfactualFepCostCents: number
+  /** Estimated FEP spend after triage filtering (only recommended candidates). */
+  triageFilteredFepCostCents: number
+  /** GPU-cost savings percentage from triage pre-filtering. Null when triaged = 0. */
+  fepCostSavingsPct: number | null
+}
+
 export interface PilotMetrics {
   hitRateUplift: HitRateUplift
   cost: CostMetrics
   cycleTime: CycleTimeMetrics
   classification: ClassificationMetrics
+  fepEconomics: FepEconomicsMetrics
   insufficientData: boolean
   computedAt: string
 }
@@ -239,10 +271,69 @@ export function computeClassificationMetrics(
   }
 }
 
+export function computeFepEconomics(
+  triagedCandidates: FepTriageCandidateRow[],
+  fepEdgeCostCents: number,
+): FepEconomicsMetrics {
+  // Filter to candidates that actually completed triage (non-null score).
+  const valid = triagedCandidates.filter((c) => typeof c.fepGateScore === "number")
+  const triaged = valid.length
+
+  if (triaged === 0) {
+    return {
+      triaged: 0,
+      triageRecommended: 0,
+      triageRejectedCount: 0,
+      triageHitRate: null,
+      triageRejectedHitRate: null,
+      triageUplift: null,
+      fepEdgeCostCents,
+      counterfactualFepCostCents: 0,
+      triageFilteredFepCostCents: 0,
+      fepCostSavingsPct: null,
+    }
+  }
+
+  const recommended = valid.filter((c) => (c.fepGateScore as number) >= FEP_TRIAGE_THRESHOLD)
+  const rejected = valid.filter((c) => (c.fepGateScore as number) < FEP_TRIAGE_THRESHOLD)
+
+  const hitRateFor = (group: FepTriageCandidateRow[]): number | null => {
+    if (group.length < CYCLE_TIME_MIN_N) return null
+    return group.filter((c) => c.labResults.some((r) => r.flag === "active")).length / group.length
+  }
+
+  const triageHitRate = hitRateFor(recommended)
+  const triageRejectedHitRate = hitRateFor(rejected)
+  const triageUplift =
+    triageHitRate !== null && triageRejectedHitRate !== null
+      ? triageHitRate - triageRejectedHitRate
+      : null
+
+  const counterfactualFepCostCents = triaged * fepEdgeCostCents
+  const triageFilteredFepCostCents = recommended.length * fepEdgeCostCents
+  const fepCostSavingsPct =
+    triaged > 0 ? ((triaged - recommended.length) / triaged) * 100 : null
+
+  return {
+    triaged,
+    triageRecommended: recommended.length,
+    triageRejectedCount: rejected.length,
+    triageHitRate,
+    triageRejectedHitRate,
+    triageUplift,
+    fepEdgeCostCents,
+    counterfactualFepCostCents,
+    triageFilteredFepCostCents,
+    fepCostSavingsPct,
+  }
+}
+
 export function assemblePilotMetrics(
   fedBackCandidates: CandidateRow[],
   candidatesWithScreenAndLab: CandidateRow[],
   linkedTransactions: LinkedTransactionRow[],
+  triagedCandidates: FepTriageCandidateRow[] = [],
+  fepEdgeCostCents: number = FEP_EDGE_COST_CENTS_DEFAULT,
 ): PilotMetrics {
   const insufficientData = fedBackCandidates.length === 0
 
@@ -251,6 +342,7 @@ export function assemblePilotMetrics(
     cost: computeCostMetrics(fedBackCandidates, linkedTransactions),
     cycleTime: computeCycleTimeMetrics(fedBackCandidates),
     classification: computeClassificationMetrics(candidatesWithScreenAndLab),
+    fepEconomics: computeFepEconomics(triagedCandidates, fepEdgeCostCents),
     insufficientData,
     computedAt: new Date().toISOString(),
   }

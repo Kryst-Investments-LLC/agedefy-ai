@@ -30,6 +30,13 @@ export interface InteractionCheckResult {
   userId: string
   flags: InteractionFlag[]
   clinicianTaskIds: string[]
+  /**
+   * Active medication / supplement names that could NOT be resolved to a
+   * compound in the controlled vocabulary. These are safety blind spots — an
+   * unresolved name means any interaction it participates in is invisible to
+   * the checker — so they are surfaced (and audited) rather than dropped.
+   */
+  unresolvedNames: string[]
   checkedAt: string
 }
 
@@ -69,24 +76,64 @@ export async function checkUserInteractions(
   for (const s of supplementStack) allNames.add(normalise(s))
 
   if (allNames.size < 2) {
-    return { userId, flags: [], clinicianTaskIds: [], checkedAt: new Date().toISOString() }
+    return { userId, flags: [], clinicianTaskIds: [], unresolvedNames: [], checkedAt: new Date().toISOString() }
   }
 
-  // Resolve compound IDs from the knowledge graph
+  // Resolve names → compound IDs DETERMINISTICALLY.
+  //
+  // This must NOT use a `contains` substring match: a partial match both
+  // over-matches (e.g. "d3" hitting unrelated names) and silently mis-resolves
+  // a medication to the wrong compound, which would hide a real interaction.
+  // We resolve only on an EXACT canonical name or an EXACT alias, normalised on
+  // both sides. The compound table is a controlled vocabulary (bounded), so we
+  // load it once and match in-memory — this also keeps resolution case-portable
+  // across SQLite (dev) and Postgres (prod), which differ on `equals` casing.
   const nameArray = [...allNames]
-  const compounds = await db.compound.findMany({
-    where: {
-      OR: nameArray.map((n) => ({ name: { contains: n } })),
-    },
-    select: { id: true, name: true },
+  const catalog = await db.compound.findMany({
+    select: { id: true, name: true, aliases: true },
   })
 
-  if (compounds.length < 2) {
-    return { userId, flags: [], clinicianTaskIds: [], checkedAt: new Date().toISOString() }
+  const idByNormalisedName = new Map<string, string>()
+  for (const c of catalog) {
+    idByNormalisedName.set(normalise(c.name), c.id)
+    for (const alias of parseJsonArray(c.aliases)) {
+      // First writer wins on alias collisions; canonical names already inserted
+      // above always take precedence because they are inserted first below.
+      const key = normalise(alias)
+      if (!idByNormalisedName.has(key)) idByNormalisedName.set(key, c.id)
+    }
   }
 
-  const compoundIds = compounds.map((c) => c.id)
-  const compoundNameById = new Map(compounds.map((c) => [c.id, c.name]))
+  const resolvedIds = new Set<string>()
+  const unresolvedNames: string[] = []
+  for (const name of nameArray) {
+    const id = idByNormalisedName.get(name)
+    if (id) resolvedIds.add(id)
+    else unresolvedNames.push(name)
+  }
+
+  // Fail-safe visibility: an unresolved name is a blind spot, not a clean bill.
+  if (unresolvedNames.length > 0) {
+    logger.warn('Interaction check could not resolve some compounds', {
+      userId,
+      unresolvedNames,
+    })
+    await logAudit({
+      actorUserId: userId,
+      tenantId,
+      action: 'safety.interaction_unresolved_compounds',
+      entityType: 'User',
+      entityId: userId,
+      details: { unresolvedNames },
+    })
+  }
+
+  if (resolvedIds.size < 2) {
+    return { userId, flags: [], clinicianTaskIds: [], unresolvedNames, checkedAt: new Date().toISOString() }
+  }
+
+  const compoundIds = [...resolvedIds]
+  const compoundNameById = new Map(catalog.map((c) => [c.id, c.name]))
 
   // Fetch all pairwise interactions among resolved compounds
   const interactions = await db.compoundInteraction.findMany({
@@ -164,6 +211,7 @@ export async function checkUserInteractions(
     userId,
     flags,
     clinicianTaskIds,
+    unresolvedNames,
     checkedAt: new Date().toISOString(),
   }
 }

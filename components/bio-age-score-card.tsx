@@ -1,13 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import {
-  Activity,
-  ArrowDown,
-  ArrowUp,
-  Minus,
-  RefreshCw,
-} from "lucide-react"
+import { Activity, RefreshCw } from "lucide-react"
+
+import { BioAgeGauge } from "@/components/viz/bio-age-gauge"
+import { HallmarksRadar, type HallmarkDatum } from "@/components/viz/hallmarks-radar"
 
 interface HallmarkScores {
   genomicInstability: number
@@ -43,54 +40,12 @@ const HALLMARK_LABELS: Record<keyof HallmarkScores, string> = {
   alteredIntercellularCommunication: "Altered Intercellular Communication",
 }
 
-function DeltaIndicator({ delta }: { delta: number }) {
-  if (delta < -0.5) {
-    return (
-      <span className="inline-flex items-center gap-1 text-green-600 font-semibold">
-        <ArrowDown className="h-4 w-4" />
-        {Math.abs(delta).toFixed(1)} years younger
-      </span>
-    )
-  }
-  if (delta > 0.5) {
-    return (
-      <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
-        <ArrowUp className="h-4 w-4" />
-        {delta.toFixed(1)} years older
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground font-semibold">
-      <Minus className="h-4 w-4" />
-      On target
-    </span>
-  )
-}
-
-function HallmarkBar({ label, score }: { label: string; score: number }) {
-  const pct = Math.round(score * 100)
-  const color =
-    score <= 0.3
-      ? "bg-green-500"
-      : score <= 0.6
-        ? "bg-yellow-500"
-        : "bg-red-500"
-
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="tabular-nums font-medium">{pct}%</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted">
-        <div
-          className={`h-2 rounded-full transition-all ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
+// Worst three hallmarks surface as focus areas beneath the radar.
+function topFocusAreas(scores: HallmarkScores): { label: string; pct: number }[] {
+  return (Object.keys(HALLMARK_LABELS) as Array<keyof HallmarkScores>)
+    .map((k) => ({ label: HALLMARK_LABELS[k], pct: Math.round((scores[k] ?? 0) * 100) }))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 3)
 }
 
 export function BioAgeScoreCard() {
@@ -150,10 +105,18 @@ export function BioAgeScoreCard() {
     return (
       <div className="rounded-lg border bg-card p-6 animate-pulse">
         <div className="h-6 w-40 bg-muted rounded mb-4" />
-        <div className="h-16 w-24 bg-muted rounded" />
+        <div className="h-40 bg-muted rounded" />
       </div>
     )
   }
+
+  const radarData: HallmarkDatum[] = latest
+    ? (Object.keys(HALLMARK_LABELS) as Array<keyof HallmarkScores>).map((k) => ({
+        key: k,
+        label: HALLMARK_LABELS[k],
+        score: latest.hallmarkScores[k] ?? 0,
+      }))
+    : []
 
   return (
     <div className="rounded-lg border bg-card p-6 space-y-6">
@@ -172,42 +135,35 @@ export function BioAgeScoreCard() {
         </button>
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {latest ? (
-        <>
-          <div className="flex items-baseline gap-4">
-            <span className="text-5xl font-bold tabular-nums">
-              {latest.biologicalAge.toFixed(1)}
-            </span>
-            <div className="text-sm space-y-1">
-              <p className="text-muted-foreground">
-                Chronological: {latest.chronologicalAge.toFixed(0)}
-              </p>
-              <DeltaIndicator delta={latest.delta} />
+        <div className="grid gap-8 md:grid-cols-2 md:items-center">
+          <BioAgeGauge
+            biologicalAge={latest.biologicalAge}
+            chronologicalAge={latest.chronologicalAge}
+            delta={latest.delta}
+            confidence={latest.confidence}
+          />
+          <div>
+            <h4 className="mb-1 text-sm font-medium">Hallmarks of aging</h4>
+            <HallmarksRadar data={radarData} />
+            <div className="mt-3">
+              <p className="text-xs font-medium text-muted-foreground">Top focus areas</p>
+              <ul className="mt-1 space-y-1">
+                {topFocusAreas(latest.hallmarkScores).map((f) => (
+                  <li key={f.label} className="flex items-center justify-between text-xs">
+                    <span>{f.label}</span>
+                    <span className="tabular-nums text-muted-foreground">{f.pct}%</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-
-          <div className="text-xs text-muted-foreground">
-            Confidence: {Math.round(latest.confidence * 100)}% · Last computed:{" "}
-            {new Date(latest.createdAt).toLocaleDateString()}
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <h4 className="text-sm font-medium">Hallmark Aging Scores</h4>
-            {(Object.keys(HALLMARK_LABELS) as Array<keyof HallmarkScores>).map(
-              (key) => (
-                <HallmarkBar
-                  key={key}
-                  label={HALLMARK_LABELS[key]}
-                  score={latest.hallmarkScores[key]}
-                />
-              )
-            )}
-          </div>
-        </>
+          <p className="text-xs text-muted-foreground md:col-span-2">
+            Last computed {new Date(latest.createdAt).toLocaleDateString()} · lower hallmark scores are better.
+          </p>
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">
           No biological age data yet. Click &quot;Calculate&quot; to compute your first score

@@ -16,6 +16,13 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
     "default-src 'self'",
     scriptSrc,
     `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    // A nonce in style-src makes browsers IGNORE 'unsafe-inline' for inline
+    // style ATTRIBUTES (which can't carry a nonce). React sets CSS custom
+    // properties via style={{}} (e.g. shadcn's --sidebar-width), so without
+    // this they are blocked and the sidebar's spacer collapses, overlapping
+    // page content. style-src-attr re-allows inline style attributes only;
+    // <style> blocks keep nonce enforcement.
+    "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     // pubchem + rcsb power the 3D molecule and protein-docking viewers (client-side fetch).

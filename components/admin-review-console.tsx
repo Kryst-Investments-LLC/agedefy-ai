@@ -142,24 +142,24 @@ export function AdminReviewConsole({ reviewItems, auditLogs }: AdminReviewConsol
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="rounded-3xl border border-gray-800 bg-gray-950 p-6 text-white">
+      <section className="rounded-3xl border border-border bg-background p-6 text-foreground">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">Review queue</h2>
-            <p className="mt-2 text-sm text-gray-400">Track billing, compliance, and operational issues that require human review.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Track billing, compliance, and operational issues that require human review.</p>
           </div>
-          {isPending ? <span className="text-sm text-gray-500">Refreshing...</span> : null}
+          {isPending ? <span className="text-sm text-muted-foreground">Refreshing...</span> : null}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           <Input placeholder="Search title or category…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="max-w-xs" />
-          <select className="flex h-10 rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ReviewStatus | "ALL")}>
+          <select className="flex h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ReviewStatus | "ALL")}>
             <option value="ALL">All statuses</option>
             {Object.values(ReviewStatus).map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 
-        <form className="mt-6 space-y-4 rounded-2xl border border-gray-800 p-4" onSubmit={createItem}>
+        <form className="mt-6 space-y-4 rounded-2xl border border-border p-4" onSubmit={createItem}>
           <div className="space-y-2">
             <Label htmlFor="review-title">Title</Label>
             <Input id="review-title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
@@ -171,7 +171,7 @@ export function AdminReviewConsole({ reviewItems, auditLogs }: AdminReviewConsol
             </div>
             <div className="space-y-2">
               <Label htmlFor="review-severity">Severity</Label>
-              <select id="review-severity" className="flex h-10 w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white" value={form.severity} onChange={(event) => setForm((current) => ({ ...current, severity: event.target.value as ReviewSeverity }))}>
+              <select id="review-severity" className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground" value={form.severity} onChange={(event) => setForm((current) => ({ ...current, severity: event.target.value as ReviewSeverity }))}>
                 {Object.values(ReviewSeverity).map((severity) => (
                   <option key={severity} value={severity}>{severity}</option>
                 ))}
@@ -182,23 +182,23 @@ export function AdminReviewConsole({ reviewItems, auditLogs }: AdminReviewConsol
             <Label htmlFor="review-details">Details</Label>
             <Textarea id="review-details" value={form.details} onChange={(event) => setForm((current) => ({ ...current, details: event.target.value }))} />
           </div>
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+          {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
           <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Create review item</Button>
         </form>
 
         <div className="mt-6 space-y-4">
           {filteredReviewItems.map((item) => (
-            <div key={item.id} className="rounded-2xl border border-gray-800 p-4">
+            <div key={item.id} className="rounded-2xl border border-border p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium">{item.title}</p>
-                  <p className="mt-1 text-sm text-gray-400">{item.category} · {item.severity.toLowerCase()} · {item.status.toLowerCase()}</p>
-                  {item.details ? <p className="mt-3 text-sm text-gray-300">{item.details}</p> : null}
+                  <p className="mt-1 text-sm text-muted-foreground">{item.category} · {item.severity.toLowerCase()} · {item.status.toLowerCase()}</p>
+                  {item.details ? <p className="mt-3 text-sm text-muted-foreground">{item.details}</p> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {item.status !== ReviewStatus.IN_REVIEW ? <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.IN_REVIEW)}>Start</Button> : null}
-                  {item.status !== ReviewStatus.RESOLVED ? <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.RESOLVED)}>Resolve</Button> : null}
-                  {item.status !== ReviewStatus.DISMISSED ? <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.DISMISSED)}>Dismiss</Button> : null}
+                  {item.status !== ReviewStatus.IN_REVIEW ? <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.IN_REVIEW)}>Start</Button> : null}
+                  {item.status !== ReviewStatus.RESOLVED ? <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.RESOLVED)}>Resolve</Button> : null}
+                  {item.status !== ReviewStatus.DISMISSED ? <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={() => updateStatus(item.id, ReviewStatus.DISMISSED)}>Dismiss</Button> : null}
                 </div>
               </div>
             </div>
@@ -206,20 +206,20 @@ export function AdminReviewConsole({ reviewItems, auditLogs }: AdminReviewConsol
         </div>
       </section>
 
-      <section className="rounded-3xl border border-gray-800 bg-gray-950 p-6 text-white">
+      <section className="rounded-3xl border border-border bg-background p-6 text-foreground">
         <h2 className="text-2xl font-semibold">Audit log</h2>
-        <p className="mt-2 text-sm text-gray-400">Immutable activity feed for critical operational and billing events.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Immutable activity feed for critical operational and billing events.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Input placeholder="Filter by entity type…" value={auditEntityFilter} onChange={(e) => setAuditEntityFilter(e.target.value)} className="max-w-xs" />
-          <Button variant="outline" className="border-gray-700 text-gray-200 hover:bg-gray-800" onClick={exportAuditCsv} disabled={isExporting}>{isExporting ? "Exporting…" : "Export CSV"}</Button>
+          <Button variant="outline" className="border-border text-gray-200 hover:bg-gray-800" onClick={exportAuditCsv} disabled={isExporting}>{isExporting ? "Exporting…" : "Export CSV"}</Button>
         </div>
         <div className="mt-6 space-y-4">
           {filteredAuditLogs.map((log) => (
-            <div key={log.id} className="rounded-2xl border border-gray-800 p-4">
+            <div key={log.id} className="rounded-2xl border border-border p-4">
               <p className="font-medium">{log.action}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">{log.entityType}{log.entityId ? ` · ${log.entityId}` : ""}</p>
-              <p className="mt-2 text-sm text-gray-300">Actor: {log.actorEmail ?? "system"}</p>
-              {log.details ? <pre className="mt-3 overflow-x-auto rounded-xl bg-gray-900 p-3 text-xs text-gray-300">{log.details}</pre> : null}
+              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{log.entityType}{log.entityId ? ` · ${log.entityId}` : ""}</p>
+              <p className="mt-2 text-sm text-muted-foreground">Actor: {log.actorEmail ?? "system"}</p>
+              {log.details ? <pre className="mt-3 overflow-x-auto rounded-xl bg-background p-3 text-xs text-muted-foreground">{log.details}</pre> : null}
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 
 import { recordClaim } from './claims'
+import { emitEvidence } from './trace-evidence'
 import type {
   AgentExecutionContext,
   AgentMessage,
@@ -10,6 +11,7 @@ import type {
   HistoricalCorrelation,
   SafetyFlag,
   ScratchpadEntry,
+  TraceCitation,
 } from './types'
 
 interface BiomarkerTrend {
@@ -210,9 +212,20 @@ export class ExplainabilityAgent implements BioAgentInterface {
     // the boundary, confirm that the upstream agents recorded at least
     // one AgentClaim for this session. If they didn't, mark a critical
     // safety flag rather than silently shipping uncited recommendations.
-    const claimCount = await db.agentClaim
-      .count({ where: { sessionId: context.sessionId } })
-      .catch(() => 0)
+    type UpstreamClaim = {
+      agentClass: string
+      claimText: string
+      evidenceKind: string
+      evidenceRef: string
+      confidence: number
+    }
+    const upstreamClaims: UpstreamClaim[] = await db.agentClaim
+      .findMany({
+        where: { sessionId: context.sessionId },
+        select: { agentClass: true, claimText: true, evidenceKind: true, evidenceRef: true, confidence: true },
+      })
+      .catch(() => [])
+    const claimCount = upstreamClaims.length
 
     if (claimCount === 0 && sections.length > 1) {
       safetyFlags.push({
@@ -236,6 +249,30 @@ export class ExplainabilityAgent implements BioAgentInterface {
         confidence: 1.0,
       }).catch(() => {})
     }
+
+    // Emit the citation provenance behind the final summary as structured
+    // evidence: which upstream claims back it and the aggregate confidence.
+    // When uncited, this records the absence explicitly (the critical flag
+    // above is what actually gates it).
+    const citations: TraceCitation[] = upstreamClaims.map((c) => ({
+      id: c.evidenceRef,
+      source: `${c.agentClass}:${c.evidenceKind}`,
+      title: c.claimText,
+    }))
+    const meanConfidence =
+      claimCount > 0 ? upstreamClaims.reduce((s, c) => s + c.confidence, 0) / claimCount : 0
+    emitEvidence(context.emitTrace, {
+      agentClass: 'explainability',
+      message:
+        claimCount > 0
+          ? `Summary backed by ${claimCount} upstream citation(s)`
+          : 'Summary produced with NO upstream citations',
+      evidence: {
+        citations,
+        confidence: meanConfidence,
+        reasoningRef: `agent-session:${context.sessionId}`,
+      },
+    })
 
     messages.push({
       from: 'explainability',

@@ -115,6 +115,38 @@ export type TraceEventKind =
   | 'governance_decision'
   | 'hitl_pause'
   | 'session_complete'
+  | 'evidence'
+
+/** A single piece of provenance behind a trace decision (paper / trial / source). */
+export type TraceCitation = {
+  /** Stable identifier: PMID / DOI / NCT id / internal compound-interaction id. */
+  id?: string
+  /** Origin: 'pubmed' | 'biorxiv' | 'clinicaltrials_gov' | 'drugbank' | 'cpic' | 'internal' | … */
+  source?: string
+  title?: string
+  url?: string
+  /** Strength of the evidence, where the source grades it (e.g. CPIC/DDI A–D). */
+  evidenceGrade?: 'A' | 'B' | 'C' | 'D'
+}
+
+/**
+ * Structured reasoning provenance attached to a trace event. This is what makes
+ * the diagnostic reasoning tree reconstructable — the inputs a step considered,
+ * the citations its conclusion rests on, and (for LLM steps) the model and
+ * confidence — instead of burying it all in a free-text `message`.
+ */
+export type TraceEvidence = {
+  /** Inputs that drove this step (e.g. the biomarker values / lab panel). */
+  inputs?: Record<string, unknown>
+  /** Citations / sources backing the assertion. */
+  citations?: TraceCitation[]
+  /** Model id, when an LLM produced this step. */
+  model?: string
+  /** Confidence in [0, 1], when the producer reports one. */
+  confidence?: number
+  /** Scratchpad key or sub-prompt id holding the full chain, if persisted elsewhere. */
+  reasoningRef?: string
+}
 
 export type TraceEvent = {
   id: string
@@ -124,6 +156,8 @@ export type TraceEvent = {
   icon: string
   message: string
   detail?: string
+  /** Structured provenance (citations, inputs, model, confidence). Optional. */
+  evidence?: TraceEvidence
   timestamp: string
 }
 

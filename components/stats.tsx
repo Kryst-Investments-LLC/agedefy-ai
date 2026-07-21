@@ -48,11 +48,11 @@ export async function Stats() {
   if (stats.length === 0) return null
 
   return (
-    <section className="py-20 bg-gray-800/50">
+    <section className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">Live platform metrics</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Live platform metrics</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Real counts queried from the database — no hardcoded marketing numbers.
           </p>
         </div>
@@ -61,17 +61,17 @@ export async function Stats() {
           {stats.map((stat) => (
             <Card
               key={stat.label}
-              className="bg-gray-800 border-gray-700 hover:border-teal-500/50 transition-all duration-300 group"
+              className="bg-card border-border hover:border-teal-500/50 transition-all duration-300 group"
             >
               <CardContent className="p-6 text-center">
                 <div className="bg-teal-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 group-hover:bg-teal-500 transition-colors">
-                  <stat.icon className="h-6 w-6 text-white" />
+                  <stat.icon className="h-6 w-6 text-foreground" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-1">
+                <div className="text-3xl font-bold text-foreground mb-1">
                   {stat.value.toLocaleString()}
                 </div>
-                <div className="text-teal-400 font-medium mb-2">{stat.label}</div>
-                <div className="text-gray-400 text-sm">{stat.description}</div>
+                <div className="text-teal-500 dark:text-teal-400 font-medium mb-2">{stat.label}</div>
+                <div className="text-muted-foreground text-sm">{stat.description}</div>
               </CardContent>
             </Card>
           ))}

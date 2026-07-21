@@ -60,11 +60,11 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card className="border-gray-800 bg-gray-900 text-white">
+      <Card className="border-border bg-background text-foreground">
         <CardContent className="pt-6">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-muted-foreground">
             Invalid reset link. Please request a new{" "}
-            <Link href="/forgot-password" className="text-teal-400 hover:underline">
+            <Link href="/forgot-password" className="text-teal-600 dark:text-teal-400 hover:underline">
               password reset
             </Link>
             .
@@ -75,7 +75,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="border-gray-800 bg-gray-900 text-white">
+    <Card className="border-border bg-background text-foreground">
       <CardHeader>
         <CardTitle>Set new password</CardTitle>
         <CardDescription>Enter a new password for your account.</CardDescription>
@@ -83,12 +83,12 @@ function ResetPasswordForm() {
       <CardContent>
         {success ? (
           <div className="space-y-4">
-            <p className="text-sm text-green-400">Password reset successfully. Redirecting to sign in…</p>
+            <p className="text-sm text-green-600 dark:text-green-400">Password reset successfully. Redirecting to sign in…</p>
           </div>
         ) : (
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">
                 {error}
               </p>
             )}
@@ -133,9 +133,9 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-16">
+    <main className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-md">
-        <Suspense fallback={<div className="text-gray-400">Loading…</div>}>
+        <Suspense fallback={<div className="text-muted-foreground">Loading…</div>}>
           <ResetPasswordForm />
         </Suspense>
       </div>

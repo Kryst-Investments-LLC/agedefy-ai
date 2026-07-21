@@ -26,7 +26,7 @@ const Biomarker3DDashboard = dynamic(
 function ViewerSkeleton({ label }: { label: string }) {
   return (
     <div className="flex h-[460px] w-full items-center justify-center rounded-lg bg-[#0b1020]">
-      <p className="animate-pulse text-sm text-gray-400">{label}</p>
+      <p className="animate-pulse text-sm text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -35,7 +35,7 @@ const STATUS_BADGE: Record<BiomarkerStatus, { label: string; className: string }
   optimal:      { label: "Optimal",      className: "bg-green-600 text-white" },
   borderline:   { label: "Borderline",   className: "bg-amber-500 text-white" },
   out_of_range: { label: "Out of range", className: "bg-red-600 text-white" },
-  unknown:      { label: "No range",     className: "bg-slate-500 text-white" },
+  unknown:      { label: "No range",     className: "bg-slate-500 text-foreground" },
 }
 
 interface BodyInsightsClientProps {

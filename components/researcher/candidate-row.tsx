@@ -16,7 +16,7 @@ const REALITY_CONFIG: Record<RealityCheckStatus, { label: string; icon: React.Re
   PENDING: {
     label: 'Checking…',
     icon: <AlertCircle className="h-3.5 w-3.5" />,
-    cls: 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400',
+    cls: 'bg-gray-100 text-muted-foreground dark:bg-slate-800 dark:text-gray-400',
   },
   KNOWN_COMPOUND: {
     label: 'Known compound',

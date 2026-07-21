@@ -59,7 +59,7 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
 
   if (step === "idle") {
     return (
-      <Card className="border-gray-800 bg-gray-900 text-white">
+      <Card className="border-border bg-background text-foreground">
         <CardHeader>
           <CardTitle>Two-Factor Authentication</CardTitle>
           <CardDescription>
@@ -67,7 +67,7 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+          {error ? <p className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
           <Button
             onClick={handleBeginSetup}
             className="bg-teal-600 hover:bg-teal-700"
@@ -82,7 +82,7 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
 
   if (step === "scan") {
     return (
-      <Card className="border-gray-800 bg-gray-900 text-white">
+      <Card className="border-border bg-background text-foreground">
         <CardHeader>
           <CardTitle>Scan QR Code</CardTitle>
           <CardDescription>
@@ -97,18 +97,18 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
           ) : null}
           <div className="space-y-2">
             <Label>Manual Entry Key</Label>
-            <code className="block rounded bg-gray-800 p-2 text-sm text-teal-400 break-all">
+            <code className="block rounded bg-card p-2 text-sm text-teal-600 dark:text-teal-400 break-all">
               {secret}
             </code>
           </div>
           <div className="space-y-2">
             <Label>Backup Codes</Label>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Save these codes securely. Each can be used once if you lose access to your authenticator.
             </p>
             <div className="grid grid-cols-2 gap-2">
               {backupCodes.map((code) => (
-                <code key={code} className="rounded bg-gray-800 p-1 text-center text-sm text-gray-300">
+                <code key={code} className="rounded bg-card p-1 text-center text-sm text-muted-foreground">
                   {code}
                 </code>
               ))}
@@ -129,7 +129,7 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
               </InputOTP>
             </div>
           </div>
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+          {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
           <Button
             onClick={handleVerify}
             className="w-full bg-teal-600 hover:bg-teal-700"
@@ -144,7 +144,7 @@ export function MfaSetup({ onComplete }: MfaSetupProps) {
 
   // done
   return (
-    <Card className="border-gray-800 bg-gray-900 text-white">
+    <Card className="border-border bg-background text-foreground">
       <CardHeader>
         <CardTitle>MFA Enabled</CardTitle>
         <CardDescription>

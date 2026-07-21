@@ -46,3 +46,6 @@ testResults.xml
 
 # PDB structure file cache (can be hundreds of MB; rebuilt on demand)
 data/pdb-structures/
+
+# Dev-only demo data seeders (local recordings / manual runs; never for prod)
+_dev-demo-*.cjs

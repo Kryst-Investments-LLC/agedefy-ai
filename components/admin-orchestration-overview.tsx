@@ -56,17 +56,17 @@ function queueToneClasses(summary: AdminOrchestrationQueueSummary) {
   switch (getAdminOrchestrationQueueTone(summary)) {
     case "critical":
       return {
-        badge: "border-red-500/40 bg-red-500/15 text-red-100",
+        badge: "border-red-500/40 bg-red-500/15 text-red-800 dark:text-red-100",
         border: "border-red-900/80",
       }
     case "active":
       return {
-        badge: "border-amber-500/40 bg-amber-500/15 text-amber-100",
+        badge: "border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-100",
         border: "border-amber-900/70",
       }
     default:
       return {
-        badge: "border-emerald-500/40 bg-emerald-500/15 text-emerald-100",
+        badge: "border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-100",
         border: "border-emerald-950/70",
       }
   }
@@ -82,12 +82,12 @@ function SummaryStat({
   icon: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+    <div className="rounded-xl border border-border bg-background p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-400">{label}</p>
-        <div className="text-gray-500">{icon}</div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <div className="text-muted-foreground">{icon}</div>
       </div>
-      <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
     </div>
   )
 }
@@ -144,19 +144,19 @@ export function AdminOrchestrationOverview() {
   const generatedAgeLabel = payload ? formatAdminOrchestrationAge(payload.generatedAt) : null
 
   return (
-    <section className="mb-10 rounded-3xl border border-gray-800 bg-gray-950 p-6">
+    <section className="mb-10 rounded-3xl border border-border bg-background p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Durable orchestration operations</h2>
-          <p className="mt-2 max-w-3xl text-sm text-gray-400">
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             Review backlog, in-flight work, and dead-letter pressure across AI, ingestion, notification, and governance queues without scanning the raw job list first.
           </p>
           {payload ? (
-            <p className="mt-3 text-xs text-gray-500">
+            <p className="mt-3 text-xs text-muted-foreground">
               Tenant {payload.tenantId} · generated {formatTimestamp(payload.generatedAt)}{generatedAgeLabel ? ` (${generatedAgeLabel})` : ""}
             </p>
           ) : null}
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             {queueFilter === "ALL" ? `Showing ${visibleSummary.queueCount} queues` : `Showing ${queueFilter} queue`} · stale threshold {adminOrchestrationStaleThresholdMinutes} minutes · {autoRefreshSeconds > 0 ? `auto-refresh every ${autoRefreshSeconds} seconds` : "manual refresh"}
             {staleQueueCount > 0 ? ` · ${staleQueueCount} queue${staleQueueCount > 1 ? "s" : ""} stale` : ""}
           </p>
@@ -164,9 +164,9 @@ export function AdminOrchestrationOverview() {
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[11rem]">
-            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-gray-500">Queue filter</p>
+            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">Queue filter</p>
             <Select value={queueFilter} onValueChange={(value) => setQueueFilter(value as AdminOrchestrationQueueFilter)}>
-              <SelectTrigger className="border-gray-700 bg-gray-900 text-gray-100">
+              <SelectTrigger className="border-border bg-background text-gray-100">
                 <SelectValue placeholder="Select queue" />
               </SelectTrigger>
               <SelectContent>
@@ -178,9 +178,9 @@ export function AdminOrchestrationOverview() {
             </Select>
           </div>
           <div className="min-w-[11rem]">
-            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-gray-500">Refresh cadence</p>
+            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">Refresh cadence</p>
             <Select value={`${autoRefreshSeconds}`} onValueChange={(value) => setAutoRefreshSeconds(Number(value))}>
-              <SelectTrigger className="border-gray-700 bg-gray-900 text-gray-100">
+              <SelectTrigger className="border-border bg-background text-gray-100">
                 <SelectValue placeholder="Refresh cadence" />
               </SelectTrigger>
               <SelectContent>
@@ -193,7 +193,7 @@ export function AdminOrchestrationOverview() {
           <Button
             type="button"
             variant="outline"
-            className="border-gray-700 text-gray-100 hover:bg-gray-800"
+            className="border-border text-gray-100 hover:bg-gray-800"
             onClick={() => void loadSummary()}
             disabled={isLoading}
           >
@@ -210,7 +210,7 @@ export function AdminOrchestrationOverview() {
       </div>
 
       {error ? (
-        <div className="mt-6 rounded-xl border border-red-900 bg-red-950/70 p-4 text-sm text-red-200">
+        <div className="mt-6 rounded-xl border border-red-900 bg-red-950/70 p-4 text-sm text-red-700 dark:text-red-200">
           {error}
         </div>
       ) : null}
@@ -224,7 +224,7 @@ export function AdminOrchestrationOverview() {
 
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         {visibleQueueSummaries.length === 0 && !isLoading ? (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5 text-sm text-gray-400">
+          <div className="rounded-2xl border border-border bg-background p-5 text-sm text-muted-foreground">
             No queues match the current filter.
           </div>
         ) : null}
@@ -238,12 +238,12 @@ export function AdminOrchestrationOverview() {
             }
 
             return (
-              <div key={queue} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+              <div key={queue} className="rounded-2xl border border-border bg-background p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-white">{queue}</h3>
-                  <Badge variant="outline" className="border-gray-700 text-gray-300">Loading</Badge>
+                  <h3 className="text-lg font-semibold text-foreground">{queue}</h3>
+                  <Badge variant="outline" className="border-border text-muted-foreground">Loading</Badge>
                 </div>
-                <p className="mt-4 text-sm text-gray-500">{isLoading ? "Loading queue metrics..." : "Queue metrics unavailable."}</p>
+                <p className="mt-4 text-sm text-muted-foreground">{isLoading ? "Loading queue metrics..." : "Queue metrics unavailable."}</p>
               </div>
             )
           }
@@ -268,11 +268,11 @@ export function AdminOrchestrationOverview() {
           ].filter((reason): reason is string => Boolean(reason))
 
           return (
-            <div key={queue} className={`rounded-2xl border bg-gray-900 p-5 ${tone.border}`}>
+            <div key={queue} className={`rounded-2xl border bg-background p-5 ${tone.border}`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{queueSummary.queue}</h3>
-                  <p className="mt-1 text-sm text-gray-400">
+                  <h3 className="text-lg font-semibold text-foreground">{queueSummary.queue}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Queued {queueSummary.counts.QUEUED} · Failed {queueSummary.counts.FAILED} · Dead-letter {queueSummary.counts.DEAD_LETTER}
                   </p>
                 </div>
@@ -282,42 +282,42 @@ export function AdminOrchestrationOverview() {
               </div>
 
               {staleReasons.length > 0 ? (
-                <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+                <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-100">
                   {staleReasons.join(" · ")} exceeds the {staleness.staleAfterMinutes}-minute review threshold.
                 </div>
               ) : null}
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Backlog</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{queueSummary.backlogCount}</p>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Backlog</p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground">{queueSummary.backlogCount}</p>
                 </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">In flight</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{queueSummary.inFlightCount}</p>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">In flight</p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground">{queueSummary.inFlightCount}</p>
                 </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Dead-letter</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{queueSummary.deadLetterCount}</p>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Dead-letter</p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground">{queueSummary.deadLetterCount}</p>
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 text-sm text-gray-300 lg:grid-cols-2">
-                <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Oldest backlog</p>
+              <div className="mt-4 grid gap-3 text-sm text-muted-foreground lg:grid-cols-2">
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Oldest backlog</p>
                   <p className="mt-2">{formatTimestamp(queueSummary.oldestBacklogAt)}</p>
-                  {staleness.backlog.ageLabel ? <p className="mt-1 text-xs text-gray-500">{staleness.backlog.ageLabel}</p> : null}
+                  {staleness.backlog.ageLabel ? <p className="mt-1 text-xs text-muted-foreground">{staleness.backlog.ageLabel}</p> : null}
                 </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Oldest dead-letter</p>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Oldest dead-letter</p>
                   <p className="mt-2">{formatTimestamp(queueSummary.oldestDeadLetterAt)}</p>
-                  {staleness.deadLetter.ageLabel ? <p className="mt-1 text-xs text-gray-500">{staleness.deadLetter.ageLabel}</p> : null}
+                  {staleness.deadLetter.ageLabel ? <p className="mt-1 text-xs text-muted-foreground">{staleness.deadLetter.ageLabel}</p> : null}
                 </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link href={buildAdminJobsApiPath({ queue })} target="_blank">
-                  <Button variant="outline" className="border-gray-700 text-gray-100 hover:bg-gray-800">Inspect queue</Button>
+                  <Button variant="outline" className="border-border text-gray-100 hover:bg-gray-800">Inspect queue</Button>
                 </Link>
                 <Link href={buildAdminJobsApiPath({ queue, status: "DEAD_LETTER" })} target="_blank">
                   <Button variant="ghost" className="text-gray-200 hover:bg-gray-800">Open dead-letter</Button>

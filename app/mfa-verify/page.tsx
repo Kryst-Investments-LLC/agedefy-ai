@@ -51,8 +51,8 @@ export default function MfaVerifyPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900 px-4">
-      <Card className="w-full max-w-md border-gray-800 bg-gray-900 text-white">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md border-border bg-background text-foreground">
         <CardHeader>
           <CardTitle>Two-Factor Authentication</CardTitle>
           <CardDescription>
@@ -89,7 +89,7 @@ export default function MfaVerifyPage() {
               </div>
             )}
 
-            {error ? <p className="text-sm text-red-400">{error}</p> : null}
+            {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
             <Button
               type="submit"
@@ -101,7 +101,7 @@ export default function MfaVerifyPage() {
 
             <button
               type="button"
-              className="w-full text-center text-sm text-teal-400 hover:underline"
+              className="w-full text-center text-sm text-teal-600 dark:text-teal-400 hover:underline"
               onClick={() => setUseBackup(!useBackup)}
             >
               {useBackup ? "Use authenticator app instead" : "Use a backup code instead"}

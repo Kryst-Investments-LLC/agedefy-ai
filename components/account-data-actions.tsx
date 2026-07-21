@@ -53,18 +53,18 @@ export function AccountDataActions() {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
+    <div className="rounded-2xl border border-border bg-background p-6">
       <h2 className="text-lg font-semibold">Data & privacy</h2>
-      <p className="mt-2 text-sm text-gray-400">
+      <p className="mt-2 text-sm text-muted-foreground">
         Export all your data as JSON or permanently delete your account. These actions support GDPR data subject rights.
       </p>
-      {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <div className="mt-4 flex flex-wrap gap-3">
         <Button className="bg-teal-600 hover:bg-teal-700" onClick={exportData} disabled={exporting}>
           {exporting ? "Exporting..." : "Export my data"}
         </Button>
         {!confirmDelete ? (
-          <Button variant="outline" className="border-red-800 text-red-400 hover:bg-red-950" onClick={() => setConfirmDelete(true)}>
+          <Button variant="outline" className="border-red-800 text-red-600 dark:text-red-400 hover:bg-red-950" onClick={() => setConfirmDelete(true)}>
             Delete account
           </Button>
         ) : (

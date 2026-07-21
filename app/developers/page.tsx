@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { AppShell } from "@/components/app-shell"
+
 export const metadata: Metadata = {
   title: "Developer Portal | Biozephyra ÆonForge API",
   description:
@@ -9,7 +11,8 @@ export const metadata: Metadata = {
 
 export default function DeveloperPortalPage() {
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-10 space-y-10">
+    <AppShell pageTitle="Developer Portal">
+    <div className="container mx-auto max-w-4xl px-4 py-10 space-y-10">
       {/* Hero */}
       <section>
         <h1 className="text-3xl font-bold tracking-tight">
@@ -214,7 +217,8 @@ export default function DeveloperPortalPage() {
           </table>
         </div>
       </section>
-    </main>
+    </div>
+    </AppShell>
   )
 }
 

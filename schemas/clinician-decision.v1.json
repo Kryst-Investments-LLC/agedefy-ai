@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agedefy.ai/schemas/clinician-decision.v1.json",
+  "title": "AgeDefy Clinician Decision (v1)",
+  "description": "Signed decision returned by a licensed clinician after reviewing a clinician-handoff packet. Referenced by agents/clinician-review-agent.yml (return_payload.schema_ref). A decision is only attributable and auditable if it carries the reviewer's DID and a verifiable signature, so both are required alongside the decision itself.",
+  "type": "object",
+  "required": ["decision", "clinician_did", "clinician_signature_vc"],
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["approve", "modify", "reject"]
+    },
+    "clinician_did": {
+      "type": "string",
+      "description": "Decentralized identifier of the reviewing clinician."
+    },
+    "clinician_signature_vc": {
+      "type": "string",
+      "description": "Verifiable credential cryptographically signing this decision."
+    },
+    "modifications": {
+      "type": "object",
+      "description": "Concrete changes to the recommendation. Required when decision == 'modify'.",
+      "additionalProperties": true
+    },
+    "free_text_to_user": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decision": { "const": "modify" } }, "required": ["decision"] },
+      "then": { "required": ["modifications"] }
+    }
+  ]
+}

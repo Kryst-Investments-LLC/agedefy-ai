@@ -77,14 +77,14 @@ export default async function AdminFLDashboardPage() {
 
   return (
     <AppShell>
-      <div className="min-h-full bg-gray-900">
-      <main className="mx-auto max-w-7xl px-4 py-10 text-white">
+      <div className="min-h-full bg-background">
+      <main className="mx-auto max-w-7xl px-4 py-10 text-foreground">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-400">
+          <p className="text-sm uppercase tracking-[0.2em] text-teal-600 dark:text-teal-400">
             Privacy-Preserving AI
           </p>
           <h1 className="mt-3 text-4xl font-bold">Federated Learning Dashboard</h1>
-          <p className="mt-3 max-w-2xl text-gray-400">
+          <p className="mt-3 max-w-2xl text-muted-foreground">
             Monitor FL model training, participant contributions, and privacy budget consumption.
           </p>
         </div>
@@ -108,8 +108,8 @@ export default async function AdminFLDashboardPage() {
                 value: latestModel ? `v${latestModel.version}` : 'None',
               },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-gray-800 bg-gray-950 p-4">
-                <p className="text-sm text-gray-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
                 <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
               </div>
             ))}
@@ -119,12 +119,12 @@ export default async function AdminFLDashboardPage() {
         {/* Privacy Budget Bar */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Privacy Budget (ε)</h2>
-          <div className="rounded-xl border border-gray-800 bg-gray-950 p-6">
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+          <div className="rounded-xl border border-border bg-background p-6">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <span>ε used: {budgetUsed.toFixed(2)}</span>
               <span>ε total: {budgetTotal}</span>
             </div>
-            <div className="h-4 w-full rounded-full bg-gray-800 overflow-hidden">
+            <div className="h-4 w-full rounded-full bg-card overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
                   budgetPercent > 80
@@ -136,7 +136,7 @@ export default async function AdminFLDashboardPage() {
                 style={{ width: `${budgetPercent}%` }}
               />
             </div>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               {budgetPercent > 80
                 ? '⚠ Privacy budget nearly exhausted. Consider pausing training.'
                 : `${(100 - budgetPercent).toFixed(1)}% budget remaining`}
@@ -147,9 +147,9 @@ export default async function AdminFLDashboardPage() {
         {/* Model Registry */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Model Registry</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-800">
+          <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-950 text-gray-400">
+              <thead className="bg-background text-muted-foreground">
                 <tr>
                   <th className="p-3">Version</th>
                   <th className="p-3">Task</th>
@@ -165,7 +165,7 @@ export default async function AdminFLDashboardPage() {
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {models.map((model) => (
-                  <tr key={model.id} className="bg-gray-900 hover:bg-gray-800/50">
+                  <tr key={model.id} className="bg-background hover:bg-gray-800/50">
                     <td className="p-3 font-mono">v{model.version}</td>
                     <td className="p-3">{model.taskType}</td>
                     <td className="p-3 font-mono text-xs">{model.architecture}</td>
@@ -173,10 +173,10 @@ export default async function AdminFLDashboardPage() {
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                           model.status === 'published'
-                            ? 'bg-green-900 text-green-300'
+                            ? 'bg-green-900 text-green-700 dark:text-green-300'
                             : model.status === 'training'
-                              ? 'bg-blue-900 text-blue-300'
-                              : 'bg-gray-800 text-gray-400'
+                              ? 'bg-blue-900 text-blue-700 dark:text-blue-300'
+                              : 'bg-card text-muted-foreground'
                         }`}
                       >
                         {model.status}
@@ -196,7 +196,7 @@ export default async function AdminFLDashboardPage() {
                 ))}
                 {models.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="p-6 text-center text-gray-500">
+                    <td colSpan={10} className="p-6 text-center text-muted-foreground">
                       No models registered yet.
                     </td>
                   </tr>
@@ -209,9 +209,9 @@ export default async function AdminFLDashboardPage() {
         {/* Recent Participations */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Recent Participations</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-800">
+          <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-950 text-gray-400">
+              <thead className="bg-background text-muted-foreground">
                 <tr>
                   <th className="p-3">Participant</th>
                   <th className="p-3">Model</th>
@@ -225,7 +225,7 @@ export default async function AdminFLDashboardPage() {
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {recentParticipations.map((p) => (
-                  <tr key={p.id} className="bg-gray-900 hover:bg-gray-800/50">
+                  <tr key={p.id} className="bg-background hover:bg-gray-800/50">
                     <td className="p-3 text-xs">{p.user.email ?? p.user.name ?? p.userId}</td>
                     <td className="p-3 font-mono text-xs">
                       v{p.model.version} ({p.model.taskType})
@@ -242,23 +242,23 @@ export default async function AdminFLDashboardPage() {
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                           p.status === 'completed'
-                            ? 'bg-green-900 text-green-300'
+                            ? 'bg-green-900 text-green-700 dark:text-green-300'
                             : p.status === 'failed'
-                              ? 'bg-red-900 text-red-300'
-                              : 'bg-amber-900 text-amber-300'
+                              ? 'bg-red-900 text-red-700 dark:text-red-300'
+                              : 'bg-amber-900 text-amber-700 dark:text-amber-300'
                         }`}
                       >
                         {p.status}
                       </span>
                     </td>
-                    <td className="p-3 text-xs text-gray-400">
+                    <td className="p-3 text-xs text-muted-foreground">
                       {p.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
                     </td>
                   </tr>
                 ))}
                 {recentParticipations.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-gray-500">
+                    <td colSpan={8} className="p-6 text-center text-muted-foreground">
                       No participations recorded yet.
                     </td>
                   </tr>
@@ -271,7 +271,7 @@ export default async function AdminFLDashboardPage() {
         {/* Server Configuration */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Server Configuration</h2>
-          <div className="rounded-xl border border-gray-800 bg-gray-950 p-6">
+          <div className="rounded-xl border border-border bg-background p-6">
             <dl className="grid gap-4 md:grid-cols-3 text-sm">
               {[
                 { label: 'Strategy', value: DEFAULT_FL_CONFIG.strategy },
@@ -285,8 +285,8 @@ export default async function AdminFLDashboardPage() {
                 { label: 'Local epochs', value: DEFAULT_FL_CONFIG.hyperparams.localEpochs },
               ].map((item) => (
                 <div key={item.label}>
-                  <dt className="text-gray-400">{item.label}</dt>
-                  <dd className="mt-1 font-mono text-white">{item.value}</dd>
+                  <dt className="text-muted-foreground">{item.label}</dt>
+                  <dd className="mt-1 font-mono text-foreground">{item.value}</dd>
                 </div>
               ))}
             </dl>

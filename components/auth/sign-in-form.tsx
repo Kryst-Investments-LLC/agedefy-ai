@@ -44,7 +44,7 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
   }
 
   return (
-    <Card className="border-gray-800 bg-gray-900 text-white">
+    <Card className="border-border bg-background text-foreground">
       <CardHeader>
         <CardTitle>Sign in</CardTitle>
         <CardDescription>Access your real Biozephyra workspace.</CardDescription>
@@ -71,14 +71,14 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
               required
             />
           </div>
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+          {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
           <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isSubmitting}>
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
-          <Link href="/forgot-password" className="text-teal-400 hover:underline">Forgot password?</Link>
-          <span>Need an account? <Link href="/sign-up" className="text-teal-400">Create one</Link></span>
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+          <Link href="/forgot-password" className="text-teal-600 dark:text-teal-400 hover:underline">Forgot password?</Link>
+          <span>Need an account? <Link href="/sign-up" className="text-teal-600 dark:text-teal-400">Create one</Link></span>
         </div>
       </CardContent>
     </Card>
