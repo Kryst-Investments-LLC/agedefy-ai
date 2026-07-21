@@ -462,8 +462,14 @@ items — partials are documented inline but do not increase the completed count
        ([keyId,endpoint], _count/_sum) assembled in-app, same output shape, verified on
        real PG (api-usage-summary-pg.test.ts: per-key totals + byEndpoint + empty-window
        zeroing). And earlier: /api/referrals stats moved to DB aggregates (groupBy+count)
-       instead of loading the full array. REMAINING: broader N+1 sweep
-       (achievement-evaluator, aeonforge engine, supervisor) under query-plan review. -->
+       instead of loading the full array. SWEEP of the remaining query-in-loop
+       candidates found NO further batchable N+1s: achievement-evaluator's
+       getUserAchievements is already a 2-query in-memory join and its milestone loop
+       is a bounded ~7-entry constant; aeonforge/engine queries the knowledge graph
+       with a single findMany({ name: { in } }); supervisor's loops are in-memory plan
+       validation and its per-step queries are inherently-sequential agent
+       orchestration (ordered, dependent — not batchable). REMAINING: narrow `select`
+       projections + index/query-plan review under production-like volume (PERF-011). -->
 
 - [ ] `P1-PERF-013` Add connection pooling and define pool sizes for web, workers,
   migrations, serverless concurrency, and sidecars.
