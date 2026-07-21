@@ -18,12 +18,12 @@
 - Record an owner, target date, pull request, evidence, and residual risk for
   every P0/P1 item in the release tracker.
 
-## Implementation progress — 2026-07-20
+## Implementation progress — 2026-07-21
 
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
-| P0 | 27 | 85 | 31.8% |
-| P1 | 1 | 77 | 1.3% |
+| P0 | 28 | 85 | 32.9% |
+| P1 | 8 | 77 | 10.4% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
 
@@ -75,6 +75,16 @@ items — partials are documented inline but do not increase the completed count
 - Verification so far: TypeScript, zero-warning ESLint, production build, the full
   pure unit suite, and focused security/governance/candidate tests pass.
   PostgreSQL-backed and live-server suites remain open environment-dependent gates.
+- 2026-07-21 session: closed P0-OBS-004 (SLI/SLOs + all six instrumentation gaps:
+  outbox-latency, stripe-outcome, job-age gauge, DB-pool via Prisma $metrics,
+  route-templated http metrics, candidate-lifecycle) and P1-OBS-005 (all nine
+  alert dimensions); P1-PERF-008 (no-store PHI default + public-catalog caching,
+  empirically verified); P1-PERF-015 (per-tenant lease-cap fairness, dead-letter
+  replay, enqueue quota — plus the pre-existing priorities/cancel/dedup);
+  P1-OPS-010/011 (liveness/readiness split, graceful worker shutdown + lease
+  handoff); P1-INT-008 (circuit-breaker degraded-state banner across AI/payments/
+  research-data). Advanced PERF-006/009/012/021 and SEC-002/006/009 with code +
+  real-Postgres tests. Full run: unit 2136 pass / 4 todo, PostgreSQL 74 pass.
 
 ## Definition of production-ready
 
