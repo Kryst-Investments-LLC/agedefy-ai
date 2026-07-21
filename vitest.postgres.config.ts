@@ -21,6 +21,7 @@ export const postgresTestFiles = [
   "__tests__/orchestration-queue.test.ts",
   "__tests__/outbox-dispatcher.test.ts",
   "__tests__/prisma-health-event-store.test.ts",
+  "__tests__/privacy-budget-ledger-pg.test.ts",
   "__tests__/scim-groups-members-pg.test.ts",
   "__tests__/status-route-pg.test.ts",
   "__tests__/tenancy.test.ts",

@@ -360,17 +360,23 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P1-GOV-011` Add prompt/model/data-card versioning with rollback and audit trails.
 - [ ] `P1-GOV-012` Build adversarial evaluations for unsafe health claims,
   hallucinated citations, prompt injection, jurisdiction bypass, and data leakage.
-- [ ] `P1-GOV-013` Verify cohort queries retain k-anonymity of at least 50 and
+- [x] `P1-GOV-013` Verify cohort queries retain k-anonymity of at least 50 and
   differential privacy under composition, retries, joins, and repeated queries.
-  <!-- k-ANONYMITY FLOOR ENFORCED: the cohort-query path (runOutcomeAggregation)
-       clamped every equivalence class to k>=50 via resolveCohortK (was a default
-       of 5); a class with <50 distinct users is suppressed, never published.
-       Constant MIN_COHORT_K=50, unit-tested (cohort-k-anonymity.test.ts). Callers
-       may request a stricter (higher) k but never lower. Differential-privacy
-       NOISE is already applied per statistic (addNoisyMean, epsilon default 1.0).
-       REMAINING: DP UNDER COMPOSITION — a per-tenant/subject privacy-budget ledger
-       that debits epsilon across repeated/retried/joined queries so the cumulative
-       leakage stays bounded (today each run is independently noised, not budgeted). -->
+  <!-- k-ANONYMITY FLOOR: the cohort-query path (runOutcomeAggregation) clamps every
+       equivalence class to k>=50 via resolveCohortK (was a default of 5); a class
+       with <50 distinct users is suppressed, never published. MIN_COHORT_K=50,
+       unit-tested (cohort-k-anonymity.test.ts). DP NOISE per statistic already
+       present (addNoisyMean, epsilon default 1.0). DP UNDER COMPOSITION: a
+       persistent per-(tenant, scope) epsilon budget (lib/privacy/budget-ledger.ts +
+       PrivacyBudgetEntry model) bounds cumulative leakage — every aggregation run
+       reserves its epsilon (advisory-locked, atomic) before publishing any noised
+       statistic, and once the rolling window's budget (PRIVACY_EPSILON_BUDGET,
+       default 10 / PRIVACY_EPSILON_WINDOW_HOURS default 24) is spent, further runs
+       are refused; the on-demand /api/insights/aggregate route returns 429 so
+       repeated/retried queries can't average out the noise. Tested on real PG
+       (privacy-budget-ledger-pg.test.ts: grant-until-exhausted, per-tenant scope,
+       rolling window). -->
+
 
 - [ ] `P2-GOV-014` Establish quality-management procedures appropriate to the final
   product claims and regulatory classification.

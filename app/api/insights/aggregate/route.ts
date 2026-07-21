@@ -99,5 +99,14 @@ export async function POST(request: NextRequest) {
     epsilon: typeof body.epsilon === 'number' ? body.epsilon : undefined,
   })
 
+  if (result.privacyBudgetExhausted) {
+    // GOV-013: repeated/retried queries can't average out the DP noise — the
+    // composition budget for this window is spent. Fail closed with 429.
+    return NextResponse.json(
+      { error: 'Differential-privacy budget exhausted for this period. Try again later.', result },
+      { status: 429 },
+    )
+  }
+
   return NextResponse.json({ result })
 }
