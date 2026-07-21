@@ -19,6 +19,10 @@ export const aiRequestLatencyHistogram = meter.createHistogram("biozephyra.ai.re
   unit: "ms",
 })
 
+export const aiProviderQuotaCounter = meter.createCounter("biozephyra.ai.provider.quota.count", {
+  description: "AI provider quota/rate-limit (HTTP 429) responses, labeled by provider",
+})
+
 export const httpRequestDurationHistogram = meter.createHistogram("biozephyra.http.request.duration_ms", {
   description: "HTTP request duration",
   unit: "ms",

@@ -166,3 +166,52 @@ groups:
         annotations:
           summary: "Candidate stage {{ $labels.stage }} P95 dwell time exceeds 7 days"
           description: "Stage {{ $labels.stage }} P95: {{ $value }}ms"
+
+  - name: biozephyra-reliability-cost
+    interval: 30s
+    rules:
+      - alert: OutboxEventDeadLettered
+        # A canonical event exhausted its retries and parked in dead_letter —
+        # a poison message that needs manual inspection/replay.
+        expr: |
+          increase(biozephyra_outbox_dispatch_count{status="dead_letter"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: P2
+          slo: dead-letter
+        annotations:
+          summary: "Outbox event dead-lettered on topic {{ $labels.topic }}"
+
+      - alert: OrchestrationJobDeadLettered
+        expr: |
+          increase(biozephyra_jobs_execution_count{status="dead_letter"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: P2
+          slo: dead-letter
+        annotations:
+          summary: "Orchestration job dead-lettered (queue {{ $labels.queue }}, type {{ $labels.jobType }})"
+
+      - alert: AiSpendHigh
+        # Unusual spend: total governed-AI provider cost in the last hour exceeds
+        # the hourly budget. 50 USD/h is a starting threshold — set to the real budget.
+        expr: |
+          sum(increase(biozephyra_ai_request_cost_usd_sum[1h])) > 50
+        for: 5m
+        labels:
+          severity: P2
+          slo: ai-spend
+        annotations:
+          summary: "Governed AI spend exceeded the hourly budget"
+          description: "Last-hour AI spend: {{ $value }} USD"
+
+      - alert: AiProviderQuotaExhausted
+        # Sustained HTTP 429s from an AI provider = quota/rate limit exhausted.
+        expr: |
+          sum(rate(biozephyra_ai_provider_quota_count[5m])) by (provider) > 0
+        for: 5m
+        labels:
+          severity: P2
+          slo: provider-quota
+        annotations:
+          summary: "AI provider {{ $labels.provider }} returning sustained 429s (quota exhausted)"

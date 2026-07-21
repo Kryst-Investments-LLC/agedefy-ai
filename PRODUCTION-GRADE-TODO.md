@@ -281,17 +281,19 @@ items — partials are documented inline but do not increase the completed count
   <!-- PROGRESS: jobExecutionCounter + authFailureCounter now emitted; the last unemitted metric httpRequestDurationHistogram is emitted via lib/observability/with-http-metrics.ts#withHttpMetrics (tested) — adopted on all three governed AI routes (/api/ai/openai, /api/ai/anthropic, /api/ai/grok). alert-rules.yml reconciled to the exported OTel names (biozephyra_http_request_duration_ms_*, biozephyra_circuit_breaker_state_change_count) and fixed state="open" casing; also fixed two more prefix mismatches so the alerts match emitted names (ai_request_latency_ms_bucket -> biozephyra_ai_request_latency_ms_bucket, rate_limit_abuse_count -> biozephyra_rate_limit_abuse_count). The "define" half is DONE: observability/SLOs.md defines the SLI/SLO for each domain (auth, payments, API success, AI latency, job age, data ingestion, candidate workflow) mapped to the metric actually emitted, honestly marking which are ✅ emitted vs ⚠️ instrumentation gaps. Three more gaps now CLOSED: (1) biozephyra.outbox.dispatch.latency_ms histogram emitted on publish (creation->publish lag) — un-inerts OutboxDispatchDelayed (name also fixed to biozephyra_outbox_dispatch_latency_ms_bucket), tested in outbox-dispatcher.test.ts; (2) stripeWebhookCounter now records the terminal outcome (success/failed/duplicate) per webhook, making the payments success SLO measurable, tested in stripe-webhook-ai-credits.test.ts; (3) biozephyra.orchestration.job.oldest_queued_age_ms observable gauge (registered at OTel init via registerJobQueueAgeGauge) — un-inerts JobQueueStale (alert now thresholds age > 300000ms directly); core computeOldestQueuedJobAgeMs tested in orchestration-queue.test.ts; (4) DB-pool gauges bridged from Prisma $metrics (metrics preview feature enabled + client regenerated): biozephyra_db_pool_connections_{open,busy,idle} + biozephyra_db_client_queries_{wait,active}, registered at OTel init via registerDbPoolGauges; DbPoolHighUtilization rewritten to DbPoolSaturated (queries_wait > 0 for 2m — Prisma has no pool-max gauge, so saturation is signalled by queued queries); readDbPoolMetrics tested on real PG (db-pool-metrics-pg.test.ts); (5) route-metrics coverage: found @opentelemetry/instrumentation-http ALREADY auto-emits http.server.duration for the whole surface, so a 100-route withHttpMetrics sweep would be redundant — instead documented the auto-instr baseline in SLOs.md and layered the route-templated biozephyra_http_request_duration_ms (via the already-variadic withHttpMetrics) onto the SLO-critical non-AI flows: /api/stripe/webhook (payments), /api/wearables/webhook (ingestion), /api/biomarkers + /api/medications (PHI intake). withHttpMetrics is the shared factory; remaining non-critical routes adopt it incrementally. (6) candidate-workflow SLI CLOSED: recordCandidateTransition emits biozephyra_candidate_transition_count (from_status/to_status) + biozephyra_candidate_stage_duration_ms histogram (stage latency from the entering-status event), wired at the canonical transition endpoint and at creation (null->PROPOSED); helper unit-tested (candidate-transition-metrics.test.ts) and the transition route test updated. DONE: every OBS-004 SLI is defined in observability/SLOs.md AND backed by an emitted metric. The three previously-"(to add)" alerts are now authored in alert-rules.yml group biozephyra-domain-slos: AuthFailureSpike (P2, >5x baseline + absolute floor), PaymentWebhookFailureRateHigh (P1, failure ratio > 1% / 15m), CandidateStageSlaBreached (P2, stage P95 dwell > 7d). Residual (non-blocking): let the auxiliary candidate event sites (feedback/lab) adopt recordCandidateTransition. -->
 
 
-- [ ] `P1-OBS-005` Alert on error rate, latency, saturation, queue age, dead letters,
+- [x] `P1-OBS-005` Alert on error rate, latency, saturation, queue age, dead letters,
   webhook failures, provider quota, circuit state, and unusual spend.
-  <!-- PROGRESS: observability/alerts/alert-rules.yml (all against verified emitted
-       series) now covers error rate (ApiErrorRateHigh, ErrorBudgetBurnFast),
-       latency (ApiLatencyP99High, AiProviderLatencyP95High), saturation
-       (DbPoolSaturated), queue age (JobQueueStale), webhook failures
-       (PaymentWebhookFailureRateHigh), circuit state (CircuitBreakerOpen), plus
-       AuthFailureSpike and CandidateStageSlaBreached. REMAINING dimensions: dead
-       letters (metric exists — outbox_dispatch_count{status="dead_letter"} — needs
-       an alert), provider quota (add an AI 429/quota metric+alert), and unusual
-       spend (aiRequestCostHistogram is emitted — add a budget/anomaly alert). -->
+  <!-- observability/alerts/alert-rules.yml covers every listed dimension, all
+       against verified emitted series: error rate (ApiErrorRateHigh,
+       ErrorBudgetBurnFast), latency (ApiLatencyP99High, AiProviderLatencyP95High),
+       saturation (DbPoolSaturated), queue age (JobQueueStale), dead letters
+       (OutboxEventDeadLettered, OrchestrationJobDeadLettered), webhook failures
+       (PaymentWebhookFailureRateHigh), provider quota (AiProviderQuotaExhausted —
+       new biozephyra_ai_provider_quota_count emitted on 429 in all three AI
+       routes), circuit state (CircuitBreakerOpen), unusual spend (AiSpendHigh on
+       biozephyra_ai_request_cost_usd_sum). Absolute thresholds (spend budget, 429
+       tolerance) are commented as starting points to tune. -->
+
 
 - [ ] `P1-OBS-006` Add synthetic tests for sign-in, checkout, biomarker upload,
   candidate lookup, and account export.

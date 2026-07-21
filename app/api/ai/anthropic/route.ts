@@ -11,7 +11,7 @@ import { requireGdprConsent } from '@/lib/consent'
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency'
 import { enqueueGovernedAIAuditJob } from '@/lib/jobs/ai-governance'
 import { createRequestContext, logRequestEvent, withRequestContextHeaders } from '@/lib/observability/request-context'
-import { aiRequestCounter, aiRequestCostHistogram, aiRequestLatencyHistogram, withSpan } from '@/lib/observability/telemetry'
+import { aiProviderQuotaCounter, aiRequestCounter, aiRequestCostHistogram, aiRequestLatencyHistogram, withSpan } from '@/lib/observability/telemetry'
 import { withHttpMetrics } from '@/lib/observability/with-http-metrics'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { aiQuerySchema } from '@/lib/validators/ai'
@@ -142,6 +142,7 @@ export const POST = withHttpMetrics('/api/ai/anthropic', async (request: NextReq
                   clearTimeout(timeoutId)
 
                   if (!providerResponse.ok && (providerResponse.status === 429 || providerResponse.status >= 500)) {
+                    if (providerResponse.status === 429) aiProviderQuotaCounter.add(1, { provider: 'anthropic' })
                     throw new Error(`Anthropic upstream request failed with status ${providerResponse.status}`)
                   }
 
