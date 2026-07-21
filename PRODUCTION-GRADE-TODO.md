@@ -491,6 +491,16 @@ items — partials are documented inline but do not increase the completed count
   provider-aware rate limits, and stale-while-revalidate for public scientific data.
 - [ ] `P1-PERF-021` Bound all caches by size and expose hit rate, eviction, age,
   and memory metrics.
+  <!-- BOUNDING VERIFIED (no unbounded in-process cache = no OOM/leak risk): audited
+       every module-level Map cache and all are size-capped — LLM_CACHE (clinical-
+       planning-agent, clears at 200), trace-emitter sessionTraces (200/session +
+       30-min TTL sweep with unref'd timer), verificationCache (license-verifier,
+       FIFO-evicts oldest at 1000 + 30-day TTL), membershipCache (tenancy,
+       MAX_ENTRIES), circuit-breaker cbCache (bounded by dependency count).
+       Function-local Maps are GC'd, not caches. REMAINING: expose hit-rate/eviction/
+       age metrics per cache (observability, nice-to-have), and PERF-019's move to a
+       shared cache (Redis) for multi-instance correctness. -->
+
 - [ ] `P1-PERF-022` Route AI tasks by required capability, latency, cost, and evidence
   risk; do not use an LLM where deterministic computation is available.
 - [ ] `P1-PERF-023` Stream long operations, expose progress, and support cancellation.
