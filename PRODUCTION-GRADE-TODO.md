@@ -510,9 +510,15 @@ items — partials are documented inline but do not increase the completed count
        30-min TTL sweep with unref'd timer), verificationCache (license-verifier,
        FIFO-evicts oldest at 1000 + 30-day TTL), membershipCache (tenancy,
        MAX_ENTRIES), circuit-breaker cbCache (bounded by dependency count).
-       Function-local Maps are GC'd, not caches. REMAINING: expose hit-rate/eviction/
-       age metrics per cache (observability, nice-to-have), and PERF-019's move to a
-       shared cache (Redis) for multi-instance correctness. -->
+       Function-local Maps are GC'd, not caches. OBSERVABILITY ADDED: all five caches
+       now emit hit/miss/eviction via lib/observability/cache-metrics.ts
+       (biozephyra_cache_{hit,miss,eviction}_count{cache=...}) so hit rate is
+       hit/(hit+miss) per cache — instrumented on tenant_membership, license_
+       verification, clinical_planning_llm, circuit_breaker_state (hit+miss+eviction)
+       and agent_trace_history (eviction; it's a buffer, not a lookup cache). Helper
+       unit-tested (cache-metrics.test.ts); tenancy + circuit-breaker regressions
+       green. REMAINING: per-entry AGE and cache MEMORY-footprint metrics, and
+       PERF-019's move to a shared cache (Redis) for multi-instance correctness. -->
 
 - [ ] `P1-PERF-022` Route AI tasks by required capability, latency, cost, and evidence
   risk; do not use an LLM where deterministic computation is available.

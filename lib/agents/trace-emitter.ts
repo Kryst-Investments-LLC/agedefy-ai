@@ -1,4 +1,8 @@
+import { recordCacheEviction } from '@/lib/observability/cache-metrics'
+
 import type { TraceEvent, TraceEmitter } from './types'
+
+const TRACE_CACHE_NAME = 'agent_trace_history'
 
 type TraceListener = (event: TraceEvent) => void
 
@@ -25,6 +29,7 @@ export function createTraceEmitter(sessionId: string): TraceEmitter {
     }
     history.push(event)
     if (history.length > MAX_TRACE_HISTORY) {
+      recordCacheEviction(TRACE_CACHE_NAME, history.length - MAX_TRACE_HISTORY)
       history.splice(0, history.length - MAX_TRACE_HISTORY)
     }
 
@@ -78,6 +83,7 @@ if (typeof setInterval !== 'undefined') {
       }
       const lastEvent = events[events.length - 1]
       if (new Date(lastEvent.timestamp).getTime() < cutoff) {
+        recordCacheEviction(TRACE_CACHE_NAME, events.length)
         sessionTraces.delete(sessionId)
         sessionListeners.delete(sessionId)
       }
