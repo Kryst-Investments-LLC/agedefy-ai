@@ -477,6 +477,19 @@ items — partials are documented inline but do not increase the completed count
   docking, screening, FEP, and AI fan-out to durable asynchronous jobs.
 - [ ] `P1-PERF-015` Add job priorities, quotas, backpressure, cancellation,
   deduplication, dead-letter replay, and per-tenant fairness.
+  <!-- PROGRESS: priorities (lease orderBy priority asc), cancellation
+       (cancelOrchestrationJob), deduplication (tenantId_dedupeKey unique on enqueue),
+       and dead-letter status (failOrchestrationJob) already existed. Added PER-TENANT
+       FAIRNESS / backpressure: leaseAvailableOrchestrationJobs now caps how many jobs a
+       single tenant may hold LEASED at once (JOB_MAX_CONCURRENT_LEASES_PER_TENANT,
+       default 200, 0 disables) — it counts active leases per tenant, excludes
+       already-capped tenants from the cross-tenant candidate scan, and tracks
+       per-tenant headroom while claiming so a batch never exceeds the cap. A capped
+       tenant's excess jobs stay QUEUED for a later cycle so one tenant's backlog can't
+       starve the shared pool. Tested (tenant:cap_fair in orchestration-queue.test.ts:
+       3 available -> 2 leased -> 0 on the next call -> 1 still QUEUED). REMAINING:
+       explicit quota rejection at enqueue time and a dead-letter replay endpoint. -->
+
 - [ ] `P2-PERF-016` Add materialized views/read models for dashboards, knowledge-graph
   traversals, aggregate outcomes, and marketplace metrics.
 - [ ] `P2-PERF-017` Evaluate read replicas only after query and index optimization.

@@ -59,6 +59,8 @@ export type LeaseOrchestrationJobsOptions = {
   batchSize?: number
   leaseMs?: number
   now?: Date
+  /** Max jobs one tenant may hold LEASED at once (fairness). 0/undefined disables. */
+  maxConcurrentLeasesPerTenant?: number
 }
 
 export type OrchestrationJobListOptions = {
@@ -102,6 +104,9 @@ export function getJobRuntimeConfig() {
     maxAttempts: parseNumber(env.JOB_WORKER_MAX_ATTEMPTS, 8),
     retryDelayMs: parseNumber(env.JOB_WORKER_RETRY_DELAY_MS, 15_000),
     leaseMs: parseNumber(env.JOB_WORKER_LEASE_MS, 120_000),
+    // Per-tenant fairness cap: max jobs a single tenant may hold LEASED at once,
+    // so one tenant's backlog can't starve the shared worker pool. 0 disables it.
+    maxConcurrentLeasesPerTenant: parseNumber(env.JOB_MAX_CONCURRENT_LEASES_PER_TENANT, 200),
     tenantId: env.JOB_TENANT_ID?.trim() || undefined,
   }
 }
@@ -155,10 +160,36 @@ export async function leaseAvailableOrchestrationJobs(
   const now = options.now ?? new Date()
   const batchSize = options.batchSize ?? getJobRuntimeConfig().batchSize
   const leaseMs = options.leaseMs ?? getJobRuntimeConfig().leaseMs
+  const maxPerTenant = options.maxConcurrentLeasesPerTenant ?? getJobRuntimeConfig().maxConcurrentLeasesPerTenant
+  const capEnabled = typeof maxPerTenant === "number" && maxPerTenant > 0
+
+  // Per-tenant fairness (P1-PERF-015): count each tenant's currently-active leases
+  // so a single tenant's backlog can't monopolise the shared worker pool. Every
+  // tenant seen in the scan keeps its remaining headroom (which may be <= 0);
+  // tenants already at the cap are also excluded from the candidate scan up front
+  // (only in the cross-tenant case — a single-tenant lease relies on the per-
+  // candidate check below, since the tenantId filter already scopes the query).
+  const tenantHeadroom = new Map<string, number>()
+  const cappedTenantIds: string[] = []
+  if (capEnabled) {
+    const activeByTenant = await client.orchestrationJob.groupBy({
+      by: ["tenantId"],
+      where: { status: "LEASED", leaseExpiresAt: { gt: now } },
+      _count: { _all: true },
+    })
+    for (const row of activeByTenant) {
+      const headroom = maxPerTenant - row._count._all
+      tenantHeadroom.set(row.tenantId, headroom)
+      if (headroom <= 0) cappedTenantIds.push(row.tenantId)
+    }
+  }
 
   const candidates = await client.orchestrationJob.findMany({
     where: {
       ...(options.tenantId ? { tenantId: options.tenantId } : {}),
+      ...(capEnabled && !options.tenantId && cappedTenantIds.length > 0
+        ? { tenantId: { notIn: cappedTenantIds } }
+        : {}),
       ...(options.queue ? { queue: options.queue } : {}),
       availableAt: { lte: now },
       OR: [
@@ -173,6 +204,12 @@ export async function leaseAvailableOrchestrationJobs(
   const leased: OrchestrationJob[] = []
 
   for (const candidate of candidates) {
+    if (capEnabled) {
+      // A tenant not seen in the active scan has full headroom (maxPerTenant).
+      const remaining = tenantHeadroom.get(candidate.tenantId) ?? maxPerTenant
+      if (remaining <= 0) continue
+    }
+
     const claimed = await client.orchestrationJob.updateMany({
       where: {
         id: candidate.id,
@@ -191,6 +228,11 @@ export async function leaseAvailableOrchestrationJobs(
 
     if (claimed.count === 0) {
       continue
+    }
+
+    if (capEnabled) {
+      const remaining = tenantHeadroom.get(candidate.tenantId) ?? maxPerTenant
+      tenantHeadroom.set(candidate.tenantId, remaining - 1)
     }
 
     const job = await client.orchestrationJob.findUnique({ where: { id: candidate.id } })

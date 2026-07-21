@@ -132,6 +132,49 @@ describe("orchestration queue", () => {
     await db.orchestrationJob.deleteMany({ where: { tenantId } })
   })
 
+  it("caps concurrent leases per tenant for fairness tenant:cap_fair", async () => {
+    const tenantId = "cap_fair"
+    for (let i = 0; i < 3; i++) {
+      await enqueueOrchestrationJob({
+        tenantId,
+        queue: "AI",
+        jobType: "ai.governance.audit",
+        dedupeKey: `cap:${tenantId}:${i}`,
+        payload: {
+          provider: "openai",
+          model: "gpt-4o-mini",
+          route: "/api/ai/openai",
+          requestId: `req:${tenantId}:${i}`,
+          queryLength: 12,
+          tenantId,
+          outcome: "success",
+          actor: {},
+        },
+      })
+    }
+
+    // Only 2 of the 3 available jobs are leased — the tenant's cap.
+    const first = await leaseAvailableOrchestrationJobs({
+      tenantId,
+      batchSize: 10,
+      leaseMs: 60_000,
+      maxConcurrentLeasesPerTenant: 2,
+    })
+    expect(first).toHaveLength(2)
+
+    // Tenant now holds 2 active leases → a second lease returns nothing (excluded).
+    const second = await leaseAvailableOrchestrationJobs({
+      tenantId,
+      batchSize: 10,
+      leaseMs: 60_000,
+      maxConcurrentLeasesPerTenant: 2,
+    })
+    expect(second).toHaveLength(0)
+
+    // The third job stays QUEUED, waiting for headroom.
+    expect(await db.orchestrationJob.count({ where: { tenantId, status: "QUEUED" } })).toBe(1)
+  })
+
   it("dead-letters exhausted jobs tenant:jobs_deadletter", async () => {
     const tenantId = "jobs_deadletter"
     const job = await enqueueOrchestrationJob({
