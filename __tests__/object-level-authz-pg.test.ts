@@ -87,6 +87,31 @@ describe("object-level authorization (IDOR) + role gate (P0-SEC-009)", () => {
     expect(await db.biomarker.count({ where: { id: bm.id } })).toBe(0)
   })
 
+  it("a user cannot act on a tenant they don't belong to via a spoofed x-tenant-id header (403)", async () => {
+    // B is authenticated (RESEARCHER) but has NO session tenant, so the tenant is
+    // taken from the request header — which must be membership-validated. B is not
+    // a member of the spoofed tenant, so deriveTenantContextWithValidation returns
+    // null and the route rejects with 403 (real tenancy guard, not mocked).
+    getServerSessionMock.mockResolvedValue({
+      user: { id: userB, email: `${userB}@example.com`, name: userB, role: "RESEARCHER" },
+    })
+    const { POST } = await import("@/app/api/compounds/route")
+    const res = await POST(
+      new NextRequest("http://localhost/api/compounds", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-tenant-id": `victim-tenant-${suffix}`,
+          "idempotency-key": `idem-tenant-${suffix}`,
+        },
+        body: JSON.stringify({ name: "Spoofed Compound", category: "supplement" }),
+      }),
+    )
+    expect(res.status).toBe(403)
+    // Nothing was written under the spoofed tenant.
+    expect(await db.compound.count({ where: { name: "Spoofed Compound" } })).toBe(0)
+  })
+
   it("a non-admin session is denied an ADMIN route (403)", async () => {
     getServerSessionMock.mockResolvedValue(sessionFor(userB, "MEMBER"))
     const { PATCH } = await import("@/app/api/admin/users/route")

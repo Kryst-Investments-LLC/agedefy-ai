@@ -127,9 +127,12 @@ items — partials are documented inline but do not increase the completed count
   <!-- PROGRESS: the central guard is now proven — tenancy.test.ts asserts
        deriveTenantContextWithValidation() rejects a header-supplied tenant the
        user is not a member of (403) and allows the user's own tenant. Owned-
-       resource routes additionally scope by userId (findFirst {id,userId}).
-       REMAINING: per-route/per-table cross-tenant negative tests across
-       read/write/export/search/jobs/streams, and the RLS decision. -->
+       resource routes additionally scope by userId (findFirst {id,userId}). An
+       end-to-end cross-tenant negative test now proves the wiring: a RESEARCHER
+       with no session tenant who spoofs x-tenant-id for a tenant they don't belong
+       to is rejected 403 by POST /api/compounds and writes nothing
+       (object-level-authz-pg.test.ts). REMAINING: extend cross-tenant negatives to
+       more write/export/search/jobs/streams routes, and the RLS decision. -->
 
 - [x] `P0-SEC-007` Add SSRF protection to every user-configurable outbound URL.
   - Block loopback, link-local, private, metadata-service, and DNS-rebinding targets.
@@ -147,7 +150,7 @@ items — partials are documented inline but do not increase the completed count
 
 - [x] `P0-SEC-009` Add CSRF, open-redirect, session-fixation, authorization,
   object-level authorization, file-upload, and rate-limit security tests.
-  <!-- PROGRESS: open-redirect FIXED — sign-in callbackUrl now passes through safeInternalPath() (same-origin only), tested in safe-redirect.test.ts. file-upload (lab-upload-security.test.ts) and rate-limit (rate-limit.test.ts) covered; role-gate authz partially covered (scientist-sponsor-marketplace-authz.test.ts) + object-level scoping proven (tenancy.test.ts). REMAINING: CSRF/session-fixation are NextAuth-managed; add per-route IDOR + role-gate route tests. -->
+  <!-- PROGRESS: open-redirect FIXED — sign-in callbackUrl now passes through safeInternalPath() (same-origin only), tested in safe-redirect.test.ts. file-upload (lab-upload-security.test.ts) and rate-limit (rate-limit.test.ts) covered; role-gate authz covered: object-level-authz-pg.test.ts now proves per-route IDOR (biomarker + protocol DELETE by a non-owner -> 404, resource untouched, with an owner-can-delete positive control), an ADMIN route rejecting a non-admin (403), and a cross-tenant spoofed x-tenant-id rejection (403). REMAINING: CSRF/session-fixation stay NextAuth-managed; extend IDOR/role-gate coverage to more routes as they change. -->
 - [ ] `P0-SEC-010` Add malware scanning, MIME sniffing, size/page limits, safe PDF
   parsing, and isolated storage for uploaded laboratory documents.
   <!-- DONE (code): lib/security/lab-upload.ts enforces magic-byte MIME sniffing
@@ -388,6 +391,17 @@ items — partials are documented inline but do not increase the completed count
   add responsive sizes, modern formats, and immutable caching.
 - [ ] `P1-PERF-006` Lazy-load Three.js, 3Dmol, Recharts, D3, docking viewers, and
   other heavy client modules only on routes that need them.
+  <!-- LARGELY DONE: the heavy WebGL/3D libs are already code-split. Three.js
+       components load via next/dynamic({ ssr:false }) + loading skeletons
+       (components/three/body-insights-client.tsx, compound-board-client.tsx);
+       docking viewers via next/dynamic (discovery/docking-explorer, docking-runner);
+       3Dmol is loaded at runtime with `await import("3dmol")` inside the client
+       molecular-viewer (the top-level `import type` is erased), so a static import
+       of MolecularViewer pulls only the small component, not the ~MB lib. REMAINING
+       (marginal): Recharts/D3 are imported statically but are primary above-the-fold
+       content on their dashboards, where dynamic import mainly adds load flicker;
+       revisit only if bundle analysis flags them. -->
+
 - [ ] `P1-PERF-007` Use server components by default and minimize client boundaries,
   hydration payloads, duplicated fetches, and browser-side secrets/configuration.
 - [x] `P1-PERF-008` Define caching rules per route: private/no-store for health data;
