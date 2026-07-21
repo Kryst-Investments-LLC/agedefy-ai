@@ -457,8 +457,12 @@ items — partials are documented inline but do not increase the completed count
        now one createMany({skipDuplicates}) for adds (idempotent, replaces the
        per-member existence check) and one deleteMany({userId:{in}}) for removes.
        Tested on real PG (scim-groups-members-pg.test.ts: batch add, re-add idempotency,
-       batch remove). Also earlier: /api/referrals stats moved to DB aggregates
-       (groupBy+count) instead of loading the full array. REMAINING: broader N+1 sweep
+       batch remove). Also fixed lib/api-keys/metering.ts#getUserUsageSummary — was a
+       per-key aPIUsageRecord.findMany (N+1 across a user's keys); now one groupBy
+       ([keyId,endpoint], _count/_sum) assembled in-app, same output shape, verified on
+       real PG (api-usage-summary-pg.test.ts: per-key totals + byEndpoint + empty-window
+       zeroing). And earlier: /api/referrals stats moved to DB aggregates (groupBy+count)
+       instead of loading the full array. REMAINING: broader N+1 sweep
        (achievement-evaluator, aeonforge engine, supervisor) under query-plan review. -->
 
 - [ ] `P1-PERF-013` Add connection pooling and define pool sizes for web, workers,

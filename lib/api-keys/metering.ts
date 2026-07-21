@@ -77,15 +77,37 @@ export async function getUserUsageSummary(
     where: { userId },
     select: { id: true, name: true, prefix: true },
   })
+  if (keys.length === 0) return []
 
-  const summaries = await Promise.all(
-    keys.map(async (key) => ({
-      keyId: key.id,
-      name: key.name,
-      prefix: key.prefix,
-      usage: await getUsageSummary(key.id, since),
-    })),
-  )
+  // One grouped aggregate for every key instead of a per-key findMany (N+1).
+  const grouped = await db.aPIUsageRecord.groupBy({
+    by: ["keyId", "endpoint"],
+    where: { keyId: { in: keys.map((k) => k.id) }, createdAt: { gte: since } },
+    _count: { _all: true },
+    _sum: { tokens: true, computeMs: true },
+  })
 
-  return summaries
+  const byKey = new Map<
+    string,
+    { totalCalls: number; totalTokens: number; totalComputeMs: number; byEndpoint: Record<string, number> }
+  >()
+  for (const key of keys) {
+    byKey.set(key.id, { totalCalls: 0, totalTokens: 0, totalComputeMs: 0, byEndpoint: {} })
+  }
+  for (const g of grouped) {
+    const summary = byKey.get(g.keyId)
+    if (!summary) continue
+    const calls = g._count._all
+    summary.totalCalls += calls
+    summary.totalTokens += g._sum.tokens ?? 0
+    summary.totalComputeMs += g._sum.computeMs ?? 0
+    summary.byEndpoint[g.endpoint] = (summary.byEndpoint[g.endpoint] ?? 0) + calls
+  }
+
+  return keys.map((key) => ({
+    keyId: key.id,
+    name: key.name,
+    prefix: key.prefix,
+    usage: byKey.get(key.id)!,
+  }))
 }
