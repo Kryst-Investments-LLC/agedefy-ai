@@ -110,3 +110,59 @@ groups:
         annotations:
           summary: "DB pool saturated: queries waiting for a connection for 2m"
           description: "Waiting queries: {{ $value }}; consider raising connection_limit or reducing long transactions"
+
+  - name: biozephyra-domain-slos
+    interval: 30s
+    rules:
+      - alert: AuthFailureSpike
+        # Self-calibrating credential-stuffing signal: the recent failure rate is
+        # both above a small absolute floor AND >5x the 6h baseline. The floor
+        # suppresses noise when the baseline is ~0. Tune the floor per traffic.
+        expr: |
+          (
+            sum(rate(biozephyra_auth_failure_count[5m])) > 0.1
+          )
+          and
+          (
+            sum(rate(biozephyra_auth_failure_count[5m]))
+            > 5 * sum(rate(biozephyra_auth_failure_count[6h]))
+          )
+        for: 5m
+        labels:
+          severity: P2
+          slo: authentication
+        annotations:
+          summary: "Auth failure rate spiked >5x baseline (possible credential stuffing)"
+          description: "Failed-auth rate: {{ $value }}/s over 5m"
+
+      - alert: PaymentWebhookFailureRateHigh
+        # Payments success SLO is >=99.5%; alert when the terminal-failure ratio
+        # (duplicates excluded) exceeds 1% over 15m.
+        expr: |
+          sum(rate(biozephyra_stripe_webhook_count{outcome="failed"}[15m]))
+          /
+          sum(rate(biozephyra_stripe_webhook_count{outcome=~"success|failed"}[15m]))
+          > 0.01
+        for: 15m
+        labels:
+          severity: P1
+          slo: payments
+        annotations:
+          summary: "Stripe webhook failure ratio exceeds 1% over 15m"
+          description: "Failure ratio: {{ $value | humanizePercentage }}"
+
+      - alert: CandidateStageSlaBreached
+        # A lifecycle stage's P95 time-in-stage exceeds its stall window. 7 days is
+        # a conservative starting threshold; split by stage and tune per-stage SLAs.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(biozephyra_candidate_stage_duration_ms_bucket[1d])) by (le, stage)
+          ) > 604800000
+        for: 1h
+        labels:
+          severity: P2
+          slo: candidate-workflow
+        annotations:
+          summary: "Candidate stage {{ $labels.stage }} P95 dwell time exceeds 7 days"
+          description: "Stage {{ $labels.stage }} P95: {{ $value }}ms"

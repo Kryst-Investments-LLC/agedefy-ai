@@ -59,8 +59,8 @@ severity.
 | SLI | Credential-auth failure rate, and absence of an anomalous failure spike |
 | Metric | `biozephyra_auth_failure_count` (label `reason`) |
 | Query | `sum(rate(…[5m])) by (reason)` — alert on sustained spike relative to baseline |
-| SLO | No sustained failure-rate spike > 5× the 7-day baseline (credential-stuffing signal) |
-| Alert / sev | (to add — see gap note) P2 |
+| SLO | No sustained failure-rate spike > 5× the baseline (credential-stuffing signal) |
+| Alert / sev | `AuthFailureSpike` (P2) |
 | Backed by | ✅ emitted (counter incremented at every `authorize` failure with a `reason`) |
 
 ## Payments (Stripe)
@@ -71,7 +71,7 @@ severity.
 | Metric | `biozephyra_stripe_webhook_count` (labels `event_type`, `livemode`, `outcome` = success/failed/duplicate) |
 | Query | `sum(rate(…{outcome="success"}[15m])) / sum(rate(…{outcome=~"success|failed"}[15m]))` (duplicates excluded) |
 | SLO | ≥ 99.5% of processed webhooks succeed (persisted + side-effects) without a terminal failure |
-| Alert / sev | (to add) P1 on success ratio < 0.99 for 15m |
+| Alert / sev | `PaymentWebhookFailureRateHigh` (P1) — failure ratio > 1% for 15m |
 | Backed by | ✅ emitted — counter now records the terminal `outcome` per webhook at each return path |
 
 ## Data ingestion (canonical event outbox)
@@ -104,7 +104,7 @@ severity.
 | Metric | `biozephyra_candidate_transition_count` (labels `from_status`, `to_status`); `biozephyra_candidate_stage_duration_ms_bucket` (label `stage`) |
 | Query | throughput `sum(rate(…transition_count[1h])) by (to_status)`; stage time `histogram_quantile(0.95, rate(…stage_duration_ms_bucket[1d])) by (stage)` |
 | SLO | ≥ 95% of candidates advance past triage within the target stage SLA; no stage P95 stalls beyond its window |
-| Alert / sev | (to add) P2 on a stage P95 exceeding its SLA window |
+| Alert / sev | `CandidateStageSlaBreached` (P2) — stage P95 dwell > 7d (tune per stage) |
 | Backed by | ✅ emitted — `recordCandidateTransition` at the canonical transition endpoint (with stage latency from the entering-status event) and at creation (null→PROPOSED). Auxiliary event sites (feedback/lab) adopt the same helper incrementally. |
 
 ## Supporting reliability signals (not user SLOs, but alerted)
