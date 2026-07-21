@@ -3039,6 +3039,10 @@ model ExperimentCandidate {
   fepGateReason String? // human-readable triage rationale
   fepJson       Json? // FepResult snapshot (populated after a real FEP run)
 
+  // Provenance trace (P0-CMP-010): the request that created this candidate, for
+  // audit/reproducibility. Correlates the record back to logs/traces.
+  sourceRequestId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

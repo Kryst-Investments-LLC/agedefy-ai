@@ -68,6 +68,11 @@ export async function POST(request: NextRequest) {
         targetChemblId: data.targetChemblId,
         hypothesisNote: data.hypothesisNote,
         notes: data.notes,
+        // Provenance trace (P0-CMP-010): tie the record to its creating request.
+        sourceRequestId:
+          request.headers.get('x-request-id')?.trim() ||
+          request.headers.get('x-correlation-id')?.trim() ||
+          null,
         events: {
           create: {
             actorUserId: session.user.id,

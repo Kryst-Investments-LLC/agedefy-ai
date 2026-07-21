@@ -615,6 +615,17 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P0-CMP-010` Create one canonical candidate record for each suggestion with:
   normalized structure, InChIKey, canonical/isomeric SMILES, source, prompt hash,
   model/version, temperature/seed where available, timestamp, tenant, user, and trace.
+  <!-- PROGRESS (safe-governance subset — no chemistry/claims): one ExperimentCandidate
+       row per suggestion already carries source (kind = CHEMBL | AI), the raw source
+       snapshot (chemblJson/aiMolJson), timestamp (createdAt), tenant, user, and the
+       AI-source model context via the AeonForgeCandidate FK. Added the missing TRACE:
+       sourceRequestId captured at creation from the request's x-request-id/
+       x-correlation-id (route stays RESEARCHER/CLINICIAN/ADMIN-gated); migration
+       20260721130000, unit-tested (experiment-candidates-route.test.ts). REMAINING
+       (needs /research + chemistry toolkit, deliberately deferred): normalized
+       structure, InChIKey, and canonical/isomeric SMILES (RDKit-class normalization,
+       see CMP-020), plus explicit prompt-hash/temperature/seed capture on the record. -->
+
 - [ ] `P0-CMP-011` Preserve the raw suggestion separately from normalized fields.
 - [ ] `P0-CMP-012` Deduplicate by standardized structure, stereochemistry, salt,
   tautomer policy, and known database identifiers.
