@@ -1,3 +1,7 @@
+// CI-008: reads required data from the database — force dynamic rendering so
+// the DB is queried at request time, never at build (a DB failure can then
+// never be swallowed into a statically-generated page).
+export const dynamic = "force-dynamic"
 import { getServerSession } from "next-auth"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
@@ -43,7 +47,7 @@ export default async function DashboardPage() {
     return null
   }
 
-  const [user, biomarkerCount, protocolCount, labOrderCount, pathwayCount, biomarkers, protocols, researchEntries, clinicianTasks, partnerRecords, latestBioAge, wearableConnections] = await Promise.all([
+  const [user, biomarkerCount, protocolCount, labOrderCount, pathwayCount, biomarkers, protocols, researchEntries, clinicianTasks, partnerRecords, latestBioAge] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -86,11 +90,6 @@ export default async function DashboardPage() {
     db.biologicalAgeSnapshot.findFirst({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
-    }),
-    db.wearableConnection.findMany({
-      where: { userId: session.user.id, status: 'active' },
-      select: { provider: true, lastSyncAt: true },
-      orderBy: { lastSyncAt: 'desc' },
     }),
   ])
 

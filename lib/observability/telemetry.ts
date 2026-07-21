@@ -19,6 +19,10 @@ export const aiRequestLatencyHistogram = meter.createHistogram("biozephyra.ai.re
   unit: "ms",
 })
 
+export const aiProviderQuotaCounter = meter.createCounter("biozephyra.ai.provider.quota.count", {
+  description: "AI provider quota/rate-limit (HTTP 429) responses, labeled by provider",
+})
+
 export const httpRequestDurationHistogram = meter.createHistogram("biozephyra.http.request.duration_ms", {
   description: "HTTP request duration",
   unit: "ms",
@@ -30,6 +34,11 @@ export const stripeWebhookCounter = meter.createCounter("biozephyra.stripe.webho
 
 export const outboxDispatchCounter = meter.createCounter("biozephyra.outbox.dispatch.count", {
   description: "Outbox dispatch operations",
+})
+
+export const outboxDispatchLatencyHistogram = meter.createHistogram("biozephyra.outbox.dispatch.latency_ms", {
+  description: "Outbox dispatch lag: time from event creation to successful publish",
+  unit: "ms",
 })
 
 export const jobExecutionCounter = meter.createCounter("biozephyra.jobs.execution.count", {
@@ -47,6 +56,39 @@ export const circuitBreakerStateChangeCounter = meter.createCounter("biozephyra.
 export const rateLimitAbuseCounter = meter.createCounter("biozephyra.rate_limit.abuse.count", {
   description: "Detected rate-limit abuse events (repeated blocks from same source)",
 })
+
+export const authFailureCounter = meter.createCounter("biozephyra.auth.failure.count", {
+  description: "Failed credential authentication attempts, labeled by reason (credential stuffing signal)",
+})
+
+export const candidateTransitionCounter = meter.createCounter("biozephyra.candidate.transition.count", {
+  description: "Experiment candidate lifecycle transitions, labeled by from/to status",
+})
+
+export const candidateStageDurationHistogram = meter.createHistogram("biozephyra.candidate.stage.duration_ms", {
+  description: "Time a candidate spent in a lifecycle stage before advancing out of it",
+  unit: "ms",
+})
+
+/**
+ * Record a candidate lifecycle transition (OBS-004 candidate-workflow SLI): a
+ * transition counter labelled by from/to status, plus an optional stage-latency
+ * observation (time spent in `fromStatus` before this move). `fromStatus` is
+ * null for the initial creation into PROPOSED.
+ */
+export function recordCandidateTransition(args: {
+  fromStatus: string | null
+  toStatus: string
+  stageDurationMs?: number
+}): void {
+  candidateTransitionCounter.add(1, {
+    from_status: args.fromStatus ?? "none",
+    to_status: args.toStatus,
+  })
+  if (typeof args.stageDurationMs === "number" && args.stageDurationMs >= 0) {
+    candidateStageDurationHistogram.record(args.stageDurationMs, { stage: args.fromStatus ?? "none" })
+  }
+}
 
 // ─── Span Helpers ────────────────────────────────────────────
 

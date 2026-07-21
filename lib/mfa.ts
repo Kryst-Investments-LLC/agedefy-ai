@@ -31,17 +31,58 @@ export async function isMfaEnabled(userId: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Server-authoritative verification marker
+//
+// The MFA gate (token.mfaPending) is lowered by the JWT callback ONLY when the
+// DB shows a verification recorded after the current session's login. The
+// client cannot clear the gate by passing data to NextAuth's update() — the
+// server is the sole source of truth. `recordMfaVerification` is the write side
+// (called by the verify endpoint on a successful challenge); `getMfaVerifiedAt`
+// is the read side used by the callback.
+// ---------------------------------------------------------------------------
+
+export async function recordMfaVerification(userId: string): Promise<void> {
+  await db.userMfaSecret.updateMany({
+    where: { userId },
+    data: { lastVerifiedAt: new Date() },
+  })
+}
+
+export async function getMfaVerifiedAt(userId: string): Promise<Date | null> {
+  const record = await db.userMfaSecret.findUnique({
+    where: { userId },
+    select: { lastVerifiedAt: true },
+  })
+  return record?.lastVerifiedAt ?? null
+}
+
+// ---------------------------------------------------------------------------
 // Secret + QR generation
 // ---------------------------------------------------------------------------
 
 function generateBackupCodes(): string[] {
-  return Array.from({ length: BACKUP_CODE_COUNT }, () =>
-    crypto.randomBytes(4).toString("hex"), // 8-char hex codes
-  )
+  return Array.from({ length: BACKUP_CODE_COUNT }, () => {
+    // 80 bits of entropy (was 32). Grouped as XXXXX-XXXXX-XXXXX-XXXXX for
+    // readability; the separators/case are cosmetic — hashCode normalizes them
+    // away, so what the user types back is matched regardless of formatting.
+    const raw = crypto.randomBytes(10).toString("hex")
+    return (raw.match(/.{1,5}/g) ?? [raw]).join("-").toUpperCase()
+  })
 }
 
+// Strip formatting so a code entered as "abcde-fghij" matches one stored from
+// "ABCDEFGHIJ". Legacy 8-char hex codes are unaffected (already normalized),
+// so previously issued backup codes keep working.
+function normalizeCode(code: string): string {
+  return code.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+}
+
+// SHA-256 is the right primitive for high-entropy random tokens (same as this
+// schema's ActiveSession.tokenHash). With ≥80-bit codes it is not offline-
+// brute-forceable, and a deterministic hash is what lets verifyBackupCode
+// consume atomically (see below).
 function hashCode(code: string): string {
-  return crypto.createHash("sha256").update(code).digest("hex")
+  return crypto.createHash("sha256").update(normalizeCode(code)).digest("hex")
 }
 
 export async function generateMfaSecret(userId: string, email: string) {
@@ -83,31 +124,21 @@ export async function verifyMfaToken(userId: string, token: string): Promise<boo
 // ---------------------------------------------------------------------------
 
 export async function verifyBackupCode(userId: string, code: string): Promise<boolean> {
-  const record = await db.userMfaSecret.findUnique({
-    where: { userId },
-  })
-
-  if (!record || !Array.isArray(record.backupCodes)) {
-    return false
-  }
-
   const hashed = hashCode(code)
-  const codes = record.backupCodes as string[]
-  const idx = codes.indexOf(hashed)
 
-  if (idx === -1) {
-    return false
-  }
+  // Atomic single-use consume. A single UPDATE removes the hash from the jsonb
+  // array only while it is still present (`@>`). Under concurrency Postgres
+  // takes a row lock and re-evaluates the WHERE against the committed row, so a
+  // second request racing with the same code matches zero rows — closing the
+  // read-modify-write TOCTOU that previously let one backup code be spent twice.
+  const affected = await db.$executeRaw`
+    UPDATE "UserMfaSecret"
+    SET "backupCodes" = "backupCodes" - ${hashed}::text
+    WHERE "userId" = ${userId}
+      AND "backupCodes" @> ${JSON.stringify([hashed])}::jsonb
+  `
 
-  // Consume the backup code
-  const remaining = [...codes]
-  remaining.splice(idx, 1)
-  await db.userMfaSecret.update({
-    where: { userId },
-    data: { backupCodes: remaining },
-  })
-
-  return true
+  return affected === 1
 }
 
 // ---------------------------------------------------------------------------

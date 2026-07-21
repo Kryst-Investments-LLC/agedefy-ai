@@ -1,3 +1,7 @@
+// CI-008: reads required data from the database — force dynamic rendering so
+// the DB is queried at request time, never at build (a DB failure can then
+// never be swallowed into a statically-generated page).
+export const dynamic = "force-dynamic"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 
@@ -18,6 +22,9 @@ export default async function AdminPage() {
   if (!session?.user?.id || session.user.role !== "ADMIN") {
     redirect("/dashboard")
   }
+
+  const marketplaceAuditWindowStart = new Date()
+  marketplaceAuditWindowStart.setDate(marketplaceAuditWindowStart.getDate() - 7)
 
   const [
     reviewItems,
@@ -61,7 +68,7 @@ export default async function AdminPage() {
     db.marketplaceDealRoom.count(),
     db.marketplaceTransaction.count(),
     db.marketplaceNotification.count(),
-    db.marketplaceAuditLog.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    db.marketplaceAuditLog.count({ where: { createdAt: { gte: marketplaceAuditWindowStart } } }),
     db.marketplaceTransaction.findMany({
       where: { status: "SETTLED" },
       orderBy: { updatedAt: "desc" },

@@ -105,9 +105,7 @@ export default async function globalSetup() {
       description: "Prisma schema sync for tests",
     })
   } else {
-    // Non-PostgreSQL URL (e.g. SQLite file:// during local dev) — skip db push.
-    // Unit tests that need the DB mock it entirely; integration tests require a real PG URL.
-    console.warn("[global-setup] Skipping prisma db push: DATABASE_URL is not a PostgreSQL URL")
+    throw new Error("Live-server integration tests require DATABASE_URL to use postgresql:// or postgres://")
   }
 
   const spawnCommand = process.platform === "win32" ? "cmd.exe" : "pnpm"

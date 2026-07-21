@@ -47,6 +47,11 @@ export async function authenticateAPIKey(
     )
   }
 
+  if (!['RESEARCHER', 'CLINICIAN', 'ADMIN'].includes(key.ownerRole)) {
+    logger.warn('API key owner lacks research role', { keyId: key.id, ownerRole: key.ownerRole })
+    return NextResponse.json({ error: 'API key is not authorized for research endpoints' }, { status: 403 })
+  }
+
   // Per-key rate limiting
   const rl = rateLimit(`apikey:${key.id}`, {
     maxRequests: key.rateLimitPerMin,
@@ -79,6 +84,17 @@ export function requireScope(
   if (!ctx.key.scopes.includes(scope)) {
     return NextResponse.json(
       { error: `API key does not have the '${scope}' scope` },
+      { status: 403 },
+    )
+  }
+  return null
+}
+
+/** Discovery/science scopes are never consumer-accessible, including sandbox keys. */
+export function requireResearchRole(ctx: APIKeyContext): NextResponse | null {
+  if (!['RESEARCHER', 'CLINICIAN', 'ADMIN'].includes(ctx.key.ownerRole)) {
+    return NextResponse.json(
+      { error: 'This API is restricted to researcher or clinician accounts' },
       { status: 403 },
     )
   }

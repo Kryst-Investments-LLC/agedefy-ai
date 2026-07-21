@@ -51,10 +51,6 @@ async function getDiscoveryForAccess(discoveryId: string) {
   return db.marketplaceDiscovery.findUnique({ where: { id: discoveryId } })
 }
 
-async function getFundingRequestForAccess(fundingRequestId: string) {
-  return db.marketplaceFundingRequest.findUnique({ where: { id: fundingRequestId } })
-}
-
 async function canAccessDealRoomId(actor: MarketplaceActorContext, dealRoomId: string) {
   const dealRoom = await getDealRoomForAccess(dealRoomId)
   if (!dealRoom) {

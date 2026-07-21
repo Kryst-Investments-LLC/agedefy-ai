@@ -201,7 +201,6 @@ export async function listReplications(
 /*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseMilestonePlan(plan: any): Record<string, unknown> | null {
   if (!plan) return null
   if (typeof plan === 'string') {
@@ -210,7 +209,6 @@ function parseMilestonePlan(plan: any): Record<string, unknown> | null {
   return plan as Record<string, unknown>
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toReplicationRequest(fr: any): ReplicationRequest {
   const plan = parseMilestonePlan(fr.milestonePlan) ?? {}
   const statusMap: Record<string, ReplicationStatus> = {

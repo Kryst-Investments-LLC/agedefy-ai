@@ -9,9 +9,11 @@ import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { stripeWebhookCounter } from "@/lib/observability/telemetry"
 import { isAICreditPackKey, isPricingRegionTierKey, normalizeStripeIntervalToBillingCycle, resolveDefaultMonthlyAICreditAllowance } from "@/lib/pricing"
+import { logger } from "@/lib/logger"
 import { stripe } from "@/lib/stripe"
-import { claimWebhookDelivery } from "@/lib/webhook-idempotency"
+import { claimWebhookDelivery, completeWebhookDelivery, failWebhookDelivery } from "@/lib/webhook-idempotency"
 import { confirmMarketplaceStripeCheckoutSession } from "@/scientist-sponsor-marketplace/backend/services/paymentLifecycleService"
+import { withHttpMetrics } from "@/lib/observability/with-http-metrics"
 
 export const runtime = "nodejs"
 
@@ -115,7 +117,9 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
   })
 }
 
-export async function POST(request: Request) {
+export const POST = withHttpMetrics("/api/stripe/webhook", stripeWebhookHandler)
+
+async function stripeWebhookHandler(request: Request) {
   if (!stripe || !env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Stripe webhook is not configured" }, { status: 500 })
   }
@@ -149,7 +153,9 @@ export async function POST(request: Request) {
     details: { livemode: event.livemode },
   })
 
-  stripeWebhookCounter.add(1, { event_type: event.type, livemode: String(event.livemode) })
+  // Emitted once per webhook at its terminal outcome (duplicate/failed/success)
+  // so the payments success SLO is measurable from metrics (OBS-004).
+  const webhookMetricLabels = { event_type: event.type, livemode: String(event.livemode) }
 
   // Idempotency guard: Stripe retries deliveries; refuse to re-execute side effects.
   const claim = await claimWebhookDelivery({
@@ -163,10 +169,12 @@ export async function POST(request: Request) {
       entityType: event.type,
       entityId: event.id,
     })
+    stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "duplicate" })
     return NextResponse.json({ received: true, duplicate: true })
   }
 
-  switch (event.type) {
+  try {
+    switch (event.type) {
     case "checkout.session.completed": {
       const checkoutSession = event.data.object as Stripe.Checkout.Session
       if (checkoutSession.metadata?.flow === "marketplace-escrow-checkout") {
@@ -319,7 +327,23 @@ export async function POST(request: Request) {
     }
     default:
       break
+    }
+  } catch (err) {
+    // A side effect failed. Leave the delivery PENDING (not COMPLETED) so
+    // Stripe's retry reprocesses it, and return 5xx so Stripe knows to retry.
+    // This prevents a transient DB error from permanently dropping a paid
+    // subscription activation or credit grant.
+    const message = err instanceof Error ? err.message : String(err)
+    await failWebhookDelivery({ provider: "stripe", route: "/api/stripe/webhook", eventId: event.id, errorMessage: message })
+    logger.error("Stripe webhook handler failed", { eventId: event.id, eventType: event.type, error: message })
+    stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "failed" })
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
   }
 
+  // All side effects succeeded — mark the delivery COMPLETED so subsequent
+  // retries are correctly recognized as duplicates.
+  await completeWebhookDelivery({ provider: "stripe", route: "/api/stripe/webhook", eventId: event.id })
+
+  stripeWebhookCounter.add(1, { ...webhookMetricLabels, outcome: "success" })
   return NextResponse.json({ received: true })
 }

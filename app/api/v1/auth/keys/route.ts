@@ -5,6 +5,13 @@ import { z } from 'zod'
 import { authOptions } from '@/lib/auth'
 import { generateAPIKey, listAPIKeys, revokeAPIKey, rotateAPIKey } from '@/lib/api-keys/manager'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
+
+async function requireKeyManagerSession() {
+  const session = await getServerSession(authOptions)
+  return requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+}
 
 const createKeySchema = z.object({
   name: z.string().min(1).max(100),
@@ -23,10 +30,10 @@ export async function POST(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 10, windowMs: 60_000 })
   if (blocked) return blocked
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const session = await requireKeyManagerSession()
+  if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: unknown
   try {
@@ -81,10 +88,8 @@ export async function GET(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 20, windowMs: 60_000 })
   if (blocked) return blocked
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const session = await requireKeyManagerSession()
+  if (session instanceof NextResponse) return session
 
   const keys = await listAPIKeys(session.user.id)
   return NextResponse.json({ keys })
@@ -99,10 +104,10 @@ export async function DELETE(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 10, windowMs: 60_000 })
   if (blocked) return blocked
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const session = await requireKeyManagerSession()
+  if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: { keyId?: string }
   try {
@@ -132,10 +137,10 @@ export async function PATCH(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 5, windowMs: 60_000 })
   if (blocked) return blocked
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const session = await requireKeyManagerSession()
+  if (session instanceof NextResponse) return session
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: { keyId?: string }
   try {

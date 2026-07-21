@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { db } from "@/lib/db"
+import { PUBLIC_CATALOG_CACHE_CONTROL } from "@/lib/http/cache-control"
 
 /**
  * GET /api/learn/[slug] — fetch a single published article by slug
@@ -29,5 +30,5 @@ export async function GET(
     body: article.body,
     publishedAt: article.publishedAt?.toISOString() ?? null,
     author: article.author,
-  })
+  }, { headers: { "Cache-Control": PUBLIC_CATALOG_CACHE_CONTROL } })
 }

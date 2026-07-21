@@ -9,7 +9,9 @@
  */
 
 import { logger } from "@/lib/logger"
+import { recordCacheEviction, recordCacheHit, recordCacheMiss } from "@/lib/observability/cache-metrics"
 
+const CACHE_NAME = "license_verification"
 const CACHE_TTL_DAYS = 30
 const NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/?version=2.1"
 
@@ -97,7 +99,11 @@ export async function verifyLicense(
   const key = cacheKey(licenseNumber, jurisdiction)
 
   const cached = verificationCache.get(key)
-  if (cached && isCacheValid(cached)) return cached
+  if (cached && isCacheValid(cached)) {
+    recordCacheHit(CACHE_NAME)
+    return cached
+  }
+  recordCacheMiss(CACHE_NAME)
 
   let result: LicenseVerificationResult
 
@@ -119,7 +125,10 @@ export async function verifyLicense(
 
   if (verificationCache.size > 1000) {
     const firstKey = verificationCache.keys().next().value
-    if (firstKey) verificationCache.delete(firstKey)
+    if (firstKey) {
+      verificationCache.delete(firstKey)
+      recordCacheEviction(CACHE_NAME)
+    }
   }
   verificationCache.set(key, result)
 

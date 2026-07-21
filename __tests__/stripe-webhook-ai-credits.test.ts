@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { stripeWebhookCounter } from "@/lib/observability/telemetry"
+
 const headersMock = vi.fn()
 const constructEventMock = vi.fn()
 const logAuditMock = vi.fn()
@@ -42,6 +44,8 @@ vi.mock("@/lib/db", () => ({
     },
     idempotencyRecord: {
       create: vi.fn().mockResolvedValue({}),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
@@ -85,6 +89,7 @@ describe("POST /api/stripe/webhook AI credit checkout", () => {
       },
     })
 
+    const outcomeSpy = vi.spyOn(stripeWebhookCounter, "add")
     const { POST } = await import("@/app/api/stripe/webhook/route")
     const response = await POST(new Request("http://localhost:3000/api/stripe/webhook", {
       method: "POST",
@@ -92,6 +97,12 @@ describe("POST /api/stripe/webhook AI credit checkout", () => {
     }))
 
     expect(response.status).toBe(200)
+    // Payments success SLI (OBS-004): terminal outcome recorded once, labelled success.
+    expect(outcomeSpy).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ event_type: "checkout.session.completed", outcome: "success" }),
+    )
+    outcomeSpy.mockRestore()
     expect(billingRecordUpsertMock).toHaveBeenCalledWith(expect.objectContaining({
       where: { stripeCheckoutSessionId: "cs_ai_123" },
       create: expect.objectContaining({

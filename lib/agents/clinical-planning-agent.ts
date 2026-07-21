@@ -20,6 +20,7 @@ import { createHash } from "node:crypto"
 
 import { getAIConfig } from "@/lib/config/ai-config"
 import { logger } from "@/lib/logger"
+import { recordCacheEviction, recordCacheHit, recordCacheMiss } from "@/lib/observability/cache-metrics"
 import type { AgentClass } from "./types"
 
 export const PLAN_DISCLAIMER =
@@ -150,6 +151,7 @@ function buildDeterministicPlan(
 // ---------------------------------------------------------------------------
 
 const LLM_CACHE = new Map<string, string>()
+const LLM_CACHE_NAME = "clinical_planning_llm"
 
 async function enrichRationale(
   plan: InvestigationPlan,
@@ -167,7 +169,11 @@ async function enrichRationale(
     .slice(0, 16)
 
   const cached = LLM_CACHE.get(cacheKey)
-  if (cached) return cached
+  if (cached) {
+    recordCacheHit(LLM_CACHE_NAME)
+    return cached
+  }
+  recordCacheMiss(LLM_CACHE_NAME)
 
   const prompt = [
     "You are a biomedical research planning assistant. Generate a concise planning rationale (2-3 sentences).",
@@ -209,7 +215,10 @@ async function enrichRationale(
       const data = (await response.json()) as { content?: { text?: string }[] }
       const text = data.content?.[0]?.text?.trim()
       if (text) {
-        if (LLM_CACHE.size > 200) LLM_CACHE.clear() // simple eviction
+        if (LLM_CACHE.size > 200) {
+          recordCacheEviction(LLM_CACHE_NAME, LLM_CACHE.size) // clear-all eviction
+          LLM_CACHE.clear()
+        }
         LLM_CACHE.set(cacheKey, text)
         return text
       }

@@ -9,6 +9,7 @@ import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { orchestrationJobAdminQuerySchema } from "@/lib/validators/enterprise"
 import { adminEnqueueOrchestrationJobSchema } from "@/lib/validators/jobs"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 function buildAdminManagedJobPayload(
   parsed: typeof adminEnqueueOrchestrationJobSchema._type,
@@ -92,6 +93,8 @@ export async function POST(request: NextRequest) {
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: authResult.user, request })
   if (!tenantContext) return NextResponse.json({ error: "Forbidden: invalid tenant" }, { status: 403 })
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
     actorUserId: authResult.user.id,
     requestFingerprint: createIdempotencyFingerprint({ actorUserId: authResult.user.id, payload: parsed.data }),
     execute: async () => {
-      const { enqueueOrchestrationJob } = await import("@/lib/jobs/queue")
+      const { enqueueOrchestrationJob, JobQuotaExceededError } = await import("@/lib/jobs/queue")
       const payload = buildAdminManagedJobPayload(parsed.data, {
         tenantId: tenantContext.tenantId,
         organizationId: tenantContext.organizationId,
@@ -121,21 +124,29 @@ export async function POST(request: NextRequest) {
         actorEmail: authResult.user.email,
         actorRole: authResult.user.role,
       })
-      const job = await enqueueOrchestrationJob({
-        tenantId: tenantContext.tenantId,
-        organizationId: tenantContext.organizationId,
-        queue: parsed.data.queue,
-        jobType: parsed.data.jobType,
-        createdByUserId: authResult.user.id,
-        payload,
-        dedupeKey: parsed.data.dedupeKey,
-        priority: parsed.data.priority,
-        maxAttempts: parsed.data.maxAttempts,
-        availableAt: parsed.data.availableAt ? new Date(parsed.data.availableAt) : undefined,
-        correlationId: parsed.data.correlationId ?? (request.headers.get("x-correlation-id")?.trim() || undefined),
-        parentJobId: parsed.data.parentJobId,
-        requestId: request.headers.get("x-request-id")?.trim() || undefined,
-      })
+      let job
+      try {
+        job = await enqueueOrchestrationJob({
+          tenantId: tenantContext.tenantId,
+          organizationId: tenantContext.organizationId,
+          queue: parsed.data.queue,
+          jobType: parsed.data.jobType,
+          createdByUserId: authResult.user.id,
+          payload,
+          dedupeKey: parsed.data.dedupeKey,
+          priority: parsed.data.priority,
+          maxAttempts: parsed.data.maxAttempts,
+          availableAt: parsed.data.availableAt ? new Date(parsed.data.availableAt) : undefined,
+          correlationId: parsed.data.correlationId ?? (request.headers.get("x-correlation-id")?.trim() || undefined),
+          parentJobId: parsed.data.parentJobId,
+          requestId: request.headers.get("x-request-id")?.trim() || undefined,
+        })
+      } catch (err) {
+        if (err instanceof JobQuotaExceededError) {
+          return { status: 429, body: { error: "Job quota exceeded for tenant", pending: err.pending, limit: err.limit } }
+        }
+        throw err
+      }
 
       await logAudit({
         actorUserId: authResult.user.id,

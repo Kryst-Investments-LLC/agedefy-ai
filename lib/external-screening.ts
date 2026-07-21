@@ -8,6 +8,8 @@
 
 import type { ExternalScreeningAdapter } from '@prisma/client'
 
+import { decryptExternalSecret } from '@/lib/external-secret-crypto'
+import { assertSafeOutboundUrl } from '@/lib/security/outbound-url'
 import { externalScreenResponseSchema } from '@/lib/validators/external-screening'
 
 export interface ExternalScreeningRequest {
@@ -47,12 +49,14 @@ export async function callAdapter(
   let rawResponse: unknown = null
 
   try {
+    await assertSafeOutboundUrl(adapter.endpointUrl)
+    const secret = decryptExternalSecret(adapter.secret)
     const res = await fetch(adapter.endpointUrl, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         accept: 'application/json',
-        [adapter.authHeader]: `${adapter.authScheme} ${adapter.secret}`,
+        [adapter.authHeader]: `${adapter.authScheme} ${secret}`,
       },
       body,
       signal: controller.signal,

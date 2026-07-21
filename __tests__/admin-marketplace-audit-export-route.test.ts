@@ -13,6 +13,10 @@ vi.mock("@/lib/auth", () => ({
   authOptions: {},
 }))
 
+vi.mock("@/lib/security/recent-mfa", () => ({
+  requireRecentMfa: vi.fn(async () => null),
+}))
+
 vi.mock("@/lib/db", () => ({
   db: {
     marketplaceAuditLog: {

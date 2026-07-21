@@ -66,28 +66,22 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   for (const op of parsed.data.Operations) {
     if (op.path === 'members' && op.op === 'add' && Array.isArray(op.value)) {
-      for (const member of op.value as Array<{ value: string }>) {
-        const userId = member.value
-        if (!userId) continue
-        const exists = await db.organizationMembership.findUnique({
-          where: { organizationId_userId: { organizationId: id, userId } },
+      // Batch the whole member list into one insert instead of a findUnique +
+      // create per member (N+1). skipDuplicates makes it idempotent against
+      // existing memberships, replacing the per-member existence check.
+      const userIds = (op.value as Array<{ value: string }>).map((m) => m.value).filter(Boolean)
+      if (userIds.length > 0) {
+        await db.organizationMembership.createMany({
+          data: userIds.map((userId) => ({ tenantId: org.tenantId, organizationId: id, userId })),
+          skipDuplicates: true,
         })
-        if (!exists) {
-          await db.organizationMembership.create({
-            data: {
-              tenantId: org.tenantId,
-              organizationId: id,
-              userId,
-            },
-          })
-        }
       }
     } else if (op.path === 'members' && op.op === 'remove' && Array.isArray(op.value)) {
-      for (const member of op.value as Array<{ value: string }>) {
-        const userId = member.value
-        if (!userId) continue
+      // One delete for the whole list instead of a deleteMany per member.
+      const userIds = (op.value as Array<{ value: string }>).map((m) => m.value).filter(Boolean)
+      if (userIds.length > 0) {
         await db.organizationMembership.deleteMany({
-          where: { organizationId: id, userId },
+          where: { organizationId: id, userId: { in: userIds } },
         })
       }
     } else if (op.path === 'displayName' && op.op === 'replace') {

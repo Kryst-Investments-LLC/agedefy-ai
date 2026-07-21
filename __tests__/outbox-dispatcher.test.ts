@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { GenericHealthEventBrokerPublisher, CanonicalHealthEventOutboxDispatcher } from '@/lib/events/outbox-dispatcher'
 import { PrismaTransactionalHealthEventIngestionService } from '@/lib/events/transactional-ingestion-service'
 import { getCanonicalTopicForEventType } from '@/lib/events/topics'
+import { outboxDispatchLatencyHistogram } from '@/lib/observability/telemetry'
 
 async function cleanupTenant(tenantId: string) {
   await db.canonicalHealthEventOutboxRecord.deleteMany({ where: { tenantId } })
@@ -50,6 +51,7 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
       },
     })
 
+    const latencySpy = vi.spyOn(outboxDispatchLatencyHistogram, 'record')
     const dispatcher = new CanonicalHealthEventOutboxDispatcher(new GenericHealthEventBrokerPublisher(publishSpy), db)
     const result = await dispatcher.dispatchAvailable({ tenantId })
     const outbox = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
@@ -58,6 +60,13 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
     expect(publishSpy).toHaveBeenCalledTimes(1)
     expect(outbox?.status).toBe('published')
     expect(outbox?.publishedAt).not.toBeNull()
+    // Dispatch-lag SLI (OBS-004): a non-negative latency recorded with the topic.
+    expect(latencySpy).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.objectContaining({ topic: getCanonicalTopicForEventType('protocol.event') }),
+    )
+    expect(latencySpy.mock.calls[0]?.[0]).toBeGreaterThanOrEqual(0)
+    latencySpy.mockRestore()
   })
 
   it('marks terminal failures after max attempts tenant:outbox_fail', async () => {
@@ -102,8 +111,15 @@ describe('CanonicalHealthEventOutboxDispatcher', () => {
     const outbox = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
 
     expect(result).toEqual({ processed: 1, published: 0, failed: 1, skipped: 0 })
-    expect(outbox?.status).toBe('failed')
+    expect(outbox?.status).toBe('dead_letter')
     expect(outbox?.lastError).toContain('broker unavailable')
     expect(outbox?.attemptCount).toBe(1)
+
+    // Regression: a dead-lettered record must NOT be re-selected on the next
+    // cycle (previously terminal 'failed' + availableAt=now looped forever).
+    const secondRun = await dispatcher.dispatchAvailable({ tenantId, maxAttempts: 1 })
+    expect(secondRun).toEqual({ processed: 0, published: 0, failed: 0, skipped: 0 })
+    const afterSecond = await db.canonicalHealthEventOutboxRecord.findFirst({ where: { tenantId } })
+    expect(afterSecond?.attemptCount).toBe(1) // unchanged — not retried again
   })
 })

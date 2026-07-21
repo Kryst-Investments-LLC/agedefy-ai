@@ -13,6 +13,7 @@ const envSchema = z.object({
   PRISMA_RUNTIME: z.enum(["sqlite", "postgres"]).optional(),
   ENABLE_TEST_AUTH_ENDPOINT: z.enum(["true", "false"]).optional(),
   ADMIN_EMAILS: z.string().optional(),
+  CRON_SECRET: z.string().min(32).optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_GRAPH_PRICE_ID: z.string().optional(),
@@ -35,6 +36,8 @@ const envSchema = z.object({
   SSO_CLIENT_SECRET: z.string().optional(),
   SCIM_SHARED_SECRET: z.string().optional(),
   MFA_ENCRYPTION_KEY: z.string().min(32).optional(),
+  SCREENING_ADAPTER_ENCRYPTION_KEY: z.string().min(32).optional(),
+  SCREENING_ADAPTER_ALLOW_PLAINTEXT: z.enum(["true", "false"]).optional(),
   TENANCY_MODE: z.enum(["single", "shared", "isolated"]).optional(),
   DEFAULT_TENANT_ID: z.string().optional(),
   AI_GOVERNANCE_ENFORCED: z.enum(["true", "false"]).optional(),
@@ -45,6 +48,8 @@ const envSchema = z.object({
   JOB_WORKER_MAX_ATTEMPTS: z.string().optional(),
   JOB_WORKER_RETRY_DELAY_MS: z.string().optional(),
   JOB_WORKER_LEASE_MS: z.string().optional(),
+  JOB_MAX_CONCURRENT_LEASES_PER_TENANT: z.string().optional(),
+  JOB_MAX_PENDING_PER_TENANT: z.string().optional(),
   JOB_RETENTION_HOURS: z.string().optional(),
   JOB_TENANT_ID: z.string().optional(),
   CPIC_GUIDELINES_JSON_PATH: z.string().optional(),
@@ -55,10 +60,14 @@ const envSchema = z.object({
   BIO_AGE_USE_OMICS: z.enum(["true", "false"]).optional(),
   // ─── Experimental / in-development feature gates (default OFF) ───────────
   ENABLE_FEDERATED_LEARNING: z.enum(["true", "false"]).optional(),
+  FL_SERVER_URL: z.string().optional(),
   ENABLE_CAUSAL_SIDECAR: z.enum(["true", "false"]).optional(),
+  CAUSAL_SIDECAR_URL: z.string().optional(),
   ENABLE_NEO4J_BACKEND: z.enum(["true", "false"]).optional(),
   ENABLE_SCREENING_SIDECAR: z.enum(["true", "false"]).optional(),
+  SCREENING_SIDECAR_URL: z.string().optional(),
   ENABLE_OPENMM_SIDECAR: z.enum(["true", "false"]).optional(),
+  OPENMM_SIDECAR_URL: z.string().optional(),
   ENABLE_FEP_SIDECAR: z.enum(["true", "false"]).optional(),
   FEP_SIDECAR_URL: z.string().optional(),
 })
@@ -102,6 +111,7 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     PRISMA_RUNTIME: parseOptionalEnum(process.env.PRISMA_RUNTIME, ["sqlite", "postgres"]),
     ENABLE_TEST_AUTH_ENDPOINT: parseOptionalEnum(process.env.ENABLE_TEST_AUTH_ENDPOINT, ["true", "false"]),
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    CRON_SECRET: process.env.CRON_SECRET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_GRAPH_PRICE_ID: process.env.STRIPE_GRAPH_PRICE_ID,
@@ -124,6 +134,8 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     SSO_CLIENT_SECRET: process.env.SSO_CLIENT_SECRET,
     SCIM_SHARED_SECRET: process.env.SCIM_SHARED_SECRET,
     MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
+    SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
+    SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
     TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
     DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
     AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -134,13 +146,19 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     JOB_WORKER_MAX_ATTEMPTS: process.env.JOB_WORKER_MAX_ATTEMPTS,
     JOB_WORKER_RETRY_DELAY_MS: process.env.JOB_WORKER_RETRY_DELAY_MS,
     JOB_WORKER_LEASE_MS: process.env.JOB_WORKER_LEASE_MS,
+    JOB_MAX_CONCURRENT_LEASES_PER_TENANT: process.env.JOB_MAX_CONCURRENT_LEASES_PER_TENANT,
+    JOB_MAX_PENDING_PER_TENANT: process.env.JOB_MAX_PENDING_PER_TENANT,
     JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
     JOB_TENANT_ID: process.env.JOB_TENANT_ID,
     ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+    FL_SERVER_URL: process.env.FL_SERVER_URL,
     ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+    CAUSAL_SIDECAR_URL: process.env.CAUSAL_SIDECAR_URL,
     ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
     ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
+    SCREENING_SIDECAR_URL: process.env.SCREENING_SIDECAR_URL,
     ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+    OPENMM_SIDECAR_URL: process.env.OPENMM_SIDECAR_URL,
     ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
     FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
   }
@@ -185,6 +203,34 @@ export function shouldEnforceRuntimeRequirements(input: Partial<ParsedEnvironmen
   return input.RUNTIME_REQUIREMENTS_ENFORCED === "true" || ["staging", "production"].includes(resolveAppEnvironment(input))
 }
 
+/**
+ * P0-CFG-004 / P0-CFG-005 — fail closed on the development fallbacks in a
+ * production runtime. Independent of APP_ENV (so a deploy that sets only the
+ * conventional NODE_ENV=production is still protected), and cheap enough to run
+ * at build time: NEXTAUTH_SECRET and the database URL are present in both the
+ * build and runtime environments of a real deploy, so this never trips a
+ * correctly-configured build — only a misconfiguration that would otherwise
+ * boot with a publicly-known session secret or SQLite.
+ */
+export function assertNoDevFallbacksInProduction(
+  input: Partial<ParsedEnvironment>,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): void {
+  if (nodeEnv !== "production") return
+
+  const secret = input.NEXTAUTH_SECRET?.trim()
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "NEXTAUTH_SECRET must be set to a real secret of at least 32 characters when NODE_ENV=production (refusing the development fallback).",
+    )
+  }
+  if (!getEffectiveDatabaseUrl(input)) {
+    throw new Error(
+      "DATABASE_URL or POSTGRES_DATABASE_URL must be set when NODE_ENV=production (refusing the SQLite fallback).",
+    )
+  }
+}
+
 export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProcessEnvironment()): RuntimeBaseline {
   const appEnv = resolveAppEnvironment(input)
   const productionBaselineRequired = shouldEnforceRuntimeRequirements(input)
@@ -216,6 +262,72 @@ export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProce
     })
   }
 
+  if (productionBaselineRequired && !input.CRON_SECRET?.trim()) {
+    issues.push({
+      code: "cron.secret_required",
+      message: "Staging and production baselines require CRON_SECRET (at least 32 characters).",
+    })
+  }
+
+  if (productionBaselineRequired && input.ENABLE_TEST_AUTH_ENDPOINT !== "false") {
+    issues.push({
+      code: "auth.test_endpoint_forbidden",
+      message: "ENABLE_TEST_AUTH_ENDPOINT must be explicitly false in staging and production.",
+    })
+  }
+
+  const requireEnabledConfiguration = (
+    enabled: boolean,
+    configured: boolean,
+    code: string,
+    message: string,
+  ) => {
+    if (productionBaselineRequired && enabled && !configured) issues.push({ code, message })
+  }
+
+  requireEnabledConfiguration(
+    input.SSO_ENABLED === "true",
+    Boolean(input.SSO_ISSUER?.trim() && input.SSO_CLIENT_ID?.trim() && input.SSO_CLIENT_SECRET?.trim()),
+    "integration.sso_configuration_required",
+    "SSO_ENABLED requires SSO_ISSUER, SSO_CLIENT_ID, and SSO_CLIENT_SECRET.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_FEDERATED_LEARNING === "true",
+    Boolean(input.FL_SERVER_URL?.trim()),
+    "integration.federated_learning_url_required",
+    "ENABLE_FEDERATED_LEARNING requires FL_SERVER_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_CAUSAL_SIDECAR === "true",
+    Boolean(input.CAUSAL_SIDECAR_URL?.trim()),
+    "integration.causal_sidecar_url_required",
+    "ENABLE_CAUSAL_SIDECAR requires CAUSAL_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_NEO4J_BACKEND === "true",
+    input.KG_BACKEND === "neo4j" && Boolean(input.KG_NEO4J_URL?.trim() && input.KG_NEO4J_USER?.trim() && input.KG_NEO4J_PASSWORD?.trim()),
+    "integration.neo4j_configuration_required",
+    "ENABLE_NEO4J_BACKEND requires KG_BACKEND=neo4j and Neo4j URL, user, and password.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_SCREENING_SIDECAR === "true",
+    Boolean(input.SCREENING_SIDECAR_URL?.trim()),
+    "integration.screening_sidecar_url_required",
+    "ENABLE_SCREENING_SIDECAR requires SCREENING_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_OPENMM_SIDECAR === "true",
+    Boolean(input.OPENMM_SIDECAR_URL?.trim()),
+    "integration.openmm_sidecar_url_required",
+    "ENABLE_OPENMM_SIDECAR requires OPENMM_SIDECAR_URL.",
+  )
+  requireEnabledConfiguration(
+    input.ENABLE_FEP_SIDECAR === "true",
+    Boolean(input.FEP_SIDECAR_URL?.trim()),
+    "integration.fep_sidecar_url_required",
+    "ENABLE_FEP_SIDECAR requires FEP_SIDECAR_URL.",
+  )
+
   return {
     appEnv,
     productionBaselineRequired,
@@ -245,6 +357,17 @@ if (resolvedAppEnvironment !== "test" && !runtimeEnvInput.MFA_ENCRYPTION_KEY?.tr
   throw new Error("Invalid environment configuration: MFA_ENCRYPTION_KEY is required outside tests.")
 }
 
+assertNoDevFallbacksInProduction(runtimeEnvInput)
+
+if (
+  shouldEnforceRuntimeRequirements(runtimeEnvInput) &&
+  !runtimeEnvInput.SCREENING_ADAPTER_ENCRYPTION_KEY?.trim()
+) {
+  throw new Error(
+    "Invalid environment configuration: SCREENING_ADAPTER_ENCRYPTION_KEY is required in staging and production.",
+  )
+}
+
 if (!parsedEnv.success && shouldEnforceRuntimeRequirements()) {
   throw new Error(`Invalid environment configuration: ${formatEnvironmentValidationError(parsedEnv.error)}`)
 }
@@ -264,6 +387,7 @@ const fallbackEnv: ParsedEnvironment = {
   PRISMA_RUNTIME: parseOptionalEnum(process.env.PRISMA_RUNTIME, ["sqlite", "postgres"]),
   ENABLE_TEST_AUTH_ENDPOINT: parseOptionalEnum(process.env.ENABLE_TEST_AUTH_ENDPOINT, ["true", "false"]),
   ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+  CRON_SECRET: process.env.CRON_SECRET,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   STRIPE_GRAPH_PRICE_ID: process.env.STRIPE_GRAPH_PRICE_ID,
@@ -286,6 +410,8 @@ const fallbackEnv: ParsedEnvironment = {
   SSO_CLIENT_SECRET: process.env.SSO_CLIENT_SECRET,
   SCIM_SHARED_SECRET: process.env.SCIM_SHARED_SECRET,
   MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
+  SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
+  SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
   TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
   DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
   AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -296,13 +422,19 @@ const fallbackEnv: ParsedEnvironment = {
   JOB_WORKER_MAX_ATTEMPTS: process.env.JOB_WORKER_MAX_ATTEMPTS,
   JOB_WORKER_RETRY_DELAY_MS: process.env.JOB_WORKER_RETRY_DELAY_MS,
   JOB_WORKER_LEASE_MS: process.env.JOB_WORKER_LEASE_MS,
+  JOB_MAX_CONCURRENT_LEASES_PER_TENANT: process.env.JOB_MAX_CONCURRENT_LEASES_PER_TENANT,
+  JOB_MAX_PENDING_PER_TENANT: process.env.JOB_MAX_PENDING_PER_TENANT,
   JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
   JOB_TENANT_ID: process.env.JOB_TENANT_ID,
   ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
+  FL_SERVER_URL: process.env.FL_SERVER_URL,
   ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
+  CAUSAL_SIDECAR_URL: process.env.CAUSAL_SIDECAR_URL,
   ENABLE_NEO4J_BACKEND: parseOptionalEnum(process.env.ENABLE_NEO4J_BACKEND, ["true", "false"]),
   ENABLE_SCREENING_SIDECAR: parseOptionalEnum(process.env.ENABLE_SCREENING_SIDECAR, ["true", "false"]),
+  SCREENING_SIDECAR_URL: process.env.SCREENING_SIDECAR_URL,
   ENABLE_OPENMM_SIDECAR: parseOptionalEnum(process.env.ENABLE_OPENMM_SIDECAR, ["true", "false"]),
+  OPENMM_SIDECAR_URL: process.env.OPENMM_SIDECAR_URL,
   ENABLE_FEP_SIDECAR: parseOptionalEnum(process.env.ENABLE_FEP_SIDECAR, ["true", "false"]),
   FEP_SIDECAR_URL: process.env.FEP_SIDECAR_URL,
 }

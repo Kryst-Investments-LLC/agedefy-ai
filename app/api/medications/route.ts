@@ -3,14 +3,18 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
+import { requireGdprConsent } from '@/lib/consent'
 import { db } from '@/lib/db'
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { checkUserInteractions } from '@/lib/safety/interaction-checker'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 import { medicationCreateSchema } from '@/lib/validators/medication'
+import { withHttpMetrics } from '@/lib/observability/with-http-metrics'
 
-export async function GET(request: NextRequest) {
+export const GET = withHttpMetrics('/api/medications', medicationsGetHandler)
+
+async function medicationsGetHandler(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 30, windowMs: 60_000 })
   if (blocked) return blocked
 
@@ -31,7 +35,9 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ medications })
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withHttpMetrics('/api/medications', medicationsPostHandler)
+
+async function medicationsPostHandler(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 15, windowMs: 60_000 })
   if (blocked) return blocked
 
@@ -39,6 +45,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const consentBlocked = await requireGdprConsent(session.user.id, ['data-processing'])
+  if (consentBlocked) return consentBlocked
 
   const body = await request.json().catch(() => null)
   const parsed = medicationCreateSchema.safeParse(body)

@@ -16,6 +16,7 @@ import { z } from 'zod'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logAudit } from '@/lib/audit'
+import { listPageHeaders, overfetchTake, parseListPageParams, splitOverfetch } from '@/lib/http/pagination'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
 
@@ -49,28 +50,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const referrals = await db.referral.findMany({
-    where: { referrerId: session.user.id },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      code: true,
-      status: true,
-      rewardGranted: true,
-      completedAt: true,
-      expiresAt: true,
-      createdAt: true,
-    },
+  const referrerId = session.user.id
+  const { limit, offset } = parseListPageParams(new URL(request.url).searchParams, {
+    defaultLimit: 50,
+    maxLimit: 200,
   })
 
+  // Page the list, but compute stats from DB aggregates so they cover ALL of the
+  // user's referrals, not just the current page (P1-PERF-009).
+  const [rows, statusGroups, rewardsEarned, total] = await Promise.all([
+    db.referral.findMany({
+      where: { referrerId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        rewardGranted: true,
+        completedAt: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+      skip: offset,
+      take: overfetchTake(limit),
+    }),
+    db.referral.groupBy({ by: ['status'], where: { referrerId }, _count: { _all: true } }),
+    db.referral.count({ where: { referrerId, rewardGranted: true } }),
+    db.referral.count({ where: { referrerId } }),
+  ])
+
+  const { items, hasMore } = splitOverfetch(rows, limit)
+  const countFor = (status: string) =>
+    statusGroups.find((g) => g.status === status)?._count._all ?? 0
+
   const stats = {
-    total: referrals.length,
-    completed: referrals.filter((r) => r.status === 'COMPLETED').length,
-    pending: referrals.filter((r) => r.status === 'PENDING').length,
-    rewardsEarned: referrals.filter((r) => r.rewardGranted).length,
+    total,
+    completed: countFor('COMPLETED'),
+    pending: countFor('PENDING'),
+    rewardsEarned,
   }
 
-  return NextResponse.json({ referrals, stats })
+  return NextResponse.json(
+    { referrals: items, stats },
+    { headers: listPageHeaders({ limit, offset, hasMore }) },
+  )
 }
 
 /* ------------------------------------------------------------------ */

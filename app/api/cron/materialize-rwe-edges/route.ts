@@ -18,17 +18,14 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { materializeRweEdges } from "@/lib/flywheel/materialize-rwe-edges"
 import { logger } from "@/lib/logger"
+import { requireCronAuthorization } from "@/lib/security/cron-auth"
 
 export const runtime = "nodejs"
 export const maxDuration = 300 // 5 minutes max
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const unauthorized = requireCronAuthorization(request)
+  if (unauthorized) return unauthorized
 
   const { searchParams } = new URL(request.url)
   const now = new Date()

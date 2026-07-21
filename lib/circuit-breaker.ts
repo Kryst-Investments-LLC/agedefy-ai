@@ -1,7 +1,10 @@
-import { DependencyCircuitBreakerState } from "@prisma/client"
+import { DependencyCircuitBreakerState, type PrismaClient } from "@prisma/client"
 
 import { db } from "@/lib/db"
+import { recordCacheEviction, recordCacheHit, recordCacheMiss } from "@/lib/observability/cache-metrics"
 import { circuitBreakerStateChangeCounter } from "@/lib/observability/telemetry"
+
+const CB_CACHE_NAME = "circuit_breaker_state"
 
 type ExecuteWithCircuitBreakerArgs<T> = {
   dependency: string
@@ -45,7 +48,10 @@ const cbCache = new Map<string, CachedCBState>()
 function setCachedState(dependency: string, entry: CachedCBState) {
   if (!cbCache.has(dependency) && cbCache.size >= CB_CACHE_MAX_ENTRIES) {
     const firstKey = cbCache.keys().next().value
-    if (firstKey !== undefined) cbCache.delete(firstKey)
+    if (firstKey !== undefined) {
+      cbCache.delete(firstKey)
+      recordCacheEviction(CB_CACHE_NAME)
+    }
   }
   cbCache.set(dependency, entry)
 }
@@ -53,8 +59,10 @@ function setCachedState(dependency: string, entry: CachedCBState) {
 async function getCachedState(dependency: string): Promise<CachedCBState | null> {
   const cached = cbCache.get(dependency)
   if (cached && Date.now() - cached.cachedAt < CB_CACHE_TTL_MS) {
+    recordCacheHit(CB_CACHE_NAME)
     return cached
   }
+  recordCacheMiss(CB_CACHE_NAME)
 
   const row = await db.dependencyCircuitBreaker.findUnique({ where: { dependency } })
   if (!row) return null
@@ -169,4 +177,31 @@ export async function executeWithCircuitBreaker<T>({
  */
 export function resetCircuitBreakerCache() {
   cbCache.clear()
+}
+
+export type DependencyAvailability = {
+  dependency: string
+  state: DependencyCircuitBreakerState
+  available: boolean
+}
+
+/**
+ * Read the current circuit state for a set of dependencies (for honest
+ * degraded-state UI, INT-008). A dependency with no row has never tripped and
+ * is treated as available/CLOSED; OPEN means unavailable; HALF_OPEN is probing
+ * and treated as available (a request is allowed through to test recovery).
+ */
+export async function getCircuitStates(
+  dependencies: string[],
+  client: Pick<PrismaClient, "dependencyCircuitBreaker"> = db,
+): Promise<DependencyAvailability[]> {
+  const rows = await client.dependencyCircuitBreaker.findMany({
+    where: { dependency: { in: dependencies } },
+    select: { dependency: true, state: true },
+  })
+  const byDep = new Map(rows.map((r) => [r.dependency, r.state]))
+  return dependencies.map((dependency) => {
+    const state = byDep.get(dependency) ?? DependencyCircuitBreakerState.CLOSED
+    return { dependency, state, available: state !== DependencyCircuitBreakerState.OPEN }
+  })
 }

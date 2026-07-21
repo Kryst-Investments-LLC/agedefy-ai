@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Bell, Clock, Globe, Loader2, Moon } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,

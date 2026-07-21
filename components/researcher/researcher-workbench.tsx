@@ -7,7 +7,7 @@ import { TargetPanel } from './target-panel'
 import { CandidateRow } from './candidate-row'
 import { candidateKey, type ResearcherCandidate, type ValidationStatus } from './types'
 import type { LibrarySearchCriteria } from '@/lib/validators/library-search'
-import type { LibrarySearchHit, LibrarySearchResult } from '@/lib/services/library-search'
+import type { LibrarySearchHit } from '@/lib/services/library-search'
 
 type SearchStatus = 'idle' | 'loading' | 'results' | 'error'
 

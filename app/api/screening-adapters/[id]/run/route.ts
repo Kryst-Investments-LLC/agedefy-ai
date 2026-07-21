@@ -8,6 +8,7 @@ import { db } from '@/lib/db'
 import { callAdapter } from '@/lib/external-screening'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { requireAuthWithRole } from '@/lib/rbac'
 import { runAdapterSchema } from '@/lib/validators/external-screening'
 
 /**
@@ -27,9 +28,8 @@ export async function POST(
   if (blocked) return blocked
 
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const { id } = await params
 

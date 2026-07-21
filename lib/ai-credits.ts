@@ -332,6 +332,14 @@ export async function reserveAICredits(params: ReserveAICreditParams): Promise<A
   const requestedCredits = Math.max(1, Math.trunc(params.requestedCredits))
 
   return db.$transaction(async (tx) => {
+    // Serialize concurrent reservations for the same user. Without this, two
+    // requests in ReadCommitted both read the same balance, neither sees the
+    // other's uncommitted PENDING reservation, and both reserve — overspending
+    // a paid, revenue-gating resource (TOCTOU). A per-user, transaction-scoped
+    // advisory lock forces the second reservation to wait until the first
+    // commits, so it reads the (now-reduced) balance before allocating.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('ai-credits'), hashtext(${params.userId}))`
+
     const snapshot = await buildAICreditBalanceSnapshot(tx, params.userId, params.now)
     const allocations = buildReservationAllocations(snapshot, requestedCredits)
     const metadata = sanitizeMetadata({

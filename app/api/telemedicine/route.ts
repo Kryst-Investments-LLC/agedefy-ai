@@ -8,22 +8,28 @@ import { db } from "@/lib/db"
 import { buildApiCanonicalEventContext } from "@/lib/events/api-context"
 import { consultationRecordToEvent } from "@/lib/events/ingestion"
 import { PrismaTransactionalHealthEventIngestionService } from "@/lib/events/transactional-ingestion-service"
+import { listPageHeaders, overfetchTake, parseListPageParams, splitOverfetch } from "@/lib/http/pagination"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { consultationRequestSchema } from "@/lib/validators/telemedicine"
 
-// GET: List telehealth providers
+// GET: List telehealth providers (paginated: ?limit=&offset=, X-Page-* headers)
 export async function GET(request: NextRequest) {
   const blocked = await applyRateLimit(request)
   if (blocked) return blocked
 
-  const providers = await db.telehealthProvider.findMany({
+  const { searchParams } = new URL(request.url)
+  const { limit, offset } = parseListPageParams(searchParams, { defaultLimit: 100, maxLimit: 500 })
+  const rows = await db.telehealthProvider.findMany({
     where: { acceptingNew: true },
     orderBy: { name: "asc" },
+    skip: offset,
+    take: overfetchTake(limit),
   })
+  const { items, hasMore } = splitOverfetch(rows, limit)
 
-  return NextResponse.json(providers)
+  return NextResponse.json(items, { headers: listPageHeaders({ limit, offset, hasMore }) })
 }
 
 // POST: Request a consultation

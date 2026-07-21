@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
     MAX_PAGE_SIZE,
   )
 
-  const where: Record<string, unknown> = { inStock: true }
+  // Products are never surfaced merely because they exist in the catalog.
+  // A signed governance review must promote them to APPROVED first.
+  const where: Record<string, unknown> = { inStock: true, reviewStatus: "APPROVED" }
   if (category) {
     const validCategories = ["SUPPLEMENT", "PEPTIDE", "TEST_KIT", "DEVICE", "BUNDLE"]
     if (validCategories.includes(category.toUpperCase())) {

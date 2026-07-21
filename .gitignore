@@ -16,6 +16,8 @@ tsconfig.tsbuildinfo
 .env
 .env.local
 .env.*.local
+k8s/**/secrets/*.env
+!k8s/**/secrets/*.env.example
 
 # AI-assistant local/personal files (never commit personal prefs or secrets)
 CLAUDE.local.md

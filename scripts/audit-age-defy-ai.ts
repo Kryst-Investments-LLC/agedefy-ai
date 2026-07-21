@@ -109,23 +109,6 @@ function isPlaceholderEnvValue(value: string | undefined) {
   ].some((marker) => normalized.includes(marker))
 }
 
-function checkRequiredEnv(
-  env: Record<string, string>,
-  required: string[],
-  name: string,
-): CheckResult {
-  const missing = required.filter((key) => isPlaceholderEnvValue(env[key]))
-
-  return {
-    name: `Env: ${name} required variables`,
-    passed: missing.length === 0,
-    details:
-      missing.length === 0
-        ? ""
-        : `Missing or placeholder env vars in ${name}: ${missing.join(", ")}`,
-  }
-}
-
 function checkBooleanEnv(
   env: Record<string, string>,
   expectations: { key: string; expected: "true" | "false" }[],

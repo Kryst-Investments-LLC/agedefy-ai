@@ -4,9 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logAudit } from '@/lib/audit'
+import { grantGdprConsents } from '@/lib/consent'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { processReferralReward } from '@/lib/sharing/referral-reward'
 import { onboardingCompleteSchema } from '@/lib/validators/onboarding'
+import type { GdprConsentCategory } from '@/lib/validators/workspace'
 
 /**
  * POST /api/onboarding
@@ -37,39 +39,41 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { step1, step2, step3, step4 } = parsed.data
+  const { step1, step2, step3, step4, consent } = parsed.data
 
-  await db.userProfile.upsert({
-    where: { userId: session.user.id },
-    update: {
-      dateOfBirth: new Date(step1.dateOfBirth),
-      biologicalSex: step1.biologicalSex,
-      healthGoals: JSON.stringify(step2.healthGoals),
-      primaryMotivation: step2.primaryMotivation,
-      riskTolerance: step2.riskTolerance,
-      healthConditions: JSON.stringify(step3.healthConditions),
-      supplementStack: JSON.stringify(step3.supplementStack),
-      dietaryPattern: step4.dietaryPattern,
-      activityLevel: step4.activityLevel,
-      sleepQuality: step4.sleepQuality,
-      stressLevel: step4.stressLevel,
-      onboardingCompletedAt: new Date(),
-    },
-    create: {
-      userId: session.user.id,
-      dateOfBirth: new Date(step1.dateOfBirth),
-      biologicalSex: step1.biologicalSex,
-      healthGoals: JSON.stringify(step2.healthGoals),
-      primaryMotivation: step2.primaryMotivation,
-      riskTolerance: step2.riskTolerance,
-      healthConditions: JSON.stringify(step3.healthConditions),
-      supplementStack: JSON.stringify(step3.supplementStack),
-      dietaryPattern: step4.dietaryPattern,
-      activityLevel: step4.activityLevel,
-      sleepQuality: step4.sleepQuality,
-      stressLevel: step4.stressLevel,
-      onboardingCompletedAt: new Date(),
-    },
+  // data-processing is mandatory (enforced by the schema); ai-health-info is opt-in.
+  const grantedCategories: GdprConsentCategory[] = [
+    "data-processing",
+    ...(consent.aiHealthInfo ? (["ai-health-info"] as const) : []),
+  ]
+
+  const profileData = {
+    dateOfBirth: new Date(step1.dateOfBirth),
+    biologicalSex: step1.biologicalSex,
+    healthGoals: JSON.stringify(step2.healthGoals),
+    primaryMotivation: step2.primaryMotivation,
+    riskTolerance: step2.riskTolerance,
+    healthConditions: JSON.stringify(step3.healthConditions),
+    supplementStack: JSON.stringify(step3.supplementStack),
+    dietaryPattern: step4.dietaryPattern,
+    activityLevel: step4.activityLevel,
+    sleepQuality: step4.sleepQuality,
+    stressLevel: step4.stressLevel,
+    onboardingCompletedAt: new Date(),
+  }
+
+  // Persist the profile (PHI) and the consent grant atomically — we must never
+  // store health data without the consent that authorizes processing it.
+  await db.$transaction(async (tx) => {
+    await tx.userProfile.upsert({
+      where: { userId: session.user.id },
+      update: profileData,
+      create: { userId: session.user.id, ...profileData },
+    })
+    await grantGdprConsents(session.user.id, grantedCategories, {
+      client: tx,
+      policyVersion: consent.policyVersion,
+    })
   })
 
   await logAudit({
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
     action: 'onboarding.complete',
     entityType: 'UserProfile',
     entityId: session.user.id,
-    details: { goals: step2.healthGoals },
+    details: { goals: step2.healthGoals, consentedCategories: grantedCategories },
   })
 
   // Award referral reward to referrer (fire-and-forget)

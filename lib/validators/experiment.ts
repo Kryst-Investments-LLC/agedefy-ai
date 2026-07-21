@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { ExperimentCandidateKind, ExperimentCandidateStatus } from '@prisma/client'
+import type { ExperimentCandidateStatus } from '@prisma/client'
 
 // ── Ordered lifecycle — only forward adjacent transitions allowed ──────────────
 

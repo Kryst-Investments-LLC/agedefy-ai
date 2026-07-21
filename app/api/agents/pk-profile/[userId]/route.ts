@@ -13,8 +13,10 @@ import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { listPageHeaders, overfetchTake, parseListPageParams, splitOverfetch } from "@/lib/http/pagination"
 import { logger } from "@/lib/logger"
 import { requireAuthWithRole } from "@/lib/middleware/auth-role"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 import { fitPkProfile, getPkProfile } from "@/lib/agents/pk-fitter"
 
@@ -42,26 +44,33 @@ export async function GET(
       return NextResponse.json({ profile })
     }
 
-    // All profiles for user
-    const profiles = await db.userPkProfile.findMany({
+    // All profiles for user (paginated: ?limit=&offset=, X-Page-* headers)
+    const { limit, offset } = parseListPageParams(searchParams, { defaultLimit: 100, maxLimit: 500 })
+    const rows = await db.userPkProfile.findMany({
       where: { userId: params.userId },
       orderBy: { fittedAt: "desc" },
+      skip: offset,
+      take: overfetchTake(limit),
     })
+    const { items, hasMore } = splitOverfetch(rows, limit)
 
-    return NextResponse.json({
-      userId: params.userId,
-      profiles: profiles.map((p) => ({
-        compoundId: p.compoundId,
-        vd: p.vd,
-        cl: p.cl,
-        ka: p.ka,
-        f: p.f,
-        n: p.n,
-        rmse: p.rmse,
-        fittedAt: p.fittedAt.toISOString(),
-        source: "fitted" as const,
-      })),
-    })
+    return NextResponse.json(
+      {
+        userId: params.userId,
+        profiles: items.map((p) => ({
+          compoundId: p.compoundId,
+          vd: p.vd,
+          cl: p.cl,
+          ka: p.ka,
+          f: p.f,
+          n: p.n,
+          rmse: p.rmse,
+          fittedAt: p.fittedAt.toISOString(),
+          source: "fitted" as const,
+        })),
+      },
+      { headers: listPageHeaders({ limit, offset, hasMore }) },
+    )
   } catch (err) {
     logger.error("GET /api/agents/pk-profile failed", { error: String(err) })
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -77,6 +86,8 @@ export async function POST(
 
   const authError = requireAuthWithRole(session, "RESEARCHER", "CLINICIAN", "ADMIN")
   if (authError instanceof NextResponse) return authError
+  const mfaRequired = await requireRecentMfa(authError.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: z.infer<typeof fitBodySchema>
   try {

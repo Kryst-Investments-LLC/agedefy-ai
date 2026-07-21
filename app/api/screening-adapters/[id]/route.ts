@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { encryptExternalSecret } from '@/lib/external-secret-crypto'
 import { logger } from '@/lib/logger'
+import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 import { updateAdapterSchema } from '@/lib/validators/external-screening'
 
 const SAFE_SELECT = {
@@ -29,9 +32,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
 
   const { id } = await params
 
@@ -64,9 +66,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { id } = await params
 
@@ -95,9 +99,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    const updateData = {
+      ...parsed.data,
+      ...(parsed.data.secret ? { secret: encryptExternalSecret(parsed.data.secret) } : {}),
+    }
+
     const updated = await db.externalScreeningAdapter.update({
       where: { id },
-      data: parsed.data,
+      data: updateData,
       select: SAFE_SELECT,
     })
 
@@ -119,9 +128,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authResult = requireAuthWithRole(session, 'RESEARCHER', 'CLINICIAN', 'ADMIN')
+  if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { id } = await params
 

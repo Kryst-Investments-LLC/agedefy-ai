@@ -73,6 +73,7 @@ async function postGraphQL<T>(query: string, variables: Record<string, unknown>)
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!response.ok) return null
   return (await response.json()) as T

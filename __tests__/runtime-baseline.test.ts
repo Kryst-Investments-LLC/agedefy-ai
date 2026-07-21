@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { getRuntimeBaseline, parseEnvironment, shouldEnforceRuntimeRequirements } from "@/lib/env"
+import {
+  assertNoDevFallbacksInProduction,
+  getRuntimeBaseline,
+  parseEnvironment,
+  shouldEnforceRuntimeRequirements,
+} from "@/lib/env"
 
 const validSecret = "development-secret-change-me-before-production"
 
@@ -32,6 +37,8 @@ describe("runtime baseline", () => {
       "database.postgres_required",
       "ratelimit.redis_required",
       "observability.otel_required",
+      "cron.secret_required",
+      "auth.test_endpoint_forbidden",
     ])
   })
 
@@ -45,12 +52,44 @@ describe("runtime baseline", () => {
       REDIS_TOKEN: "token",
       OTEL_SERVICE_NAME: "biozephyra-ai-staging",
       OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
     })
 
     expect(baseline.productionBaselineRequired).toBe(true)
     expect(baseline.databaseProvider).toBe("postgresql")
     expect(baseline.prismaRuntime).toBe("postgres")
     expect(baseline.issues).toHaveLength(0)
+  })
+
+  it("fails closed when enabled integrations are missing dependencies", () => {
+    const baseline = getRuntimeBaseline({
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/agedefy",
+      APP_ENV: "production",
+      REDIS_URL: "https://redis.example.com",
+      REDIS_TOKEN: "token",
+      OTEL_SERVICE_NAME: "agedefy",
+      OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com",
+      CRON_SECRET: "production-cron-secret-material-change-me",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
+      SSO_ENABLED: "true",
+      ENABLE_FEDERATED_LEARNING: "true",
+      ENABLE_CAUSAL_SIDECAR: "true",
+      ENABLE_NEO4J_BACKEND: "true",
+      ENABLE_SCREENING_SIDECAR: "true",
+      ENABLE_OPENMM_SIDECAR: "true",
+      ENABLE_FEP_SIDECAR: "true",
+    })
+
+    expect(baseline.issues.map((issue) => issue.code)).toEqual([
+      "integration.sso_configuration_required",
+      "integration.federated_learning_url_required",
+      "integration.causal_sidecar_url_required",
+      "integration.neo4j_configuration_required",
+      "integration.screening_sidecar_url_required",
+      "integration.openmm_sidecar_url_required",
+      "integration.fep_sidecar_url_required",
+    ])
   })
 
   it("parses optional postgres runtime environment variables", () => {
@@ -70,5 +109,40 @@ describe("runtime baseline", () => {
 
     expect(parsed.data.POSTGRES_DATABASE_URL).toContain("postgresql://")
     expect(parsed.data.PRISMA_RUNTIME).toBe("postgres")
+  })
+
+  describe("assertNoDevFallbacksInProduction (P0-CFG-004/005)", () => {
+    const realSecret = "x".repeat(40)
+    const pgUrl = "postgresql://postgres@127.0.0.1:5432/agedefy"
+
+    it("throws in production without a real NEXTAUTH_SECRET (refuses the dev fallback)", () => {
+      expect(() =>
+        assertNoDevFallbacksInProduction({ DATABASE_URL: pgUrl, NEXTAUTH_SECRET: "short" }, "production"),
+      ).toThrow(/NEXTAUTH_SECRET/)
+      expect(() =>
+        assertNoDevFallbacksInProduction({ DATABASE_URL: pgUrl }, "production"),
+      ).toThrow(/NEXTAUTH_SECRET/)
+    })
+
+    it("throws in production without a database URL (refuses the SQLite fallback)", () => {
+      expect(() =>
+        assertNoDevFallbacksInProduction({ NEXTAUTH_SECRET: realSecret }, "production"),
+      ).toThrow(/DATABASE_URL/)
+    })
+
+    it("passes in production with a real secret and database URL", () => {
+      expect(() =>
+        assertNoDevFallbacksInProduction({ NEXTAUTH_SECRET: realSecret, DATABASE_URL: pgUrl }, "production"),
+      ).not.toThrow()
+      expect(() =>
+        assertNoDevFallbacksInProduction({ NEXTAUTH_SECRET: realSecret, POSTGRES_DATABASE_URL: pgUrl }, "production"),
+      ).not.toThrow()
+    })
+
+    it("is a no-op outside production (dev/test keep their conveniences)", () => {
+      expect(() => assertNoDevFallbacksInProduction({}, "development")).not.toThrow()
+      expect(() => assertNoDevFallbacksInProduction({}, "test")).not.toThrow()
+      expect(() => assertNoDevFallbacksInProduction({}, undefined)).not.toThrow()
+    })
   })
 })

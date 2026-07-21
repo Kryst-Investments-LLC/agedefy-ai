@@ -8,6 +8,7 @@ import { cancelOrchestrationJob } from "@/lib/jobs/queue"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
 import { adminCancelOrRetryJobRequestSchema } from "@/lib/validators/jobs"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +18,8 @@ export async function POST(
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = await request.json().catch(() => null)
   const parsed = adminCancelOrRetryJobRequestSchema.safeParse(body ?? {})

@@ -9,6 +9,7 @@ import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 const updateSchema = z.object({
   title: z.string().trim().min(5, "Title must be at least 5 characters").max(200).optional(),
@@ -85,6 +86,8 @@ export async function DELETE(
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const { id } = await params
 

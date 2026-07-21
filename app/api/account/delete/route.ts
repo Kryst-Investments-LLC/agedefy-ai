@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 
+import { eraseUserResidualPii } from "@/lib/account/erasure"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
@@ -8,6 +9,7 @@ import { logAudit } from "@/lib/audit"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 export async function DELETE(request: NextRequest) {
   const blocked = await applyRateLimit(request, { maxRequests: 3, windowMs: 60_000 })
@@ -18,6 +20,9 @@ export async function DELETE(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = await request.json().catch(() => null)
 
@@ -31,25 +36,25 @@ export async function DELETE(request: NextRequest) {
   const tenantContext = await deriveTenantContextWithValidation({ sessionUser: session.user, request })
   if (!tenantContext) return NextResponse.json({ error: "Forbidden: invalid tenant" }, { status: 403 })
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { email: true },
-  })
-
   return executeRouteIdempotentJsonMutation({
     request,
     tenantId: tenantContext.tenantId,
     actorUserId: session.user.id,
     requestFingerprint: createIdempotencyFingerprint({ userId: session.user.id, confirmation: body.confirmation }),
     execute: async () => {
+      // Right to erasure (GDPR Art. 17). The deletion audit is recorded WITHOUT
+      // the email so no new PII enters the tamper-evident chain (only entityId
+      // identifies the user).
       await logAudit({
-        actorEmail: user?.email ?? session.user.email ?? undefined,
         tenantId: tenantContext.tenantId,
         action: "account.deleted",
         entityType: "user",
         entityId: session.user.id,
-        details: { email: user?.email },
       })
+
+      // Erase residual PII (idempotency cache + audit actorEmail) that a plain
+      // cascade would leave behind, then delete the user.
+      await eraseUserResidualPii(session.user.id)
 
       await db.user.delete({ where: { id: session.user.id } })
 

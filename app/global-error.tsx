@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
+import { reportClientError } from "@/lib/observability/report-client-error"
 
 export default function GlobalError({
   error,
@@ -10,6 +12,10 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    reportClientError(error, "global")
+  }, [error])
+
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 text-center text-foreground">

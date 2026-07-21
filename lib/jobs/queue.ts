@@ -4,6 +4,7 @@ import { createReviewItem, logAudit } from "@/lib/audit"
 import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
+import { jobExecutionCounter } from "@/lib/observability/telemetry"
 
 const ORCHESTRATION_QUEUES: OrchestrationJobQueue[] = ["AI", "INGESTION", "NOTIFICATION", "GOVERNANCE", "LOOP"]
 const BACKLOG_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]
@@ -11,6 +12,22 @@ const TERMINAL_STATUSES: OrchestrationJobStatus[] = ["SUCCEEDED", "DEAD_LETTER",
 const RETRYABLE_STATUSES: OrchestrationJobStatus[] = ["QUEUED", "FAILED"]
 
 type PrismaClientLike = PrismaClient | Prisma.TransactionClient
+
+/**
+ * Thrown by enqueueOrchestrationJob when a tenant already has too many pending
+ * (non-terminal) jobs — producer-side backpressure so a runaway producer can't
+ * grow the queue without bound (P1-PERF-015). Routes should map this to 429.
+ */
+export class JobQuotaExceededError extends Error {
+  constructor(
+    readonly tenantId: string,
+    readonly limit: number,
+    readonly pending: number,
+  ) {
+    super(`Job quota exceeded for tenant ${tenantId}: ${pending} pending >= ${limit}`)
+    this.name = "JobQuotaExceededError"
+  }
+}
 
 export type OrchestrationJobStatusCounts = Record<OrchestrationJobStatus, number>
 
@@ -58,6 +75,8 @@ export type LeaseOrchestrationJobsOptions = {
   batchSize?: number
   leaseMs?: number
   now?: Date
+  /** Max jobs one tenant may hold LEASED at once (fairness). 0/undefined disables. */
+  maxConcurrentLeasesPerTenant?: number
 }
 
 export type OrchestrationJobListOptions = {
@@ -101,6 +120,12 @@ export function getJobRuntimeConfig() {
     maxAttempts: parseNumber(env.JOB_WORKER_MAX_ATTEMPTS, 8),
     retryDelayMs: parseNumber(env.JOB_WORKER_RETRY_DELAY_MS, 15_000),
     leaseMs: parseNumber(env.JOB_WORKER_LEASE_MS, 120_000),
+    // Per-tenant fairness cap: max jobs a single tenant may hold LEASED at once,
+    // so one tenant's backlog can't starve the shared worker pool. 0 disables it.
+    maxConcurrentLeasesPerTenant: parseNumber(env.JOB_MAX_CONCURRENT_LEASES_PER_TENANT, 200),
+    // Producer-side backpressure: reject enqueue once a tenant has this many
+    // pending (non-terminal) jobs, bounding queue growth. 0 disables it.
+    maxPendingPerTenant: parseNumber(env.JOB_MAX_PENDING_PER_TENANT, 50_000),
     tenantId: env.JOB_TENANT_ID?.trim() || undefined,
   }
 }
@@ -108,6 +133,7 @@ export function getJobRuntimeConfig() {
 export async function enqueueOrchestrationJob(
   input: EnqueueOrchestrationJobInput,
   client: PrismaClientLike = db,
+  options: { maxPendingPerTenant?: number } = {},
 ): Promise<OrchestrationJob> {
   if (input.dedupeKey) {
     const existing = await client.orchestrationJob.findUnique({
@@ -121,6 +147,19 @@ export async function enqueueOrchestrationJob(
 
     if (existing) {
       return existing
+    }
+  }
+
+  // Producer-side backpressure (P1-PERF-015): cap a tenant's pending (non-terminal)
+  // jobs. Checked after the dedupe short-circuit so a duplicate never counts against
+  // the quota or raises an error.
+  const maxPending = options.maxPendingPerTenant ?? getJobRuntimeConfig().maxPendingPerTenant
+  if (maxPending > 0) {
+    const pending = await client.orchestrationJob.count({
+      where: { tenantId: input.tenantId, status: { notIn: TERMINAL_STATUSES } },
+    })
+    if (pending >= maxPending) {
+      throw new JobQuotaExceededError(input.tenantId, maxPending, pending)
     }
   }
 
@@ -154,10 +193,36 @@ export async function leaseAvailableOrchestrationJobs(
   const now = options.now ?? new Date()
   const batchSize = options.batchSize ?? getJobRuntimeConfig().batchSize
   const leaseMs = options.leaseMs ?? getJobRuntimeConfig().leaseMs
+  const maxPerTenant = options.maxConcurrentLeasesPerTenant ?? getJobRuntimeConfig().maxConcurrentLeasesPerTenant
+  const capEnabled = typeof maxPerTenant === "number" && maxPerTenant > 0
+
+  // Per-tenant fairness (P1-PERF-015): count each tenant's currently-active leases
+  // so a single tenant's backlog can't monopolise the shared worker pool. Every
+  // tenant seen in the scan keeps its remaining headroom (which may be <= 0);
+  // tenants already at the cap are also excluded from the candidate scan up front
+  // (only in the cross-tenant case — a single-tenant lease relies on the per-
+  // candidate check below, since the tenantId filter already scopes the query).
+  const tenantHeadroom = new Map<string, number>()
+  const cappedTenantIds: string[] = []
+  if (capEnabled) {
+    const activeByTenant = await client.orchestrationJob.groupBy({
+      by: ["tenantId"],
+      where: { status: "LEASED", leaseExpiresAt: { gt: now } },
+      _count: { _all: true },
+    })
+    for (const row of activeByTenant) {
+      const headroom = maxPerTenant - row._count._all
+      tenantHeadroom.set(row.tenantId, headroom)
+      if (headroom <= 0) cappedTenantIds.push(row.tenantId)
+    }
+  }
 
   const candidates = await client.orchestrationJob.findMany({
     where: {
       ...(options.tenantId ? { tenantId: options.tenantId } : {}),
+      ...(capEnabled && !options.tenantId && cappedTenantIds.length > 0
+        ? { tenantId: { notIn: cappedTenantIds } }
+        : {}),
       ...(options.queue ? { queue: options.queue } : {}),
       availableAt: { lte: now },
       OR: [
@@ -172,6 +237,12 @@ export async function leaseAvailableOrchestrationJobs(
   const leased: OrchestrationJob[] = []
 
   for (const candidate of candidates) {
+    if (capEnabled) {
+      // A tenant not seen in the active scan has full headroom (maxPerTenant).
+      const remaining = tenantHeadroom.get(candidate.tenantId) ?? maxPerTenant
+      if (remaining <= 0) continue
+    }
+
     const claimed = await client.orchestrationJob.updateMany({
       where: {
         id: candidate.id,
@@ -192,6 +263,11 @@ export async function leaseAvailableOrchestrationJobs(
       continue
     }
 
+    if (capEnabled) {
+      const remaining = tenantHeadroom.get(candidate.tenantId) ?? maxPerTenant
+      tenantHeadroom.set(candidate.tenantId, remaining - 1)
+    }
+
     const job = await client.orchestrationJob.findUnique({ where: { id: candidate.id } })
     if (job) {
       leased.push(job)
@@ -201,12 +277,37 @@ export async function leaseAvailableOrchestrationJobs(
   return leased
 }
 
+/**
+ * Return a leased-but-unstarted job to the queue for immediate handoff to
+ * another worker (graceful shutdown / job lease handoff, P1-OPS-011). Resets the
+ * lease and undoes the attempt increment applied at lease time, since the job
+ * never actually ran, so a rolling deploy never burns a retry. No-op if the job
+ * is no longer LEASED (already completed/failed/reclaimed). Returns the number of
+ * jobs released (0 or 1).
+ */
+export async function releaseOrchestrationJob(
+  jobId: string,
+  client: PrismaClientLike = db,
+): Promise<number> {
+  const released = await client.orchestrationJob.updateMany({
+    where: { id: jobId, status: "LEASED" },
+    data: {
+      status: "QUEUED",
+      availableAt: new Date(),
+      leasedAt: null,
+      leaseExpiresAt: null,
+      attempts: { decrement: 1 },
+    },
+  })
+  return released.count
+}
+
 export async function completeOrchestrationJob(
   jobId: string,
   result: Prisma.InputJsonValue | undefined,
   client: PrismaClientLike = db,
 ): Promise<OrchestrationJob> {
-  return client.orchestrationJob.update({
+  const updated = await client.orchestrationJob.update({
     where: { id: jobId },
     data: {
       status: "SUCCEEDED",
@@ -217,6 +318,8 @@ export async function completeOrchestrationJob(
       lastError: null,
     },
   })
+  jobExecutionCounter.add(1, { status: "succeeded", queue: updated.queue, jobType: updated.jobType })
+  return updated
 }
 
 export async function failOrchestrationJob(
@@ -245,6 +348,12 @@ export async function failOrchestrationJob(
       leasedAt: null,
       completedAt: terminalFailure ? new Date() : null,
     },
+  })
+
+  jobExecutionCounter.add(1, {
+    status: terminalFailure ? "dead_letter" : "failed",
+    queue: updated.queue,
+    jobType: updated.jobType,
   })
 
   if (terminalFailure) {
@@ -300,6 +409,39 @@ export async function retryOrchestrationJob(
       lastError: null,
     },
   })
+}
+
+/**
+ * Bulk dead-letter replay (P1-PERF-015): return DEAD_LETTER jobs to the queue
+ * with a FRESH retry budget (attempts reset to 0) — for replaying after the
+ * root cause is fixed. Unlike retryOrchestrationJob (a single manual retry that
+ * keeps attempts, giving one more shot), this restores the full maxAttempts.
+ * Scoped to a tenant; optionally narrowed to a queue or a specific job list.
+ * Returns the number of jobs replayed.
+ */
+export async function replayDeadLetterJobs(
+  options: { tenantId: string; queue?: OrchestrationJobQueue; jobIds?: string[]; now?: Date },
+  client: PrismaClientLike = db,
+): Promise<number> {
+  const now = options.now ?? new Date()
+  const result = await client.orchestrationJob.updateMany({
+    where: {
+      status: "DEAD_LETTER",
+      tenantId: options.tenantId,
+      ...(options.queue ? { queue: options.queue } : {}),
+      ...(options.jobIds ? { id: { in: options.jobIds } } : {}),
+    },
+    data: {
+      status: "QUEUED",
+      attempts: 0,
+      availableAt: now,
+      leasedAt: null,
+      leaseExpiresAt: null,
+      completedAt: null,
+      lastError: null,
+    },
+  })
+  return result.count
 }
 
 export async function cancelOrchestrationJob(

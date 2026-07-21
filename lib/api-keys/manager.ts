@@ -9,6 +9,7 @@
  */
 
 import crypto from 'crypto'
+import type { UserRole } from '@prisma/client'
 
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
@@ -33,6 +34,7 @@ export interface ValidatedKey {
   scopes: string[]
   rateLimitPerMin: number
   sandbox: boolean
+  ownerRole: UserRole
 }
 
 /**
@@ -87,6 +89,7 @@ export async function validateAPIKey(rawKey: string): Promise<ValidatedKey | nul
       sandbox: true,
       expiresAt: true,
       revokedAt: true,
+      user: { select: { role: true } },
     },
   })
 
@@ -107,6 +110,7 @@ export async function validateAPIKey(rawKey: string): Promise<ValidatedKey | nul
     scopes: record.scopes.split(',').map((s) => s.trim()),
     rateLimitPerMin: record.rateLimitPerMin,
     sandbox: record.sandbox,
+    ownerRole: record.user.role,
   }
 }
 

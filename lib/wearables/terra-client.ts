@@ -43,6 +43,7 @@ export async function createWidgetSession(
       providers: providers ?? ['GARMIN', 'FITBIT', 'OURA', 'WHOOP', 'APPLE', 'GOOGLE'],
       language: 'en',
     }),
+    signal: AbortSignal.timeout(10_000),
   })
 
   if (!response.ok) {
@@ -93,6 +94,7 @@ export async function deauthUser(terraUserId: string): Promise<boolean> {
         'x-api-key': config.apiKey,
         'dev-id': config.devId,
       },
+      signal: AbortSignal.timeout(10_000),
     }
   )
 

@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { logAudit } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
+import { grantGdprConsents } from '@/lib/consent'
 import { db } from '@/lib/db'
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from '@/lib/idempotency'
 import { createRequestContext, withRequestContextHeaders } from '@/lib/observability/request-context'
@@ -99,41 +100,9 @@ export async function POST(request: NextRequest) {
     actorUserId: session.user.id,
     requestFingerprint: createIdempotencyFingerprint({ action: 'consent-grant', userId: session.user.id, categories }),
     execute: async () => {
-      const existing = await db.userConsentGrant.findUnique({
-        where: { userId: session.user.id },
-      })
-
-      const existingEntries = (existing?.gdprConsents as Array<{ category: string; granted: boolean; grantedAt?: string }>) ?? []
-
-      const now = new Date().toISOString()
-      const mergedEntries = GDPR_CONSENT_CATEGORIES.map((cat: GdprConsentCategory) => {
-        const isGranted = categories.includes(cat)
-        const prev = existingEntries.find((e) => e.category === cat)
-        if (isGranted) {
-          return { category: cat, granted: true, grantedAt: prev?.granted ? (prev.grantedAt ?? now) : now }
-        }
-        return prev ?? { category: cat, granted: false }
-      })
-
-      const consent = await db.userConsentGrant.upsert({
-        where: { userId: session.user.id },
-        create: {
-          userId: session.user.id,
-          status: 'active',
-          legalBasis: legalBasis ?? 'explicit-consent',
-          scopes: categories,
-          gdprConsents: mergedEntries,
-          policyVersion: policyVersion ?? '1.0',
-        },
-        update: {
-          status: 'active',
-          gdprConsents: mergedEntries,
-          consentVersion: { increment: 1 },
-          revokedAt: null,
-          revocationReason: null,
-          ...(legalBasis ? { legalBasis } : {}),
-          ...(policyVersion ? { policyVersion } : {}),
-        },
+      const consent = await grantGdprConsents(session.user.id, categories as GdprConsentCategory[], {
+        legalBasis,
+        policyVersion,
       })
 
       await logAudit({

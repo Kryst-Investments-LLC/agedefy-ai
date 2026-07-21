@@ -5,9 +5,9 @@ groups:
       - alert: ApiErrorRateHigh
         expr: |
           (
-            sum(rate(http_request_duration_ms_count{http_status_code=~"5.."}[5m]))
+            sum(rate(biozephyra_http_request_duration_ms_count{http_status_code=~"5.."}[5m]))
             /
-            sum(rate(http_request_duration_ms_count[5m]))
+            sum(rate(biozephyra_http_request_duration_ms_count[5m]))
           ) > 0.01
         for: 5m
         labels:
@@ -20,9 +20,9 @@ groups:
       - alert: ErrorBudgetBurnFast
         expr: |
           (
-            sum(increase(http_request_duration_ms_count{http_status_code=~"5.."}[1h]))
+            sum(increase(biozephyra_http_request_duration_ms_count{http_status_code=~"5.."}[1h]))
             /
-            sum(increase(http_request_duration_ms_count[1h]))
+            sum(increase(biozephyra_http_request_duration_ms_count[1h]))
           ) > 0.1
         for: 5m
         labels:
@@ -36,7 +36,7 @@ groups:
     rules:
       - alert: ApiLatencyP99High
         expr: |
-          histogram_quantile(0.99, rate(http_request_duration_ms_bucket{route!~"/api/ai/.*|/api/health"}[10m])) > 500
+          histogram_quantile(0.99, rate(biozephyra_http_request_duration_ms_bucket{route!~"/api/ai/.*|/api/health"}[10m])) > 500
         for: 10m
         labels:
           severity: P2
@@ -47,7 +47,7 @@ groups:
 
       - alert: AiProviderLatencyP95High
         expr: |
-          histogram_quantile(0.95, rate(ai_request_latency_ms_bucket[10m])) > 5000
+          histogram_quantile(0.95, rate(biozephyra_ai_request_latency_ms_bucket[10m])) > 5000
         for: 10m
         labels:
           severity: P2
@@ -61,7 +61,7 @@ groups:
     rules:
       - alert: CircuitBreakerOpen
         expr: |
-          increase(circuit_breaker_state_change_count{state="OPEN"}[5m]) > 0
+          increase(biozephyra_circuit_breaker_state_change_count{state="open"}[5m]) > 0
         for: 0m
         labels:
           severity: P1
@@ -71,7 +71,7 @@ groups:
 
       - alert: JobQueueStale
         expr: |
-          max(time() - orchestration_job_oldest_queued_timestamp) > 300
+          max(biozephyra_orchestration_job_oldest_queued_age_ms) > 300000
         for: 5m
         labels:
           severity: P2
@@ -81,7 +81,7 @@ groups:
 
       - alert: OutboxDispatchDelayed
         expr: |
-          histogram_quantile(0.95, rate(outbox_dispatch_latency_ms_bucket[15m])) > 60000
+          histogram_quantile(0.95, rate(biozephyra_outbox_dispatch_latency_ms_bucket[15m])) > 60000
         for: 15m
         labels:
           severity: P2
@@ -91,19 +91,127 @@ groups:
 
       - alert: RateLimitAbuseDetected
         expr: |
-          increase(rate_limit_abuse_count[5m]) > 0
+          increase(biozephyra_rate_limit_abuse_count[5m]) > 0
         for: 0m
         labels:
           severity: P3
         annotations:
           summary: "Rate limit abuse detected from {{ $labels.ip }}"
 
-      - alert: DbPoolHighUtilization
+      - alert: DbPoolSaturated
+        # Prisma exposes no pool-max gauge; sustained queries_wait > 0 means every
+        # pooled connection is busy and queries are queuing for one (true saturation).
         expr: |
-          prisma_pool_active_connections / prisma_pool_max_connections > 0.80
+          max(biozephyra_db_client_queries_wait) > 0
         for: 2m
         labels:
           severity: P1
           slo: db-pool
         annotations:
-          summary: "Database connection pool utilization exceeds 80%"
+          summary: "DB pool saturated: queries waiting for a connection for 2m"
+          description: "Waiting queries: {{ $value }}; consider raising connection_limit or reducing long transactions"
+
+  - name: biozephyra-domain-slos
+    interval: 30s
+    rules:
+      - alert: AuthFailureSpike
+        # Self-calibrating credential-stuffing signal: the recent failure rate is
+        # both above a small absolute floor AND >5x the 6h baseline. The floor
+        # suppresses noise when the baseline is ~0. Tune the floor per traffic.
+        expr: |
+          (
+            sum(rate(biozephyra_auth_failure_count[5m])) > 0.1
+          )
+          and
+          (
+            sum(rate(biozephyra_auth_failure_count[5m]))
+            > 5 * sum(rate(biozephyra_auth_failure_count[6h]))
+          )
+        for: 5m
+        labels:
+          severity: P2
+          slo: authentication
+        annotations:
+          summary: "Auth failure rate spiked >5x baseline (possible credential stuffing)"
+          description: "Failed-auth rate: {{ $value }}/s over 5m"
+
+      - alert: PaymentWebhookFailureRateHigh
+        # Payments success SLO is >=99.5%; alert when the terminal-failure ratio
+        # (duplicates excluded) exceeds 1% over 15m.
+        expr: |
+          sum(rate(biozephyra_stripe_webhook_count{outcome="failed"}[15m]))
+          /
+          sum(rate(biozephyra_stripe_webhook_count{outcome=~"success|failed"}[15m]))
+          > 0.01
+        for: 15m
+        labels:
+          severity: P1
+          slo: payments
+        annotations:
+          summary: "Stripe webhook failure ratio exceeds 1% over 15m"
+          description: "Failure ratio: {{ $value | humanizePercentage }}"
+
+      - alert: CandidateStageSlaBreached
+        # A lifecycle stage's P95 time-in-stage exceeds its stall window. 7 days is
+        # a conservative starting threshold; split by stage and tune per-stage SLAs.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(biozephyra_candidate_stage_duration_ms_bucket[1d])) by (le, stage)
+          ) > 604800000
+        for: 1h
+        labels:
+          severity: P2
+          slo: candidate-workflow
+        annotations:
+          summary: "Candidate stage {{ $labels.stage }} P95 dwell time exceeds 7 days"
+          description: "Stage {{ $labels.stage }} P95: {{ $value }}ms"
+
+  - name: biozephyra-reliability-cost
+    interval: 30s
+    rules:
+      - alert: OutboxEventDeadLettered
+        # A canonical event exhausted its retries and parked in dead_letter —
+        # a poison message that needs manual inspection/replay.
+        expr: |
+          increase(biozephyra_outbox_dispatch_count{status="dead_letter"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: P2
+          slo: dead-letter
+        annotations:
+          summary: "Outbox event dead-lettered on topic {{ $labels.topic }}"
+
+      - alert: OrchestrationJobDeadLettered
+        expr: |
+          increase(biozephyra_jobs_execution_count{status="dead_letter"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: P2
+          slo: dead-letter
+        annotations:
+          summary: "Orchestration job dead-lettered (queue {{ $labels.queue }}, type {{ $labels.jobType }})"
+
+      - alert: AiSpendHigh
+        # Unusual spend: total governed-AI provider cost in the last hour exceeds
+        # the hourly budget. 50 USD/h is a starting threshold — set to the real budget.
+        expr: |
+          sum(increase(biozephyra_ai_request_cost_usd_sum[1h])) > 50
+        for: 5m
+        labels:
+          severity: P2
+          slo: ai-spend
+        annotations:
+          summary: "Governed AI spend exceeded the hourly budget"
+          description: "Last-hour AI spend: {{ $value }} USD"
+
+      - alert: AiProviderQuotaExhausted
+        # Sustained HTTP 429s from an AI provider = quota/rate limit exhausted.
+        expr: |
+          sum(rate(biozephyra_ai_provider_quota_count[5m])) by (provider) > 0
+        for: 5m
+        labels:
+          severity: P2
+          slo: provider-quota
+        annotations:
+          summary: "AI provider {{ $labels.provider }} returning sustained 429s (quota exhausted)"

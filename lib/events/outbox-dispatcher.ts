@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { outboxDispatchCounter, outboxDispatchLatencyHistogram } from '@/lib/observability/telemetry'
 import { healthEventEnvelopeSchema } from '@/lib/validators/canonical-health-events'
 import type { HealthEventEnvelope } from '@/types/canonical-health-events'
 
@@ -121,10 +123,14 @@ export class CanonicalHealthEventOutboxDispatcher {
     const maxAttempts = options.maxAttempts ?? 5
     const retryDelayMs = options.retryDelayMs ?? 30_000
 
+    // Only 'pending' records are retriable. Terminally-failed records are moved
+    // to 'dead_letter' (below), which is NOT selected here — otherwise a poison
+    // message (bad payload / schema drift) that always fails would be re-selected
+    // every cycle and retried forever, incrementing attemptCount without bound.
     const pending = await this.client.canonicalHealthEventOutboxRecord.findMany({
       where: {
         ...(options.tenantId ? { tenantId: options.tenantId } : {}),
-        status: { in: ['pending', 'failed'] },
+        status: 'pending',
         availableAt: { lte: now },
       },
       orderBy: [{ createdAt: 'asc' }],
@@ -142,7 +148,7 @@ export class CanonicalHealthEventOutboxDispatcher {
       const claim = await this.client.canonicalHealthEventOutboxRecord.updateMany({
         where: {
           id: record.id,
-          status: { in: ['pending', 'failed'] },
+          status: 'pending',
         },
         data: {
           status: 'processing',
@@ -177,6 +183,11 @@ export class CanonicalHealthEventOutboxDispatcher {
           },
         })
 
+        outboxDispatchCounter.add(1, { status: 'published', topic: record.topic })
+        // Dispatch lag: creation → successful publish (data-ingestion SLO).
+        outboxDispatchLatencyHistogram.record(Math.max(0, now.getTime() - record.createdAt.getTime()), {
+          topic: record.topic,
+        })
         result.published += 1
       } catch (error) {
         const nextAttemptCount = record.attemptCount + 1
@@ -185,11 +196,25 @@ export class CanonicalHealthEventOutboxDispatcher {
         await this.client.canonicalHealthEventOutboxRecord.update({
           where: { id: record.id },
           data: {
-            status: terminalFailure ? 'failed' : 'pending',
+            // Terminal failures park in 'dead_letter' (excluded from the fetch
+            // query) instead of looping forever as 'failed'.
+            status: terminalFailure ? 'dead_letter' : 'pending',
             availableAt: terminalFailure ? now : new Date(now.getTime() + retryDelayMs),
             lastError: truncateErrorMessage(error),
           },
         })
+
+        outboxDispatchCounter.add(1, { status: terminalFailure ? 'dead_letter' : 'retry', topic: record.topic })
+        if (terminalFailure) {
+          // Surface to operators — a poison message needs manual inspection/replay.
+          logger.error('Outbox event dead-lettered after exhausting retries', {
+            outboxId: record.id,
+            topic: record.topic,
+            tenantId: record.tenantId,
+            attemptCount: nextAttemptCount,
+            lastError: truncateErrorMessage(error),
+          })
+        }
 
         result.failed += 1
       }

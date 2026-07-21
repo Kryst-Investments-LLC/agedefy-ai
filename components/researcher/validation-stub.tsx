@@ -9,7 +9,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import type { ValidationStatus } from './types'
 
 const STATUS_LABELS: Record<ValidationStatus, string> = {

@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/lib/db"
 import { BookOpen } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 const topicLabel: Record<string, string> = {
   OVERVIEW: "Overview",
   PATHWAYS: "Pathways",

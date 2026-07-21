@@ -27,8 +27,16 @@ async function main() {
   let stopping = false
 
   const requestStop = (signal: string) => {
+    // Second signal forces an immediate exit if a dispatch cycle hangs past the
+    // orchestrator's SIGTERM grace period; the first drains after the current
+    // batch. In-flight events are marked in the outbox and reclaimed on lease
+    // expiry, so an interrupted batch is recovered by any surviving worker.
+    if (stopping) {
+      logger.warn('Outbox worker received second signal, forcing exit', { signal })
+      process.exit(1)
+    }
     stopping = true
-    logger.info('Outbox worker received shutdown signal', { signal })
+    logger.info('Outbox worker draining before shutdown', { signal })
   }
 
   process.on('SIGINT', requestStop)
@@ -56,6 +64,8 @@ async function main() {
         await delay(pollIntervalMs)
       }
     }
+
+    logger.info('Outbox worker stopped cleanly')
   } finally {
     await runtime.close()
     await db.$disconnect()

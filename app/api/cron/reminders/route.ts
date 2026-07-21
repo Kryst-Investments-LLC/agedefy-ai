@@ -11,16 +11,14 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { sweepDueReminders } from '@/lib/reminders/reminder-sweeper'
 import { logger } from '@/lib/logger'
+import { requireCronAuthorization } from '@/lib/security/cron-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const unauthorized = requireCronAuthorization(request)
+  if (unauthorized) return unauthorized
 
   try {
     const result = await sweepDueReminders()

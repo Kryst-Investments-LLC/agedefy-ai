@@ -21,6 +21,7 @@ import { authOptions } from "@/lib/auth"
 import { logger } from "@/lib/logger"
 import { signResultSafe } from "@/lib/provenance/sign-result"
 import { requireAuthWithRole } from "@/lib/middleware/auth-role"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 import { runDosageOptimizer, DOSAGE_DISCLAIMER, type BiomarkerDelta } from "@/lib/agents/dosage-optimizer"
 
@@ -45,6 +46,8 @@ export async function POST(req: Request) {
 
   const authError = requireAuthWithRole(session, "CLINICIAN", "ADMIN")
   if (authError instanceof NextResponse) return authError
+  const mfaRequired = await requireRecentMfa(authError.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: z.infer<typeof bodySchema>
   try {

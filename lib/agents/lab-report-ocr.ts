@@ -106,6 +106,7 @@ async function extractWithOpenAiVision(input: OcrExtractInput): Promise<OcrExtra
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
+    signal: AbortSignal.timeout(30_000),
     headers: {
       'content-type': 'application/json',
       authorization: `Bearer ${apiKey}`,

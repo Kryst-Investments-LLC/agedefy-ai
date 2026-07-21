@@ -19,6 +19,7 @@ import { logAudit } from "@/lib/audit"
 import { logger } from "@/lib/logger"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { verifyLicense } from "@/lib/licensing/license-verifier"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 const postBodySchema = z.object({
   resourceType:  z.string().min(1).max(100),
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
 
   const authError = requireAuthWithRole(session, "CLINICIAN", "ADMIN")
   if (authError instanceof NextResponse) return authError
+
+  const mfaRequired = await requireRecentMfa(authError.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: z.infer<typeof postBodySchema>
   try {

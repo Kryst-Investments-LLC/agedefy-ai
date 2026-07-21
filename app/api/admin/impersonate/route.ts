@@ -8,6 +8,7 @@ import {
   getActiveImpersonation,
 } from '@/lib/admin/impersonation'
 import { requireAuthWithRole } from '@/lib/rbac'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 /**
  * GET /api/admin/impersonate
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, 'ADMIN')
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = await request.json()
   const targetUserId = typeof body?.targetUserId === 'string' ? body.targetUserId.trim() : ''

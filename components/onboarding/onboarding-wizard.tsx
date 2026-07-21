@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
 
+import { ageInYears, MIN_ELIGIBLE_AGE_YEARS } from "@/lib/validators/onboarding"
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -224,18 +226,28 @@ export function OnboardingWizard() {
   const [activityLevel, setActivityLevel] = useState("")
   const [sleepQuality, setSleepQuality] = useState(3)
   const [stressLevel, setStressLevel] = useState(3)
+
+  // Consent (captured on the final input step — the lawful basis for processing
+  // the health data collected during onboarding).
+  const [consentDataProcessing, setConsentDataProcessing] = useState(false)
+  const [consentAiHealth, setConsentAiHealth] = useState(false)
+
   const [onboardingComplete, setOnboardingComplete] = useState(false)
+
+  // P0-GOV-009 — the platform is adults-only; a valid, eligible DOB is required.
+  const dobAge = /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) ? ageInYears(dateOfBirth) : null
+  const isEligibleAge = dobAge !== null && dobAge >= MIN_ELIGIBLE_AGE_YEARS && dobAge < 130
 
   const canNext = (): boolean => {
     switch (step) {
       case 0:
-        return !!dateOfBirth && !!biologicalSex
+        return !!dateOfBirth && !!biologicalSex && isEligibleAge
       case 1:
         return healthGoals.length > 0 && primaryMotivation.length >= 3 && !!riskTolerance
       case 2:
         return true // conditions + supplements are optional
       case 3:
-        return !!dietaryPattern && !!activityLevel
+        return !!dietaryPattern && !!activityLevel && consentDataProcessing
       case 4:
         return onboardingComplete // personalization screen — always navigable
       default:
@@ -257,6 +269,11 @@ export function OnboardingWizard() {
         sleepQuality,
         stressLevel,
       } as Step4Data,
+      consent: {
+        dataProcessing: consentDataProcessing,
+        aiHealthInfo: consentAiHealth,
+        policyVersion: "1.0",
+      },
     }
 
     try {
@@ -323,6 +340,11 @@ export function OnboardingWizard() {
               onChange={(e) => setDateOfBirth(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
+            {dobAge !== null && !isEligibleAge && (
+              <p className="mt-1.5 text-xs text-destructive">
+                You must be at least {MIN_ELIGIBLE_AGE_YEARS} years old to use this platform.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Biological Sex</label>
@@ -496,6 +518,44 @@ export function OnboardingWizard() {
             low="Low"
             high="Very High"
           />
+
+          {/* Consent — required to process the health data collected above. */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
+            <h3 className="text-sm font-semibold">Your consent</h3>
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentDataProcessing}
+                onChange={(e) => setConsentDataProcessing(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-muted-foreground/40"
+              />
+              <span className="text-sm text-muted-foreground">
+                I consent to Biozephyra processing my health data (biomarkers, conditions,
+                supplements, lifestyle) to provide personalised longevity insights, as described
+                in the{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Privacy Policy
+                </a>{" "}
+                and{" "}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Terms
+                </a>
+                . <span className="text-destructive">(required)</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentAiHealth}
+                onChange={(e) => setConsentAiHealth(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-muted-foreground/40"
+              />
+              <span className="text-sm text-muted-foreground">
+                I additionally consent to my health information being used with AI features
+                (analysis, coaching). <span className="text-muted-foreground/70">(optional)</span>
+              </span>
+            </label>
+          </div>
         </div>
       )}
 

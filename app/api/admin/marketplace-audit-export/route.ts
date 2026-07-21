@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { requireAuthWithRole } from "@/lib/rbac"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 const marketplaceAuditExportQuerySchema = z.object({
   action: z.string().optional(),
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
 
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
 
   const parsed = marketplaceAuditExportQuerySchema.safeParse({
     action: request.nextUrl.searchParams.get("action") ?? undefined,

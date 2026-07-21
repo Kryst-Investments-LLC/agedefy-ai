@@ -2,6 +2,9 @@ import type { UserRole } from "@prisma/client"
 
 import { db } from "@/lib/db"
 import { env } from "@/lib/env"
+import { recordCacheEviction, recordCacheHit, recordCacheMiss } from "@/lib/observability/cache-metrics"
+
+const MEMBERSHIP_CACHE_NAME = "tenant_membership"
 
 type SessionUserTenantLike = {
   id?: string
@@ -48,6 +51,7 @@ function setMembershipCache(key: string, allowed: boolean) {
       membershipCache.delete(k)
       if (++i >= drop) break
     }
+    recordCacheEviction(MEMBERSHIP_CACHE_NAME, i)
   }
   membershipCache.set(key, { allowed, expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS })
 }
@@ -65,8 +69,10 @@ async function validateTenantMembership(
   const cacheKey = `${userId}:${requestedTenantId}`
   const cached = membershipCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) {
+    recordCacheHit(MEMBERSHIP_CACHE_NAME)
     return cached.allowed
   }
+  recordCacheMiss(MEMBERSHIP_CACHE_NAME)
 
   const user = await db.user.findUnique({
     where: { id: userId },

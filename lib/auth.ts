@@ -10,9 +10,10 @@ import { db } from "@/lib/db"
 import { env } from "@/lib/env"
 import { getFallbackTenantId, resolveStoredTenantContextForUser } from "@/lib/tenancy"
 import { isConfiguredAdminEmail } from "@/lib/admin"
+import { authFailureCounter } from "@/lib/observability/telemetry"
 import { getNonPasswordAuthHash, isLegacyEmptyPasswordHash, isPasswordLoginAllowed } from "@/lib/auth-password"
 import { loginSchema } from "@/lib/validators/auth"
-import { isMfaEnabled, isMfaRequired } from "@/lib/mfa"
+import { getMfaVerifiedAt, isMfaEnabled, isMfaRequired } from "@/lib/mfa"
 
 // ---------------------------------------------------------------------------
 // OIDC SSO Provider (optional)
@@ -69,6 +70,7 @@ export const authOptions: NextAuthOptions = {
         const parsedCredentials = loginSchema.safeParse(credentials)
 
         if (!parsedCredentials.success) {
+          authFailureCounter.add(1, { reason: "invalid_payload" })
           return null
         }
 
@@ -77,16 +79,19 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          authFailureCounter.add(1, { reason: "user_not_found" })
           return null
         }
 
         if (!isPasswordLoginAllowed(user.passwordHash)) {
+          authFailureCounter.add(1, { reason: "password_login_disabled" })
           return null
         }
 
         const isValidPassword = await bcrypt.compare(parsedCredentials.data.password, user.passwordHash)
 
         if (!isValidPassword) {
+          authFailureCounter.add(1, { reason: "invalid_password" })
           return null
         }
 
@@ -147,7 +152,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    async jwt({ token, user, trigger, account }) {
+    async jwt({ token, user, trigger: _trigger, account }) {
       if (user) {
         // For OIDC logins, resolve the user from the DB to get our internal ID
         if (account?.provider === "oidc" && user.email) {
@@ -156,6 +161,7 @@ export const authOptions: NextAuthOptions = {
             token.sub = dbUser.id
             token.role = dbUser.role
             token.tenantId = dbUser.defaultTenantId ?? getFallbackTenantId()
+            token.loginAt = Date.now()
             token.mfaPending = await isMfaEnabled(dbUser.id) || isMfaRequired(dbUser.role)
             return token
           }
@@ -164,14 +170,25 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role ?? UserRole.MEMBER
         token.tenantId = user.tenantId ?? getFallbackTenantId()
         token.organizationId = user.organizationId
+        token.loginAt = Date.now()
         token.mfaPending = (user as unknown as Record<string, unknown>).mfaPending === true
       }
 
-      // Allow MFA verification endpoint and MFA setup to clear mfaPending
-      if (trigger === "update" && token.mfaPending) {
-        // The verify/setup endpoint triggers a session update with mfaPending=false
-        const updatePayload = user as unknown as Record<string, unknown> | undefined
-        if (updatePayload?.mfaPending === false) {
+      // Server-authoritative MFA clear. The gate is lowered ONLY when the DB
+      // shows a second-factor challenge that was recorded AFTER this session's
+      // login epoch (token.loginAt). Nothing here trusts the update() payload,
+      // so a client cannot bypass MFA by calling update({ mfaPending: false }).
+      // Runs on every refresh while pending (cheap: one indexed lookup, and it
+      // stops once cleared).
+      if (token.mfaPending && token.sub) {
+        const loginEpoch =
+          typeof token.loginAt === "number"
+            ? token.loginAt
+            : typeof token.iat === "number"
+              ? token.iat * 1000
+              : 0
+        const verifiedAt = await getMfaVerifiedAt(token.sub as string)
+        if (verifiedAt && verifiedAt.getTime() >= loginEpoch) {
           token.mfaPending = false
         }
       }
@@ -193,6 +210,9 @@ export const authOptions: NextAuthOptions = {
           if (previousRole !== dbUser.role && isMfaRequired(dbUser.role)) {
             const enrolled = await isMfaEnabled(token.sub as string)
             token.mfaPending = enrolled || true
+            // New privilege → new auth epoch: a verification recorded before
+            // this elevation must not satisfy the re-raised gate.
+            token.loginAt = Date.now()
           }
         }
       }

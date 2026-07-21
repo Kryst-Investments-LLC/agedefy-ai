@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { createWidgetSession, deauthUser } from '@/lib/wearables/terra-client'
+import { requireRecentMfa } from '@/lib/security/recent-mfa'
 
 /**
  * POST /api/wearables/connect
@@ -77,6 +78,8 @@ export async function DELETE(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   let body: { provider?: string }
   try {

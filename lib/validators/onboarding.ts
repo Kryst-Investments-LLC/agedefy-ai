@@ -1,7 +1,34 @@
 import { z } from 'zod'
 
+// P0-GOV-009 — age eligibility. The platform processes special-category health
+// data and has no parental-consent flow, so it is adults-only. This is the
+// configurable eligibility threshold; adjust only alongside a documented
+// launch-scope / legal decision (P0-GOV-001).
+export const MIN_ELIGIBLE_AGE_YEARS = 18
+
+/** Whole years between a YYYY-MM-DD date of birth and now (UTC). */
+export function ageInYears(dateOfBirth: string, now: Date = new Date()): number {
+  const dob = new Date(`${dateOfBirth}T00:00:00Z`)
+  let age = now.getUTCFullYear() - dob.getUTCFullYear()
+  const monthDelta = now.getUTCMonth() - dob.getUTCMonth()
+  if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < dob.getUTCDate())) {
+    age -= 1
+  }
+  return age
+}
+
 export const onboardingStep1Schema = z.object({
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date format: YYYY-MM-DD'),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date format: YYYY-MM-DD')
+    .refine((d) => {
+      const t = Date.parse(`${d}T00:00:00Z`)
+      return !Number.isNaN(t) && t <= Date.now()
+    }, 'Date of birth must be a valid date in the past')
+    .refine(
+      (d) => ageInYears(d) >= MIN_ELIGIBLE_AGE_YEARS,
+      `You must be at least ${MIN_ELIGIBLE_AGE_YEARS} years old to use this platform`,
+    ),
   biologicalSex: z.enum(['male', 'female', 'other', 'prefer_not_to_say']),
 })
 
@@ -28,11 +55,23 @@ export const onboardingStep4Schema = z.object({
   stressLevel: z.number().int().min(1).max(5),
 })
 
+// Explicit, granular consent captured at onboarding — the point where health
+// data collection begins. data-processing is REQUIRED to proceed (lawful basis
+// for processing special-category health data); ai-health-info is optional.
+export const onboardingConsentSchema = z.object({
+  dataProcessing: z.literal(true, {
+    errorMap: () => ({ message: "You must consent to health-data processing to continue" }),
+  }),
+  aiHealthInfo: z.boolean().default(false),
+  policyVersion: z.string().min(1).max(50).optional(),
+})
+
 export const onboardingCompleteSchema = z.object({
   step1: onboardingStep1Schema,
   step2: onboardingStep2Schema,
   step3: onboardingStep3Schema,
   step4: onboardingStep4Schema,
+  consent: onboardingConsentSchema,
 })
 
 export type OnboardingData = z.infer<typeof onboardingCompleteSchema>

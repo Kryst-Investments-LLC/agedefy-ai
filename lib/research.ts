@@ -59,6 +59,7 @@ export async function searchPubMed(
 
       const response = await fetch(`${EUTILS_BASE}/esearch.fcgi?${params.toString()}`, {
         next: { revalidate: 300 },
+        signal: AbortSignal.timeout(10_000),
       })
 
       if (!response.ok) {
@@ -92,7 +93,9 @@ export async function fetchPubMedSummaries(pmids: string[]): Promise<PubMedArtic
         params.set("email", env.PUBMED_EMAIL)
       }
 
-      const response = await fetch(`${EUTILS_BASE}/esummary.fcgi?${params.toString()}`)
+      const response = await fetch(`${EUTILS_BASE}/esummary.fcgi?${params.toString()}`, {
+        signal: AbortSignal.timeout(10_000),
+      })
 
       if (!response.ok) {
         throw new Error(`PubMed summary failed: ${response.status}`)
@@ -130,7 +133,9 @@ export async function fetchPubMedAbstract(pmid: string): Promise<string | null> 
         params.set("email", env.PUBMED_EMAIL)
       }
 
-      const response = await fetch(`${EUTILS_BASE}/efetch.fcgi?${params.toString()}`)
+      const response = await fetch(`${EUTILS_BASE}/efetch.fcgi?${params.toString()}`, {
+        signal: AbortSignal.timeout(10_000),
+      })
 
       if (!response.ok) return null
 

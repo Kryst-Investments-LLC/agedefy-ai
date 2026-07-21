@@ -1,17 +1,7 @@
 /**
- * ⚠ TODO: THIS LOADER IS NOT ACTIVE — `@longevity-standards/legal-rules` IS NOT INSTALLED
- * ────────────────────────────────────────────────────────────────────────────────────────
- * The package import in `loadJurisdictionRuleSet` will always throw, triggering the
- * catch-block fallback that returns an empty rule set. Every gate evaluation will
- * therefore default-ALLOW with no enforcement applied.
- *
- * This file is inert scaffolding. Do not cite it as evidence of active legal/regulatory
- * enforcement in any user-facing copy, documentation, or sales material.
- * ────────────────────────────────────────────────────────────────────────────────────────
- *
- * Adapter that converts the rich rule packs published by
- * `@longevity-standards/legal-rules` into the simpler `JurisdictionRuleSet`
- * shape consumed by `lib/legal/jurisdiction-gate.ts`.
+ * Loads the versioned in-repository legal rule packs into the runtime gate.
+ * These rules are technical controls and still require qualified legal review;
+ * their presence must not be represented as a legal-compliance certification.
  *
  * Mapping:
  *   - severity `critical` | `high`  -> BLOCK
@@ -20,11 +10,12 @@
  *
  * Each `rule.category` becomes the `topic` key the gate matches on.
  *
- * The package may be unavailable (e.g. dev environments without the git
- * dependency installed); in that case `loadJurisdictionRuleSet` returns
- * an empty rule set and logs a single warning so the gate falls back to
- * its default-ALLOW behaviour.
  */
+
+import { readdir, readFile } from "node:fs/promises"
+import path from "node:path"
+
+import { parse } from "yaml"
 
 import type { GateDecision, JurisdictionRule, JurisdictionRuleSet } from "./jurisdiction-gate"
 
@@ -76,32 +67,59 @@ function packToRules(pack: RawPack): JurisdictionRule[] {
 let cached: JurisdictionRuleSet | null = null
 let warned = false
 
+async function listRuleFiles(directory: string): Promise<string[]> {
+  const entries = await readdir(directory, { withFileTypes: true })
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      const absolute = path.join(directory, entry.name)
+      if (entry.isDirectory()) return listRuleFiles(absolute)
+      return /\.ya?ml$/i.test(entry.name) ? [absolute] : []
+    }),
+  )
+  return nested.flat().sort()
+}
+
+async function loadRepositoryPacks(): Promise<RawPack[]> {
+  const root = path.join(process.cwd(), "agents", "legal-rules")
+  const files = await listRuleFiles(root)
+  return Promise.all(
+    files.map(async (file) => {
+      const pack = parse(await readFile(file, "utf8")) as RawPack
+      if (!pack?.jurisdiction?.code || !Array.isArray(pack.rules)) {
+        throw new Error(`Invalid legal rule pack: ${path.relative(process.cwd(), file)}`)
+      }
+      return pack
+    }),
+  )
+}
+
 export async function loadJurisdictionRuleSet(): Promise<JurisdictionRuleSet> {
   if (cached) return cached
   try {
-    const mod = await import("@longevity-standards/legal-rules")
-    const packs = (await mod.loadAll()) as Record<string, RawPack>
-    const rules = Object.values(packs).flatMap(packToRules)
-    const versionParts = Object.values(packs)
+    const packs = await loadRepositoryPacks()
+    const rules = packs.flatMap(packToRules)
+    const versionParts = packs
       .map((p) => p.last_reviewed)
       .filter(Boolean)
       .sort()
     cached = {
-      version: `legal-rules@${versionParts[versionParts.length - 1] ?? "unknown"}`,
+      version: `repository-legal-rules@${versionParts[versionParts.length - 1] ?? "unknown"}`,
       rules,
     }
     return cached
   } catch (err) {
     if (!warned) {
       warned = true
-      // eslint-disable-next-line no-console
       console.warn(
-        `[legal-rules] @longevity-standards/legal-rules not available; falling back to empty rule set: ${
+        `[legal-rules] repository rule packs unavailable: ${
           (err as Error).message
         }`,
       )
     }
-    cached = { version: "legal-rules@unavailable", rules: [] }
+    if (["staging", "production"].includes(process.env.APP_ENV ?? "")) {
+      throw new Error("Legal rule packs are required in staging and production", { cause: err })
+    }
+    cached = { version: "repository-legal-rules@unavailable", rules: [] }
     return cached
   }
 }

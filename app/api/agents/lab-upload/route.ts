@@ -14,6 +14,12 @@ import { requireGdprConsent } from '@/lib/consent'
 import { logger } from '@/lib/logger'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { deriveTenantContextWithValidation } from '@/lib/tenancy'
+import {
+  UnsafeLabUploadError,
+  MAX_LAB_UPLOAD_BYTES,
+  validateLabUploadBytes,
+  validateTextLabUpload,
+} from '@/lib/security/lab-upload'
 
 const MAX_TEXT_LENGTH = 500_000
 const ALLOWED_CONTENT_TYPES = new Set([
@@ -71,11 +77,16 @@ export async function POST(request: NextRequest) {
         file.name.endsWith('.csv')
 
       if (isTextFile) {
+        validateTextLabUpload(file)
         reportText = await file.text()
       } else if (isOcrSupportedMimeType(fileType)) {
         // PDF / image — route through OCR before parsing
+        if (file.size > MAX_LAB_UPLOAD_BYTES) {
+          return NextResponse.json({ error: `Upload exceeds ${MAX_LAB_UPLOAD_BYTES} bytes` }, { status: 413 })
+        }
         const buf = new Uint8Array(await file.arrayBuffer())
         try {
+          validateLabUploadBytes(buf, fileType)
           const ocr: OcrExtractResult = await extractLabReportText({
             bytes: buf,
             mimeType: fileType,
@@ -89,7 +100,7 @@ export async function POST(request: NextRequest) {
             mimeType: fileType,
           })
         } catch (err) {
-          if (err instanceof OcrError) {
+          if (err instanceof OcrError || err instanceof UnsafeLabUploadError) {
             return NextResponse.json({ error: err.message }, { status: err.status })
           }
           throw err
@@ -144,6 +155,9 @@ export async function POST(request: NextRequest) {
       instructions: 'Include the "text" field content in your agent session goal, or the values will be injected automatically when starting a session with the "labReportText" field.',
     })
   } catch (err) {
+    if (err instanceof UnsafeLabUploadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
     const message = err instanceof Error ? err.message : 'Internal server error'
     logger.error('Lab report parse failed', {
       userId: session.user.id,

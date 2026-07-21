@@ -10,6 +10,65 @@ interface GdprConsentEntry {
   grantedAt?: string | null
 }
 
+// A minimal Prisma-like surface so callers can pass either the base client or a
+// transaction client (for recording consent atomically with another write).
+type ConsentGrantClient = {
+  userConsentGrant: {
+    findUnique: (typeof db.userConsentGrant)["findUnique"]
+    upsert: (typeof db.userConsentGrant)["upsert"]
+  }
+}
+
+/**
+ * Grant (or re-affirm) the given GDPR consent categories for a user. Single
+ * source of truth for writing a consent grant — used by the /api/consent route,
+ * the onboarding flow, and the backfill script so the three can never diverge.
+ * Merges with any existing entries, preserving prior grantedAt timestamps, and
+ * bumps consentVersion on update. Pass `client` (a transaction client) to make
+ * the grant atomic with a sibling write.
+ */
+export async function grantGdprConsents(
+  userId: string,
+  categories: readonly GdprConsentCategory[],
+  opts: { legalBasis?: string; policyVersion?: string; client?: ConsentGrantClient } = {},
+) {
+  const client = opts.client ?? db
+  const existing = await client.userConsentGrant.findUnique({ where: { userId } })
+  const existingEntries =
+    (existing?.gdprConsents as unknown as Array<{ category: string; granted: boolean; grantedAt?: string }>) ?? []
+  const now = new Date().toISOString()
+
+  const mergedEntries = GDPR_CONSENT_CATEGORIES.map((cat) => {
+    const isGranted = categories.includes(cat)
+    const prev = existingEntries.find((e) => e.category === cat)
+    if (isGranted) {
+      return { category: cat, granted: true, grantedAt: prev?.granted ? (prev.grantedAt ?? now) : now }
+    }
+    return prev ?? { category: cat, granted: false }
+  })
+
+  return client.userConsentGrant.upsert({
+    where: { userId },
+    create: {
+      userId,
+      status: "active",
+      legalBasis: opts.legalBasis ?? "explicit-consent",
+      scopes: [...categories],
+      gdprConsents: mergedEntries,
+      policyVersion: opts.policyVersion ?? "1.0",
+    },
+    update: {
+      status: "active",
+      gdprConsents: mergedEntries,
+      consentVersion: { increment: 1 },
+      revokedAt: null,
+      revocationReason: null,
+      ...(opts.legalBasis ? { legalBasis: opts.legalBasis } : {}),
+      ...(opts.policyVersion ? { policyVersion: opts.policyVersion } : {}),
+    },
+  })
+}
+
 /**
  * Check whether a user has granted a specific GDPR consent category.
  * Returns `true` only when the user has an active consent grant with

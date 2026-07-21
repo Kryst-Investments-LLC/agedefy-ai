@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { authOptions } from "@/lib/auth"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 import { deriveTenantContext } from "@/lib/tenancy"
 import { buildMarketplaceActorContext, assertEntityCreateAccess, assertEntityRecordAccess, filterAccessibleRecords } from "@/scientist-sponsor-marketplace/backend/permissions/access-control"
 import { entityLabels, entityWritePermissions } from "@/scientist-sponsor-marketplace/backend/models/entity-map"
@@ -68,7 +69,7 @@ export async function createEntity(request: NextRequest, entity: string) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { actingAsRole, ...payload } = body as Record<string, unknown>
+  const { actingAsRole: _actingAsRole, ...payload } = body as Record<string, unknown>
   const parsed = entityCreateSchemas[entityName].safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
@@ -122,7 +123,7 @@ export async function updateEntity(request: NextRequest, entity: string, id: str
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { actingAsRole, ...payload } = body as Record<string, unknown>
+  const { actingAsRole: _actingAsRole, ...payload } = body as Record<string, unknown>
   const parsed = entityUpdateSchemas[entityName].safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
@@ -153,6 +154,9 @@ export async function deleteEntity(request: NextRequest, entity: string, id: str
   if ("error" in actorState) {
     return actorState.error
   }
+
+  const mfaRequired = await requireRecentMfa(actorState.session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const entityName = parseEntity(entity)
   const permission = entityWritePermissions[entityName]

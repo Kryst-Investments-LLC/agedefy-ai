@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
       if (result) {
         await sendPasswordResetEmail(result.email, result.plainToken)
-        logger.info("Password reset requested", { email: result.email })
+        logger.info("Password reset requested", { userId: result.userId })
       }
 
       return { status: 200, body: { message: "If an account with that email exists, a reset link has been sent." } }

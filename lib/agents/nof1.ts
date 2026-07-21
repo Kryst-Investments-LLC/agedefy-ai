@@ -17,7 +17,6 @@ import crypto from "node:crypto"
 import { NofOneStatus } from "@prisma/client"
 
 import { db } from "@/lib/db"
-import { safeJsonParse } from "@/lib/safe-json"
 
 export interface BayesianStopConfig {
   priorMu: number

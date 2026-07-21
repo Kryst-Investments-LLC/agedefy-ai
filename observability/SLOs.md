@@ -1,0 +1,131 @@
+# Service Level Objectives (P0-OBS-004)
+
+SLIs/SLOs for the Biozephyra platform, each mapped to the metric **actually
+emitted** by `lib/observability/telemetry.ts` (OpenTelemetry names use dots;
+the Prometheus exporter renders them with underscores and a `biozephyra_`
+prefix, e.g. `biozephyra.http.request.duration_ms` →
+`biozephyra_http_request_duration_ms_{count,bucket,sum}`). Alerts that back
+these SLOs live in [`alerts/alert-rules.yml`](alerts/alert-rules.yml); dashboards
+in [`dashboards/`](dashboards/).
+
+The **Backed by** column is the honest current state:
+- ✅ emitted — the metric exists today and the SLO is measurable now.
+- ⚠️ gap — the SLO is defined but the metric is not yet emitted; the alert is
+  written against the intended name and is inert until instrumentation lands
+  (tracked in the OBS section of `PRODUCTION-GRADE-TODO.md`).
+
+Targets are steady-state goals over a rolling 30-day window unless noted.
+Error-budget policy: burning >10% of the monthly budget in 1 hour pages P1
+(fast burn); sustained breach of the steady-state target pages at the listed
+severity.
+
+## API success (availability)
+
+| Field | Value |
+|-------|-------|
+| SLI | Fraction of HTTP responses that are **not** 5xx |
+| Metric | `biozephyra_http_request_duration_ms_count` (labels `route`, `method`, `http_status_code`) |
+| Query | `1 - sum(rate(…count{http_status_code=~"5.."}[5m])) / sum(rate(…count[5m]))` |
+| SLO | ≥ 99.0% success (≤ 1% 5xx) over 5m; monthly availability ≥ 99.5% |
+| Alert / sev | `ApiErrorRateHigh` (P1), `ErrorBudgetBurnFast` (P1) |
+| Backed by | ✅ emitted. Whole-surface baseline comes free from the auto-instrumented `http.server.duration` (`@opentelemetry/instrumentation-http`, every route). The route-templated `biozephyra_http_request_duration_ms` (via `withHttpMetrics`) is layered on the AI routes plus the SLO-critical flows — payments (`/api/stripe/webhook`), ingestion (`/api/wearables/webhook`), and PHI intake (`/api/biomarkers`, `/api/medications`) — for clean low-cardinality `route`/`http_status_code` labels the alerts query. |
+
+## API latency
+
+| Field | Value |
+|-------|-------|
+| SLI | P99 request duration for non-AI, non-health routes |
+| Metric | `biozephyra_http_request_duration_ms_bucket` |
+| Query | `histogram_quantile(0.99, rate(…bucket{route!~"/api/ai/.*|/api/health"}[10m]))` |
+| SLO | P99 ≤ 500ms |
+| Alert / sev | `ApiLatencyP99High` (P2) |
+| Backed by | ✅ emitted |
+
+## AI provider latency
+
+| Field | Value |
+|-------|-------|
+| SLI | P95 end-to-end latency of a governed AI provider call |
+| Metric | `biozephyra_ai_request_latency_ms_bucket` (label `provider`) |
+| Query | `histogram_quantile(0.95, rate(…bucket[10m]))` |
+| SLO | P95 ≤ 5s |
+| Alert / sev | `AiProviderLatencyP95High` (P2) |
+| Backed by | ✅ emitted (openai/anthropic/grok routes) |
+
+## Authentication
+
+| Field | Value |
+|-------|-------|
+| SLI | Credential-auth failure rate, and absence of an anomalous failure spike |
+| Metric | `biozephyra_auth_failure_count` (label `reason`) |
+| Query | `sum(rate(…[5m])) by (reason)` — alert on sustained spike relative to baseline |
+| SLO | No sustained failure-rate spike > 5× the baseline (credential-stuffing signal) |
+| Alert / sev | `AuthFailureSpike` (P2) |
+| Backed by | ✅ emitted (counter incremented at every `authorize` failure with a `reason`) |
+
+## Payments (Stripe)
+
+| Field | Value |
+|-------|-------|
+| SLI | Stripe webhook processing success rate |
+| Metric | `biozephyra_stripe_webhook_count` (labels `event_type`, `livemode`, `outcome` = success/failed/duplicate) |
+| Query | `sum(rate(…{outcome="success"}[15m])) / sum(rate(…{outcome=~"success|failed"}[15m]))` (duplicates excluded) |
+| SLO | ≥ 99.5% of processed webhooks succeed (persisted + side-effects) without a terminal failure |
+| Alert / sev | `PaymentWebhookFailureRateHigh` (P1) — failure ratio > 1% for 15m |
+| Backed by | ✅ emitted — counter now records the terminal `outcome` per webhook at each return path |
+
+## Data ingestion (canonical event outbox)
+
+| Field | Value |
+|-------|-------|
+| SLI | Outbox dispatch throughput/success, and dispatch lag |
+| Metric | `biozephyra_outbox_dispatch_count` (labels `status` = published/retry/dead_letter, `topic`); `biozephyra_outbox_dispatch_latency_ms_bucket` (label `topic`, creation→publish) |
+| Query | success ratio `sum(rate(…count{status="published"}[15m])) / sum(rate(…count[15m]))`; lag `histogram_quantile(0.95, rate(…latency_ms_bucket[15m]))` |
+| SLO | ≥ 99% dispatched successfully; P95 dispatch lag ≤ 60s |
+| Alert / sev | `OutboxDispatchDelayed` (P2) |
+| Backed by | ✅ emitted (count + latency histogram) |
+
+## Job age (orchestration queue)
+
+| Field | Value |
+|-------|-------|
+| SLI | Age of the oldest due-and-queued orchestration job |
+| Metric | `biozephyra_orchestration_job_oldest_queued_age_ms` (observable gauge, 0 when empty) |
+| Query | `max(biozephyra_orchestration_job_oldest_queued_age_ms)` |
+| SLO | Oldest queued job ≤ 5 minutes (300000 ms) |
+| Alert / sev | `JobQueueStale` (P2) |
+| Backed by | ✅ emitted — registered at OTel init (`registerJobQueueAgeGauge`); callback runs a cheap indexed query on metric collection |
+
+## Candidate workflow completion
+
+| Field | Value |
+|-------|-------|
+| SLI | Fraction of candidates that progress through the research lifecycle without stalling; time-in-stage |
+| Metric | `biozephyra_candidate_transition_count` (labels `from_status`, `to_status`); `biozephyra_candidate_stage_duration_ms_bucket` (label `stage`) |
+| Query | throughput `sum(rate(…transition_count[1h])) by (to_status)`; stage time `histogram_quantile(0.95, rate(…stage_duration_ms_bucket[1d])) by (stage)` |
+| SLO | ≥ 95% of candidates advance past triage within the target stage SLA; no stage P95 stalls beyond its window |
+| Alert / sev | `CandidateStageSlaBreached` (P2) — stage P95 dwell > 7d (tune per stage) |
+| Backed by | ✅ emitted — `recordCandidateTransition` at the canonical transition endpoint (with stage latency from the entering-status event) and at creation (null→PROPOSED). Auxiliary event sites (feedback/lab) adopt the same helper incrementally. |
+
+## Supporting reliability signals (not user SLOs, but alerted)
+
+| Signal | Metric | Alert / sev | Backed by |
+|--------|--------|-------------|-----------|
+| Circuit breaker opened | `biozephyra_circuit_breaker_state_change_count{state="open"}` | `CircuitBreakerOpen` (P1) | ✅ emitted |
+| Rate-limit abuse | `biozephyra_rate_limit_abuse_count` | `RateLimitAbuseDetected` (P3) | ✅ emitted |
+| DB pool saturation | `biozephyra_db_client_queries_wait` (>0 = queries queuing for a connection); pool gauges `biozephyra_db_pool_connections_{open,busy,idle}`, `biozephyra_db_client_queries_active` | `DbPoolSaturated` (P1) | ✅ emitted — bridged from Prisma `$metrics` at OTel init (`registerDbPoolGauges`) |
+
+## Instrumentation gaps to close (OBS follow-ups)
+
+1. ~~`outbox_dispatch_latency_ms` histogram~~ — **done** (`biozephyra_outbox_dispatch_latency_ms`).
+2. ~~Stripe `outcome` label for the payments success SLO~~ — **done**.
+3. ~~Job-queue-age gauge~~ — **done** (`biozephyra_orchestration_job_oldest_queued_age_ms`).
+4. ~~DB-pool gauges~~ — **done** (bridged from Prisma `$metrics`; saturation via `biozephyra_db_client_queries_wait`).
+5. ~~Candidate lifecycle transition counter + stage-latency histogram~~ — **done**
+   (`recordCandidateTransition`; canonical transition endpoint + creation).
+6. ~~Extend `withHttpMetrics` to non-AI routes~~ — **done for the SLO-critical
+   flows** (payments, ingestion, PHI intake). Whole-surface baseline latency/
+   success is already covered by the auto-instrumented `http.server.duration`;
+   remaining non-critical routes can adopt `withHttpMetrics` incrementally for
+   route-templated labels (the wrapper is already variadic — no per-route
+   boilerplate beyond the one-line wrap).

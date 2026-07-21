@@ -61,7 +61,15 @@ export function readStoredMfaSecret(storedValue: string): string {
     try {
       return decryptMfaSecret(storedValue)
     } catch {
-      return storedValue
+      // A value that parses as ciphertext but won't decrypt means a wrong or
+      // rotated key / corruption — NOT a plaintext secret. Fail closed so the
+      // fault surfaces instead of silently treating undecryptable bytes as a
+      // usable TOTP secret. MFA_ALLOW_PLAINTEXT_FALLBACK is a time-boxed escape
+      // hatch for a controlled migration off legacy plaintext secrets only.
+      if (process.env.MFA_ALLOW_PLAINTEXT_FALLBACK === "true") {
+        return storedValue
+      }
+      throw new Error("Stored MFA secret could not be decrypted (wrong/rotated key or corrupted ciphertext)")
     }
   }
 

@@ -3,8 +3,10 @@ import type { UserClinicalContext } from '@/lib/ai/clinical-context'
 import type { InvestigationPlan } from './clinical-planning-agent'
 import type { AgentPlan, AgentStep, AgentStepStatus } from './types'
 
+// NOTE: There is deliberately no 'discovery' pattern. The discovery agent
+// (biomarker profile -> compound suggestion) is a FORBIDDEN PATH for
+// consumer-facing sessions; the planner must never schedule a discovery step.
 const GOAL_PATTERNS: Record<string, RegExp> = {
-  discovery: /discover|research|find\s+compound|novel|candidate|molecule/i,
   protocol: /protocol|stack|adjust|optimize|regimen|dosage|supplement/i,
 }
 
@@ -21,18 +23,6 @@ export function createPlan(goal: string, _clinicalContext: UserClinicalContext):
     verificationCriteria: 'Snapshot must include biomarker summary and active medications',
     status: 'pending',
   })
-
-  if (GOAL_PATTERNS.discovery.test(goal)) {
-    steps.push({
-      index: index++,
-      agentClass: 'discovery',
-      description: 'Discover candidate compounds based on biomarker profile and goal',
-      toolCalls: ['aeonforgeDiscover'],
-      expectedOutputKeys: ['discovery.results'],
-      verificationCriteria: 'At least one candidate must be returned with evidence grade',
-      status: 'pending',
-    })
-  }
 
   if (GOAL_PATTERNS.protocol.test(goal)) {
     steps.push({

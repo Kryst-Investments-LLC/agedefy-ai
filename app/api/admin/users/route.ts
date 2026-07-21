@@ -8,6 +8,7 @@ import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from
 import { applyRateLimit } from "@/lib/rate-limit"
 import { requireAuthWithRole } from "@/lib/rbac"
 import { deriveTenantContextWithValidation } from "@/lib/tenancy"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 // PATCH: Update a user's role (admin only)
 export async function PATCH(request: NextRequest) {
@@ -17,6 +18,8 @@ export async function PATCH(request: NextRequest) {
   const session = await getServerSession(authOptions)
   const authResult = requireAuthWithRole(session, "ADMIN")
   if (authResult instanceof NextResponse) return authResult
+  const mfaRequired = await requireRecentMfa(authResult.user.id)
+  if (mfaRequired) return mfaRequired
   const user = authResult.user
 
   const impersonationBlock = await blockWriteDuringImpersonation(user.id)

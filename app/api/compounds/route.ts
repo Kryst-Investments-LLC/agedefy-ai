@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { PUBLIC_CATALOG_CACHE_CONTROL } from "@/lib/http/cache-control"
 import { createIdempotencyFingerprint, executeRouteIdempotentJsonMutation } from "@/lib/idempotency"
 import { logger } from "@/lib/logger"
 import { applyRateLimit } from "@/lib/rate-limit"
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
     take,
   })
 
-  return NextResponse.json(compounds)
+  return NextResponse.json(compounds, { headers: { "Cache-Control": PUBLIC_CATALOG_CACHE_CONTROL } })
 }
 
 export async function POST(request: NextRequest) {

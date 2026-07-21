@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { runPubMedContentPipeline } from "@/lib/content-pipeline"
 import { applyRateLimit } from "@/lib/rate-limit"
+import { requireRecentMfa } from "@/lib/security/recent-mfa"
 
 /**
  * POST /api/admin/content-pipeline
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
   if (session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 })
   }
+
+  const mfaRequired = await requireRecentMfa(session.user.id)
+  if (mfaRequired) return mfaRequired
 
   const body = await request.json().catch(() => ({}))
   const dryRun = body.dryRun === true

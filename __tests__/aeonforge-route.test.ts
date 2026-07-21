@@ -122,7 +122,7 @@ describe("POST /api/aeonforge/prompt", () => {
   })
 
   it("returns 400 for an invalid discovery payload", async () => {
-    getServerSessionMock.mockResolvedValue({ user: { id: "user_1" } })
+    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", role: "RESEARCHER" } })
     userFindUniqueMock.mockResolvedValue({
       id: "user_1",
       email: "user@example.com",
@@ -140,8 +140,19 @@ describe("POST /api/aeonforge/prompt", () => {
     expect(payload.error).toBe("Invalid discovery prompt payload")
   })
 
+  it("returns 403 for a consumer member", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", role: "MEMBER" } })
+    const { POST } = await import("@/app/api/aeonforge/prompt/route")
+
+    const response = await POST(buildRequest({
+      prompt: "Discover candidate structures for a research-only assay",
+    }))
+
+    expect(response.status).toBe(403)
+  })
+
   it("persists a discovered candidate and related simulations", async () => {
-    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", email: "user@example.com" } })
+    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", email: "user@example.com", role: "RESEARCHER" } })
     userFindUniqueMock.mockResolvedValue({
       id: "user_1",
       email: "user@example.com",
@@ -217,11 +228,11 @@ describe("POST /api/aeonforge/prompt", () => {
   })
 
   it("returns 503 when the AeonForge service is not configured", async () => {
-    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", email: "user@example.com" } })
+    getServerSessionMock.mockResolvedValue({ user: { id: "user_1", email: "user@example.com", role: "RESEARCHER" } })
     userFindUniqueMock.mockResolvedValue({
       id: "user_1",
       email: "user@example.com",
-      role: "MEMBER",
+      role: "RESEARCHER",
       discoveryTier: "pro",
       biomarkers: [],
       profile: null,

@@ -33,6 +33,7 @@ async function callTwinAI(prompt: string): Promise<string> {
   if (isProviderEnabled('openai') && config.providers.openai.apiKey) {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
+      signal: AbortSignal.timeout(30_000),
       headers: {
         Authorization: `Bearer ${config.providers.openai.apiKey}`,
         'Content-Type': 'application/json',
@@ -55,6 +56,7 @@ async function callTwinAI(prompt: string): Promise<string> {
   if (isProviderEnabled('anthropic') && config.providers.anthropic.apiKey) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      signal: AbortSignal.timeout(30_000),
       headers: {
         'x-api-key': config.providers.anthropic.apiKey,
         'Content-Type': 'application/json',
@@ -75,6 +77,7 @@ async function callTwinAI(prompt: string): Promise<string> {
   if (isProviderEnabled('grok') && config.providers.grok.apiKey) {
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
+      signal: AbortSignal.timeout(30_000),
       headers: {
         Authorization: `Bearer ${config.providers.grok.apiKey}`,
         'Content-Type': 'application/json',

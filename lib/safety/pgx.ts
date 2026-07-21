@@ -12,7 +12,6 @@
 import type { PgxMetabolizerPhenotype } from "@prisma/client"
 
 import { db } from "@/lib/db"
-import { safeJsonParse } from "@/lib/safe-json"
 
 import { loadCpicTable } from "./pgx-loader"
 

@@ -80,6 +80,39 @@ async function ensureUser(role: UserRole = 'MEMBER') {
       passwordHash: 'hashed-password',
     },
   })
+  // Record a recent second-factor challenge so routes gated by step-up reauth
+  // (requireRecentMfa — e.g. clinician telemedicine mutations) treat the actor
+  // as freshly verified within the allowed window.
+  await db.userMfaSecret.upsert({
+    where: { userId: currentSession.user.id },
+    update: { verified: true, lastVerifiedAt: new Date() },
+    create: {
+      userId: currentSession.user.id,
+      secret: 'test-mfa-secret',
+      verified: true,
+      lastVerifiedAt: new Date(),
+    },
+  })
+}
+
+// Grant GDPR data-processing consent for the current user. Call in tests that
+// exercise consent-gated PHI-intake routes (biomarker/medication writes). Kept
+// OUT of ensureUser so tests that assert on consent creation start clean.
+async function grantTestConsent() {
+  const grantedConsents = [
+    { category: 'data-processing', granted: true },
+    { category: 'ai-health-info', granted: true },
+  ]
+  await db.userConsentGrant.upsert({
+    where: { userId: currentSession.user.id },
+    update: { status: 'active', gdprConsents: grantedConsents },
+    create: {
+      userId: currentSession.user.id,
+      status: 'active',
+      scopes: ['data-processing', 'ai-health-info'],
+      gdprConsents: grantedConsents,
+    },
+  })
 }
 
 async function cleanupUserData() {
@@ -138,6 +171,7 @@ describe('canonical health event API routes', () => {
   })
 
   it('writes biomarker event and outbox records from POST /api/biomarkers', async () => {
+    await grantTestConsent() // biomarker POST is gated by requireGdprConsent
     const { POST } = await import('@/app/api/biomarkers/route')
 
     const response = await POST(buildRequest('/api/biomarkers', 'POST', {
