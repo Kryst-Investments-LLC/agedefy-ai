@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { db } from "@/lib/db"
-import { env, getRuntimeBaseline } from "@/lib/env"
+import { env, getConfigFingerprint, getRuntimeBaseline } from "@/lib/env"
 import { probeSidecars } from "@/lib/health/sidecar-health"
 import { getOrchestrationJobMetrics } from "@/lib/jobs/queue"
 import { isOtelConfigured } from "@/lib/observability/otel"
@@ -32,6 +32,9 @@ export async function GET() {
         sidecars,
         runtime: {
           appEnv: runtimeBaseline.appEnv,
+          // CFG-008 drift signal: compare against the expected fingerprint for this
+          // environment to detect configuration drift between deploys.
+          configFingerprint: getConfigFingerprint(),
           productionBaselineRequired: runtimeBaseline.productionBaselineRequired,
           databaseProvider: runtimeBaseline.databaseProvider,
           prismaRuntime: runtimeBaseline.prismaRuntime,

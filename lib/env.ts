@@ -237,6 +237,77 @@ export function assertNoDevFallbacksInProduction(
   }
 }
 
+/**
+ * P1-CFG-008 — configuration drift detection.
+ *
+ * A stable, secret-redacted fingerprint of the security-relevant configuration
+ * SHAPE. Secret values are never hashed — only their presence (set/unset) — so a
+ * dropped or rotated secret does not itself change the fingerprint, while a secret
+ * that appears or disappears (real topology drift) does. Non-secret dimensions
+ * (app env, resolved DB provider, feature flags) are hashed by value. Logging this
+ * at startup makes configuration drift between deploys of the same intended config
+ * visible — the fingerprint changes iff the config shape did — and /api/health
+ * exposes the running value for comparison against the expected one.
+ *
+ * This is a drift IDENTIFIER, not a security primitive: the fast, dependency-free,
+ * edge-safe pure-JS hash (cyrb53) is deliberate — env.ts must stay free of
+ * node:crypto so it remains importable from any runtime.
+ */
+const SECRET_CONFIG_KEYS: ReadonlySet<string> = new Set([
+  "DATABASE_URL",
+  "POSTGRES_DATABASE_URL",
+  "POSTGRES_SHADOW_DATABASE_URL",
+  "NEXTAUTH_SECRET",
+  "CRON_SECRET",
+  "MFA_ENCRYPTION_KEY",
+  "SCREENING_ADAPTER_ENCRYPTION_KEY",
+  "SCIM_SHARED_SECRET",
+  "SSO_CLIENT_SECRET",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "OPENAI_API_KEY",
+  "ANTHROPIC_API_KEY",
+  "GROK_API_KEY",
+  "SMTP_PASS",
+  "REDIS_TOKEN",
+])
+
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed
+  let h2 = 0x41c6ce57 ^ seed
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507)
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507)
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0)
+}
+
+export function getConfigFingerprint(
+  input: Partial<ParsedEnvironment> = readProcessEnvironment(),
+): string {
+  const canonical: Record<string, string> = {
+    // Derived, non-secret dimensions that matter for drift but aren't raw env keys.
+    _appEnv: resolveAppEnvironment(input),
+    _databaseProvider: getDatabaseProvider(getEffectiveDatabaseUrl(input)),
+  }
+
+  for (const key of Object.keys(input).sort()) {
+    const value = (input as Record<string, unknown>)[key]
+    if (SECRET_CONFIG_KEYS.has(key)) {
+      canonical[key] = value != null && String(value).length > 0 ? "set" : "unset"
+    } else {
+      canonical[key] = value == null ? "null" : String(value)
+    }
+  }
+
+  return cyrb53(JSON.stringify(canonical)).toString(16).padStart(14, "0")
+}
+
 export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProcessEnvironment()): RuntimeBaseline {
   const appEnv = resolveAppEnvironment(input)
   const productionBaselineRequired = shouldEnforceRuntimeRequirements(input)

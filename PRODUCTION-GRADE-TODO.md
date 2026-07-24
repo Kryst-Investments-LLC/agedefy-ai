@@ -23,7 +23,7 @@
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
 | P0 | 28 | 85 | 32.9% |
-| P1 | 8 | 77 | 10.4% |
+| P1 | 9 | 77 | 11.7% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
 
@@ -210,16 +210,24 @@ items — partials are documented inline but do not increase the completed count
   environment and add a deployment assertion for it.
 - [ ] `P1-CFG-007` Create separate development, CI, staging, and production secret
   scopes with least-privilege identities.
-- [ ] `P1-CFG-008` Add configuration drift detection and an audited emergency
+- [x] `P1-CFG-008` Add configuration drift detection and an audited emergency
   configuration-change procedure.
-  <!-- PARTIAL: emergency-override detection landed. getRuntimeBaseline() now flags
-       the two migration-only escape hatches (SCREENING_ADAPTER_ALLOW_PLAINTEXT,
-       MFA_ALLOW_PLAINTEXT_FALLBACK) as baseline issues when left 'true' in a
-       staging/production baseline — surfaced by /api/health (baselineSatisfied:false
-       + issues[]) and by scripts/validate-runtime-baseline.ts (non-zero exit). So an
-       emergency override left active is now detected and audited at startup + health.
-       REMAINING for full [x]: a config-fingerprint drift snapshot compared across
-       deploys, and a documented emergency change procedure. -->
+  <!-- Both code mechanisms landed:
+       (1) DRIFT DETECTION — getConfigFingerprint() (lib/env.ts) hashes a
+           secret-redacted view of the config shape (cyrb53, edge-safe; secret VALUES
+           never hashed, only presence, so rotation ≠ drift but a dropped/added secret
+           is). Logged at startup ([config] fingerprint=…) and exposed at
+           /api/health runtime.configFingerprint, so drift across deploys of the same
+           intended config is detectable by comparing fingerprints.
+       (2) AUDITED EMERGENCY OVERRIDE — getRuntimeBaseline() flags the two
+           migration-only escape hatches (SCREENING_ADAPTER_ALLOW_PLAINTEXT,
+           MFA_ALLOW_PLAINTEXT_FALLBACK) as baseline issues when left 'true' in a
+           staging/production baseline; instrumentation.ts emits a loud
+           "[config] EMERGENCY OVERRIDE ACTIVE" warning at startup, /api/health reports
+           baselineSatisfied:false + the issue, and validate-runtime-baseline exits
+           non-zero. Tested in __tests__/runtime-baseline.test.ts.
+       Operational follow-up (non-code): a written runbook for the emergency
+       change procedure. -->
 
 - [x] `P1-CFG-009` Rename the package from `my-v0-project` to the approved product name.
 

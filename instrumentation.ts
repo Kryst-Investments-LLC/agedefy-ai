@@ -14,6 +14,15 @@ export async function register() {
       }
     }
 
+    // Configuration drift + emergency-override audit at startup (P1-CFG-008).
+    // The fingerprint lets ops detect config drift across deploys; the override
+    // warning makes any migration-only escape hatch left active loud in the logs.
+    const { getConfigFingerprint, getRuntimeBaseline } = await import("@/lib/env")
+    console.log(`[config] fingerprint=${getConfigFingerprint()}`)
+    for (const issue of getRuntimeBaseline().issues.filter((i) => i.code.startsWith("secrets."))) {
+      console.warn(`[config] EMERGENCY OVERRIDE ACTIVE — ${issue.message}`)
+    }
+
     const { initOtelSdk } = await import("@/lib/observability/otel")
     const sdk = initOtelSdk()
     if (sdk) {
