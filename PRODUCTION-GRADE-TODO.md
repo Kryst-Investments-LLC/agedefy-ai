@@ -640,10 +640,13 @@ items — partials are documented inline but do not increase the completed count
        commit without its immutable record, and the record can't be silently altered
        (entryHash chained per tenant). Route stays RESEARCHER/CLINICIAN/ADMIN-gated;
        unit-tested that the audit entry is written in-tx with an entryHash
-       (experiment-transition-route.test.ts). REMAINING (policy decision, contract
-       change): make the reviewer reason MANDATORY on transitions (today it is
-       captured when provided but optional), and extend the same in-tx audit to the
-       feedback/lab transition sites. -->
+       (experiment-transition-route.test.ts). ALL status-changing sites now covered:
+       the manual transition endpoint, the active-learning feedback route
+       (RESULT_LOGGED->FED_BACK), and the lab-results auto-advance
+       (SENT_TO_LAB->RESULT_LOGGED) each write the in-tx tamper-evident audit
+       (feedback + lab-results tests updated). REMAINING (policy decision, contract
+       change, not code-blocked): make the reviewer reason MANDATORY on transitions
+       (today captured when provided but optional). -->
 
 
 ### Stage 1: identity and reality check

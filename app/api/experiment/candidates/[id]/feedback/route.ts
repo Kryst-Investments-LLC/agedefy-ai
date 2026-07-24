@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { Prisma } from "@prisma/client"
 
+import { logAuditInTransactionOrThrow } from "@/lib/audit"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
@@ -124,6 +125,18 @@ export async function POST(
               acquisitionScore: acquisition.acquisitionScore,
             } as Prisma.InputJsonValue,
           },
+        })
+
+        // Tamper-evident, in-tx transition record (P0-CMP-014), consistent with
+        // the manual transition endpoint.
+        await logAuditInTransactionOrThrow(tx, {
+          actorUserId: session.user.id,
+          actorEmail: session.user.email ?? undefined,
+          tenantId: candidate.tenantId,
+          action: "candidate.transitioned",
+          entityType: "ExperimentCandidate",
+          entityId: id,
+          details: { fromStatus: "RESULT_LOGGED", toStatus: "FED_BACK", reason: "active-learning feedback" },
         })
       }
 

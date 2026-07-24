@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { logAuditInTransactionOrThrow } from '@/lib/audit'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
@@ -82,6 +83,17 @@ export async function POST(
             toStatus: 'RESULT_LOGGED',
             notes: `Auto-advanced on first lab result: ${data.assayName}`,
           },
+        })
+
+        // Tamper-evident, in-tx transition record (P0-CMP-014).
+        await logAuditInTransactionOrThrow(tx, {
+          actorUserId: session.user.id,
+          actorEmail: session.user.email ?? undefined,
+          tenantId: candidate.tenantId,
+          action: 'candidate.transitioned',
+          entityType: 'ExperimentCandidate',
+          entityId: id,
+          details: { fromStatus: 'SENT_TO_LAB', toStatus: 'RESULT_LOGGED', reason: 'lab result auto-advance' },
         })
       }
 
