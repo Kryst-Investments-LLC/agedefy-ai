@@ -78,6 +78,14 @@ const envSchema = z.object({
 type ParsedEnvironment = z.infer<typeof envSchema>
 export type AppEnvironment = z.infer<typeof appEnvSchema>
 
+/**
+ * The authoritative list of environment variables the runtime schema validates.
+ * Single source of truth for the `.env.example` documentation drift-guard
+ * (P0-CFG-002): a new validated variable can't land without also being
+ * documented. See __tests__/env-example-documentation.test.ts.
+ */
+export const ENV_SCHEMA_KEYS = Object.keys(envSchema.shape).sort() as Array<keyof ParsedEnvironment>
+
 export type RuntimeBaselineIssue = {
   code: string
   message: string

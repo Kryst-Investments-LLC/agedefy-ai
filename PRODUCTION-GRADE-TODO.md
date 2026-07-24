@@ -196,6 +196,17 @@ items — partials are documented inline but do not increase the completed count
 - [x] `P0-CFG-001` Replace the SQLite URL in `.env.example` with a PostgreSQL example.
 - [ ] `P0-CFG-002` Document every runtime variable, owner, sensitivity, allowed
   values, default, environments, and rotation procedure.
+  <!-- PARTIAL: completeness is now enforced. Every variable in the runtime schema is
+       documented in .env.example (14 previously-undocumented vars added: SSO_*/SCIM,
+       KG_NEO4J_*, JOB_MAX_*, BIO_AGE_USE_OMICS, CPIC_GUIDELINES_JSON_PATH, PUBMED_EMAIL)
+       with inline allowed-values, defaults, and sensitivity markers ("# secret").
+       lib/env.ts exports ENV_SCHEMA_KEYS as the single source of truth, and
+       __tests__/env-example-documentation.test.ts fails the build if a validated
+       variable is ever added without documenting it — so the reference can't drift.
+       REMAINING for full [x] (needs org input, not code): per-variable OWNER,
+       a formal ROTATION procedure, and a per-ENVIRONMENT (dev/CI/staging/prod)
+       required-value matrix. -->
+
 - [x] `P0-CFG-003` Add missing baseline variables, including `APP_ENV`,
   `POSTGRES_DATABASE_URL`, `MFA_ENCRYPTION_KEY`, `CRON_SECRET`, Redis, OTEL,
   tenancy, AI governance, and sidecar flags.
