@@ -212,6 +212,15 @@ items — partials are documented inline but do not increase the completed count
   scopes with least-privilege identities.
 - [ ] `P1-CFG-008` Add configuration drift detection and an audited emergency
   configuration-change procedure.
+  <!-- PARTIAL: emergency-override detection landed. getRuntimeBaseline() now flags
+       the two migration-only escape hatches (SCREENING_ADAPTER_ALLOW_PLAINTEXT,
+       MFA_ALLOW_PLAINTEXT_FALLBACK) as baseline issues when left 'true' in a
+       staging/production baseline — surfaced by /api/health (baselineSatisfied:false
+       + issues[]) and by scripts/validate-runtime-baseline.ts (non-zero exit). So an
+       emergency override left active is now detected and audited at startup + health.
+       REMAINING for full [x]: a config-fingerprint drift snapshot compared across
+       deploys, and a documented emergency change procedure. -->
+
 - [x] `P1-CFG-009` Rename the package from `my-v0-project` to the approved product name.
 
 ## 3. CI, tests, and release engineering

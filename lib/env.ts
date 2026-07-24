@@ -38,6 +38,7 @@ const envSchema = z.object({
   MFA_ENCRYPTION_KEY: z.string().min(32).optional(),
   SCREENING_ADAPTER_ENCRYPTION_KEY: z.string().min(32).optional(),
   SCREENING_ADAPTER_ALLOW_PLAINTEXT: z.enum(["true", "false"]).optional(),
+  MFA_ALLOW_PLAINTEXT_FALLBACK: z.enum(["true", "false"]).optional(),
   TENANCY_MODE: z.enum(["single", "shared", "isolated"]).optional(),
   DEFAULT_TENANT_ID: z.string().optional(),
   AI_GOVERNANCE_ENFORCED: z.enum(["true", "false"]).optional(),
@@ -138,6 +139,7 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
     SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
     SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
+    MFA_ALLOW_PLAINTEXT_FALLBACK: parseOptionalEnum(process.env.MFA_ALLOW_PLAINTEXT_FALLBACK, ["true", "false"]),
     TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
     DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
     AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -280,6 +282,27 @@ export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProce
     })
   }
 
+  // Emergency-override detection: these are time-boxed escape hatches that weaken
+  // secret confidentiality (accept plaintext / undecryptable secrets). Left on in
+  // a staging/production baseline they are a silent security regression, so surface
+  // them as baseline issues that the /api/status health signal and the startup
+  // instrumentation warning will report.
+  if (productionBaselineRequired && input.SCREENING_ADAPTER_ALLOW_PLAINTEXT === "true") {
+    issues.push({
+      code: "secrets.screening_plaintext_override_active",
+      message:
+        "SCREENING_ADAPTER_ALLOW_PLAINTEXT is a migration-only escape hatch and must not be 'true' in staging or production (it accepts unencrypted screening-adapter secrets).",
+    })
+  }
+
+  if (productionBaselineRequired && input.MFA_ALLOW_PLAINTEXT_FALLBACK === "true") {
+    issues.push({
+      code: "secrets.mfa_plaintext_override_active",
+      message:
+        "MFA_ALLOW_PLAINTEXT_FALLBACK is a migration-only escape hatch and must not be 'true' in staging or production (it accepts undecryptable/plaintext MFA secrets).",
+    })
+  }
+
   const requireEnabledConfiguration = (
     enabled: boolean,
     configured: boolean,
@@ -416,6 +439,7 @@ const fallbackEnv: ParsedEnvironment = {
   MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
   SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
   SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
+  MFA_ALLOW_PLAINTEXT_FALLBACK: parseOptionalEnum(process.env.MFA_ALLOW_PLAINTEXT_FALLBACK, ["true", "false"]),
   TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
   DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
   AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),

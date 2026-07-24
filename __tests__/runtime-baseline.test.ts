@@ -62,6 +62,45 @@ describe("runtime baseline", () => {
     expect(baseline.issues).toHaveLength(0)
   })
 
+  it("flags plaintext-secret emergency overrides left active in an enforced baseline", () => {
+    const baseline = getRuntimeBaseline({
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/Biozephyra?schema=public",
+      NEXTAUTH_URL: "https://staging.biozephyra.com",
+      NEXTAUTH_SECRET: validSecret,
+      APP_ENV: "staging",
+      REDIS_URL: "https://example.upstash.io",
+      REDIS_TOKEN: "token",
+      OTEL_SERVICE_NAME: "biozephyra-ai-staging",
+      OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
+      SCREENING_ADAPTER_ALLOW_PLAINTEXT: "true",
+      MFA_ALLOW_PLAINTEXT_FALLBACK: "true",
+    })
+
+    const codes = baseline.issues.map((issue) => issue.code)
+    expect(codes).toContain("secrets.screening_plaintext_override_active")
+    expect(codes).toContain("secrets.mfa_plaintext_override_active")
+  })
+
+  it("does not flag plaintext overrides when they are absent or explicitly false", () => {
+    const baseline = getRuntimeBaseline({
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/Biozephyra?schema=public",
+      NEXTAUTH_URL: "https://staging.biozephyra.com",
+      NEXTAUTH_SECRET: validSecret,
+      APP_ENV: "staging",
+      REDIS_URL: "https://example.upstash.io",
+      REDIS_TOKEN: "token",
+      OTEL_SERVICE_NAME: "biozephyra-ai-staging",
+      OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
+      SCREENING_ADAPTER_ALLOW_PLAINTEXT: "false",
+    })
+
+    expect(baseline.issues).toHaveLength(0)
+  })
+
   it("fails closed when enabled integrations are missing dependencies", () => {
     const baseline = getRuntimeBaseline({
       DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/agedefy",
