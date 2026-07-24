@@ -23,7 +23,7 @@
 | Priority | Completed | Total | Completion |
 | --- | ---: | ---: | ---: |
 | P0 | 28 | 85 | 32.9% |
-| P1 | 8 | 77 | 10.4% |
+| P1 | 9 | 77 | 11.7% |
 | P2 | 0 | 18 | 0% |
 | P3 | 0 | 3 | 0% |
 
@@ -196,6 +196,17 @@ items — partials are documented inline but do not increase the completed count
 - [x] `P0-CFG-001` Replace the SQLite URL in `.env.example` with a PostgreSQL example.
 - [ ] `P0-CFG-002` Document every runtime variable, owner, sensitivity, allowed
   values, default, environments, and rotation procedure.
+  <!-- PARTIAL: completeness is now enforced. Every variable in the runtime schema is
+       documented in .env.example (14 previously-undocumented vars added: SSO_*/SCIM,
+       KG_NEO4J_*, JOB_MAX_*, BIO_AGE_USE_OMICS, CPIC_GUIDELINES_JSON_PATH, PUBMED_EMAIL)
+       with inline allowed-values, defaults, and sensitivity markers ("# secret").
+       lib/env.ts exports ENV_SCHEMA_KEYS as the single source of truth, and
+       __tests__/env-example-documentation.test.ts fails the build if a validated
+       variable is ever added without documenting it — so the reference can't drift.
+       REMAINING for full [x] (needs org input, not code): per-variable OWNER,
+       a formal ROTATION procedure, and a per-ENVIRONMENT (dev/CI/staging/prod)
+       required-value matrix. -->
+
 - [x] `P0-CFG-003` Add missing baseline variables, including `APP_ENV`,
   `POSTGRES_DATABASE_URL`, `MFA_ENCRYPTION_KEY`, `CRON_SECRET`, Redis, OTEL,
   tenancy, AI governance, and sidecar flags.
@@ -210,8 +221,25 @@ items — partials are documented inline but do not increase the completed count
   environment and add a deployment assertion for it.
 - [ ] `P1-CFG-007` Create separate development, CI, staging, and production secret
   scopes with least-privilege identities.
-- [ ] `P1-CFG-008` Add configuration drift detection and an audited emergency
+- [x] `P1-CFG-008` Add configuration drift detection and an audited emergency
   configuration-change procedure.
+  <!-- Both code mechanisms landed:
+       (1) DRIFT DETECTION — getConfigFingerprint() (lib/env.ts) hashes a
+           secret-redacted view of the config shape (cyrb53, edge-safe; secret VALUES
+           never hashed, only presence, so rotation ≠ drift but a dropped/added secret
+           is). Logged at startup ([config] fingerprint=…) and exposed at
+           /api/health runtime.configFingerprint, so drift across deploys of the same
+           intended config is detectable by comparing fingerprints.
+       (2) AUDITED EMERGENCY OVERRIDE — getRuntimeBaseline() flags the two
+           migration-only escape hatches (SCREENING_ADAPTER_ALLOW_PLAINTEXT,
+           MFA_ALLOW_PLAINTEXT_FALLBACK) as baseline issues when left 'true' in a
+           staging/production baseline; instrumentation.ts emits a loud
+           "[config] EMERGENCY OVERRIDE ACTIVE" warning at startup, /api/health reports
+           baselineSatisfied:false + the issue, and validate-runtime-baseline exits
+           non-zero. Tested in __tests__/runtime-baseline.test.ts.
+       Operational follow-up (non-code): a written runbook for the emergency
+       change procedure. -->
+
 - [x] `P1-CFG-009` Rename the package from `my-v0-project` to the approved product name.
 
 ## 3. CI, tests, and release engineering
@@ -360,8 +388,24 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P1-GOV-011` Add prompt/model/data-card versioning with rollback and audit trails.
 - [ ] `P1-GOV-012` Build adversarial evaluations for unsafe health claims,
   hallucinated citations, prompt injection, jurisdiction bypass, and data leakage.
-- [ ] `P1-GOV-013` Verify cohort queries retain k-anonymity of at least 50 and
+- [x] `P1-GOV-013` Verify cohort queries retain k-anonymity of at least 50 and
   differential privacy under composition, retries, joins, and repeated queries.
+  <!-- k-ANONYMITY FLOOR: the cohort-query path (runOutcomeAggregation) clamps every
+       equivalence class to k>=50 via resolveCohortK (was a default of 5); a class
+       with <50 distinct users is suppressed, never published. MIN_COHORT_K=50,
+       unit-tested (cohort-k-anonymity.test.ts). DP NOISE per statistic already
+       present (addNoisyMean, epsilon default 1.0). DP UNDER COMPOSITION: a
+       persistent per-(tenant, scope) epsilon budget (lib/privacy/budget-ledger.ts +
+       PrivacyBudgetEntry model) bounds cumulative leakage — every aggregation run
+       reserves its epsilon (advisory-locked, atomic) before publishing any noised
+       statistic, and once the rolling window's budget (PRIVACY_EPSILON_BUDGET,
+       default 10 / PRIVACY_EPSILON_WINDOW_HOURS default 24) is spent, further runs
+       are refused; the on-demand /api/insights/aggregate route returns 429 so
+       repeated/retried queries can't average out the noise. Tested on real PG
+       (privacy-budget-ledger-pg.test.ts: grant-until-exhausted, per-tenant scope,
+       rolling window). -->
+
+
 - [ ] `P2-GOV-014` Establish quality-management procedures appropriate to the final
   product claims and regulatory classification.
 
@@ -497,6 +541,16 @@ items — partials are documented inline but do not increase the completed count
 
 - [ ] `P1-PERF-013` Add connection pooling and define pool sizes for web, workers,
   migrations, serverless concurrency, and sidecars.
+  <!-- POOLING: Prisma pools per process (connection_limit on the DB URL). Pool
+       SIZES DEFINED in .env.example per workload (web ?connection_limit=5&pool_
+       timeout=10, workers 20, migration/cron 2) so many instances don't exhaust
+       Postgres max_connections. Guard added: instrumentation.ts warns at startup
+       in production if DATABASE_URL has no connection_limit (lib/db-pool.ts
+       parseConnectionLimit/isConnectionLimitUnset, unit-tested db-pool.test.ts).
+       Pool health is already observable via biozephyra_db_pool_connections_* (see
+       OBS-004). REMAINING: set the actual per-workload connection_limit at deploy
+       (RB-3) and tune against the managed PG's max_connections. -->
+
 - [ ] `P1-PERF-014` Move expensive aggregation, document parsing, evidence retrieval,
   docking, screening, FEP, and AI fan-out to durable asynchronous jobs.
 - [x] `P1-PERF-015` Add job priorities, quotas, backpressure, cancellation,
@@ -589,11 +643,49 @@ items — partials are documented inline but do not increase the completed count
 - [ ] `P0-CMP-010` Create one canonical candidate record for each suggestion with:
   normalized structure, InChIKey, canonical/isomeric SMILES, source, prompt hash,
   model/version, temperature/seed where available, timestamp, tenant, user, and trace.
-- [ ] `P0-CMP-011` Preserve the raw suggestion separately from normalized fields.
+  <!-- PROGRESS (safe-governance subset — no chemistry/claims): one ExperimentCandidate
+       row per suggestion already carries source (kind = CHEMBL | AI), the raw source
+       snapshot (chemblJson/aiMolJson), timestamp (createdAt), tenant, user, and the
+       AI-source model context via the AeonForgeCandidate FK. Added the missing TRACE:
+       sourceRequestId captured at creation from the request's x-request-id/
+       x-correlation-id (route stays RESEARCHER/CLINICIAN/ADMIN-gated); migration
+       20260721130000, unit-tested (experiment-candidates-route.test.ts). REMAINING
+       (needs /research + chemistry toolkit, deliberately deferred): normalized
+       structure, InChIKey, and canonical/isomeric SMILES (RDKit-class normalization,
+       see CMP-020), plus explicit prompt-hash/temperature/seed capture on the record. -->
+
+- [x] `P0-CMP-011` Preserve the raw suggestion separately from normalized fields.
+  <!-- VERIFIED against the schema (no code change needed). AI-sourced candidates:
+       AeonForgeCandidate.prompt + AeonForgeCandidate.rawResponse (the full raw
+       ÆonForge API response) are stored on the source record and linked from
+       ExperimentCandidate via aeonForgeCandidateId, kept separate from the
+       normalized ExperimentCandidate fields (smiles/displayName/...); the molecule
+       snapshot at add-time is also retained (aiMolJson). ChEMBL-sourced candidates:
+       chemblJson holds the raw LibrarySearchHit snapshot at time of add, separate
+       from the normalized fields. So the raw suggestion is preserved distinctly
+       from the normalized record in both source paths. -->
+
 - [ ] `P0-CMP-012` Deduplicate by standardized structure, stereochemistry, salt,
   tautomer policy, and known database identifiers.
 - [ ] `P0-CMP-013` Sign candidate results with the platform provenance mechanism.
 - [ ] `P0-CMP-014` Add immutable state transitions and reviewer-signed reasons.
+  <!-- IMMUTABLE + ATTRIBUTED (safe governance, no chemistry/claims): candidate
+       transitions already move forward-only through adjacent states
+       (isValidTransition) and are logged append-only (ExperimentCandidateEvent).
+       Now each transition also writes to the TAMPER-EVIDENT hash-chained audit log
+       in the SAME transaction via logAuditInTransactionOrThrow (action
+       candidate.transitioned, actor + reason + from/to) — so a transition cannot
+       commit without its immutable record, and the record can't be silently altered
+       (entryHash chained per tenant). Route stays RESEARCHER/CLINICIAN/ADMIN-gated;
+       unit-tested that the audit entry is written in-tx with an entryHash
+       (experiment-transition-route.test.ts). ALL status-changing sites now covered:
+       the manual transition endpoint, the active-learning feedback route
+       (RESULT_LOGGED->FED_BACK), and the lab-results auto-advance
+       (SENT_TO_LAB->RESULT_LOGGED) each write the in-tx tamper-evident audit
+       (feedback + lab-results tests updated). REMAINING (policy decision, contract
+       change, not code-blocked): make the reviewer reason MANDATORY on transitions
+       (today captured when provided but optional). -->
+
 
 ### Stage 1: identity and reality check
 

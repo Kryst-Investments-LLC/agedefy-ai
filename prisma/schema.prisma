@@ -2130,6 +2130,19 @@ model AggregateOutcome {
   @@index([cohortBucket, computedAt])
 }
 
+// Differential-privacy composition ledger (P1-GOV-013). Each row is an epsilon
+// debit against a (tenant, scope) budget; summing debits inside the rolling
+// window bounds cumulative privacy loss from repeated/retried/joined queries.
+model PrivacyBudgetEntry {
+  id       String   @id @default(cuid())
+  tenantId String
+  scope    String // e.g. "outcome-aggregation"
+  epsilon  Float
+  spentAt  DateTime @default(now())
+
+  @@index([tenantId, scope, spentAt])
+}
+
 // ─── Federated Learning ─────────────────────────────────────
 
 model FederatedModel {
@@ -3025,6 +3038,10 @@ model ExperimentCandidate {
   fepGateScore  Float? // 0–1: composite worthiness of an FEP run
   fepGateReason String? // human-readable triage rationale
   fepJson       Json? // FepResult snapshot (populated after a real FEP run)
+
+  // Provenance trace (P0-CMP-010): the request that created this candidate, for
+  // audit/reproducibility. Correlates the record back to logs/traces.
+  sourceRequestId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

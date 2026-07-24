@@ -151,7 +151,7 @@
       "glob": "^11.0.0",
       "flatted": "^3.3.3",
       "yaml": "^2.8.3",
-      "brace-expansion": "^2.0.2",
+      "brace-expansion": "^2.1.2",
       "postcss": "^8.5.20",
       "@babel/core": "^7.29.6",
       "@grpc/grpc-js": "^1.14.4",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   assertNoDevFallbacksInProduction,
+  getConfigFingerprint,
   getRuntimeBaseline,
   parseEnvironment,
   shouldEnforceRuntimeRequirements,
@@ -59,6 +60,45 @@ describe("runtime baseline", () => {
     expect(baseline.productionBaselineRequired).toBe(true)
     expect(baseline.databaseProvider).toBe("postgresql")
     expect(baseline.prismaRuntime).toBe("postgres")
+    expect(baseline.issues).toHaveLength(0)
+  })
+
+  it("flags plaintext-secret emergency overrides left active in an enforced baseline", () => {
+    const baseline = getRuntimeBaseline({
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/Biozephyra?schema=public",
+      NEXTAUTH_URL: "https://staging.biozephyra.com",
+      NEXTAUTH_SECRET: validSecret,
+      APP_ENV: "staging",
+      REDIS_URL: "https://example.upstash.io",
+      REDIS_TOKEN: "token",
+      OTEL_SERVICE_NAME: "biozephyra-ai-staging",
+      OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
+      SCREENING_ADAPTER_ALLOW_PLAINTEXT: "true",
+      MFA_ALLOW_PLAINTEXT_FALLBACK: "true",
+    })
+
+    const codes = baseline.issues.map((issue) => issue.code)
+    expect(codes).toContain("secrets.screening_plaintext_override_active")
+    expect(codes).toContain("secrets.mfa_plaintext_override_active")
+  })
+
+  it("does not flag plaintext overrides when they are absent or explicitly false", () => {
+    const baseline = getRuntimeBaseline({
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/Biozephyra?schema=public",
+      NEXTAUTH_URL: "https://staging.biozephyra.com",
+      NEXTAUTH_SECRET: validSecret,
+      APP_ENV: "staging",
+      REDIS_URL: "https://example.upstash.io",
+      REDIS_TOKEN: "token",
+      OTEL_SERVICE_NAME: "biozephyra-ai-staging",
+      OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.example.com/v1/traces",
+      CRON_SECRET: "staging-cron-secret-material-change-before-production",
+      ENABLE_TEST_AUTH_ENDPOINT: "false",
+      SCREENING_ADAPTER_ALLOW_PLAINTEXT: "false",
+    })
+
     expect(baseline.issues).toHaveLength(0)
   })
 
@@ -143,6 +183,46 @@ describe("runtime baseline", () => {
       expect(() => assertNoDevFallbacksInProduction({}, "development")).not.toThrow()
       expect(() => assertNoDevFallbacksInProduction({}, "test")).not.toThrow()
       expect(() => assertNoDevFallbacksInProduction({}, undefined)).not.toThrow()
+    })
+  })
+
+  describe("getConfigFingerprint (P1-CFG-008)", () => {
+    const base = {
+      DATABASE_URL: "postgresql://postgres:pw@127.0.0.1:5432/agedefy",
+      NEXTAUTH_URL: "https://app.biozephyra.com",
+      NEXTAUTH_SECRET: validSecret,
+      APP_ENV: "production" as const,
+    }
+
+    it("is stable for the same config shape", () => {
+      expect(getConfigFingerprint(base)).toBe(getConfigFingerprint({ ...base }))
+    })
+
+    it("changes when a non-secret dimension drifts", () => {
+      const changed = getConfigFingerprint({ ...base, APP_ENV: "staging" })
+      expect(changed).not.toBe(getConfigFingerprint(base))
+    })
+
+    it("changes when the resolved database provider drifts", () => {
+      const sqlite = getConfigFingerprint({ ...base, DATABASE_URL: "file:./dev.db" })
+      expect(sqlite).not.toBe(getConfigFingerprint(base))
+    })
+
+    it("does NOT change when only a secret's value rotates (presence is unchanged)", () => {
+      const rotated = getConfigFingerprint({ ...base, NEXTAUTH_SECRET: "y".repeat(40) })
+      expect(rotated).toBe(getConfigFingerprint(base))
+    })
+
+    it("changes when a secret appears or disappears (real topology drift)", () => {
+      const withCron = getConfigFingerprint({ ...base, CRON_SECRET: "z".repeat(40) })
+      expect(withCron).not.toBe(getConfigFingerprint(base))
+    })
+
+    it("never embeds a raw secret value in the fingerprint", () => {
+      const secret = "super-secret-material-that-must-not-leak-1234"
+      const fp = getConfigFingerprint({ ...base, NEXTAUTH_SECRET: secret, CRON_SECRET: secret })
+      expect(fp).not.toContain(secret)
+      expect(fp).toMatch(/^[0-9a-f]+$/)
     })
   })
 })

@@ -5,6 +5,8 @@ const getServerSessionMock = vi.fn()
 const txMock = {
   experimentCandidate: { update: vi.fn() },
   experimentCandidateEvent: { create: vi.fn() },
+  // CMP-014: the transition writes a tamper-evident audit entry in the same tx.
+  auditLog: { findFirst: vi.fn(), create: vi.fn() },
 }
 const dbMock = {
   experimentCandidate: { findFirst: vi.fn() },
@@ -32,6 +34,7 @@ function patchReq(id: string, body: unknown) {
 const BASE_CANDIDATE = {
   id: 'cand1',
   userId: 'u1',
+  tenantId: 'default',
   status: 'PROPOSED',
   displayName: 'Resveratrol',
   smiles: 'CCO',
@@ -47,6 +50,8 @@ beforeEach(() => {
   dbMock.experimentCandidateEvent.findFirst.mockResolvedValue({ createdAt: new Date(Date.now() - 1000) })
   txMock.experimentCandidate.update.mockResolvedValue({ ...BASE_CANDIDATE, status: 'SCREENED' })
   txMock.experimentCandidateEvent.create.mockResolvedValue({})
+  txMock.auditLog.findFirst.mockResolvedValue(null) // empty chain -> prevHash null
+  txMock.auditLog.create.mockResolvedValue({})
   dbMock.$transaction.mockImplementation(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock))
 })
 
@@ -147,6 +152,25 @@ describe('PATCH /api/experiment/candidates/[id]/transition', () => {
           toStatus: 'SCREENED',
           notes: 'passed screening',
           actorUserId: 'u1',
+        }),
+      }),
+    )
+  })
+
+  it('writes a tamper-evident audit entry in the same transaction (P0-CMP-014)', async () => {
+    getServerSessionMock.mockResolvedValue(AUTHED)
+    const { PATCH } = await import('@/app/api/experiment/candidates/[id]/transition/route')
+    await PATCH(patchReq('cand1', { toStatus: 'SCREENED', notes: 'passed screening' }), { params: Promise.resolve({ id: 'cand1' }) })
+    // The audit row is created via the SAME tx (txMock), with an entryHash — so
+    // the transition and its immutable record commit or roll back together.
+    expect(txMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'candidate.transitioned',
+          entityType: 'ExperimentCandidate',
+          entityId: 'cand1',
+          actorUserId: 'u1',
+          entryHash: expect.any(String),
         }),
       }),
     )

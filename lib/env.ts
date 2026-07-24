@@ -38,6 +38,7 @@ const envSchema = z.object({
   MFA_ENCRYPTION_KEY: z.string().min(32).optional(),
   SCREENING_ADAPTER_ENCRYPTION_KEY: z.string().min(32).optional(),
   SCREENING_ADAPTER_ALLOW_PLAINTEXT: z.enum(["true", "false"]).optional(),
+  MFA_ALLOW_PLAINTEXT_FALLBACK: z.enum(["true", "false"]).optional(),
   TENANCY_MODE: z.enum(["single", "shared", "isolated"]).optional(),
   DEFAULT_TENANT_ID: z.string().optional(),
   AI_GOVERNANCE_ENFORCED: z.enum(["true", "false"]).optional(),
@@ -52,6 +53,8 @@ const envSchema = z.object({
   JOB_MAX_PENDING_PER_TENANT: z.string().optional(),
   JOB_RETENTION_HOURS: z.string().optional(),
   JOB_TENANT_ID: z.string().optional(),
+  PRIVACY_EPSILON_BUDGET: z.string().optional(),
+  PRIVACY_EPSILON_WINDOW_HOURS: z.string().optional(),
   CPIC_GUIDELINES_JSON_PATH: z.string().optional(),
   KG_BACKEND: z.enum(["relational", "neo4j"]).optional(),
   KG_NEO4J_URL: z.string().optional(),
@@ -74,6 +77,14 @@ const envSchema = z.object({
 
 type ParsedEnvironment = z.infer<typeof envSchema>
 export type AppEnvironment = z.infer<typeof appEnvSchema>
+
+/**
+ * The authoritative list of environment variables the runtime schema validates.
+ * Single source of truth for the `.env.example` documentation drift-guard
+ * (P0-CFG-002): a new validated variable can't land without also being
+ * documented. See __tests__/env-example-documentation.test.ts.
+ */
+export const ENV_SCHEMA_KEYS = Object.keys(envSchema.shape).sort() as Array<keyof ParsedEnvironment>
 
 export type RuntimeBaselineIssue = {
   code: string
@@ -136,6 +147,7 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
     SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
     SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
+    MFA_ALLOW_PLAINTEXT_FALLBACK: parseOptionalEnum(process.env.MFA_ALLOW_PLAINTEXT_FALLBACK, ["true", "false"]),
     TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
     DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
     AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -150,6 +162,8 @@ function readProcessEnvironment(): Partial<ParsedEnvironment> {
     JOB_MAX_PENDING_PER_TENANT: process.env.JOB_MAX_PENDING_PER_TENANT,
     JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
     JOB_TENANT_ID: process.env.JOB_TENANT_ID,
+    PRIVACY_EPSILON_BUDGET: process.env.PRIVACY_EPSILON_BUDGET,
+    PRIVACY_EPSILON_WINDOW_HOURS: process.env.PRIVACY_EPSILON_WINDOW_HOURS,
     ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
     FL_SERVER_URL: process.env.FL_SERVER_URL,
     ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),
@@ -231,6 +245,77 @@ export function assertNoDevFallbacksInProduction(
   }
 }
 
+/**
+ * P1-CFG-008 — configuration drift detection.
+ *
+ * A stable, secret-redacted fingerprint of the security-relevant configuration
+ * SHAPE. Secret values are never hashed — only their presence (set/unset) — so a
+ * dropped or rotated secret does not itself change the fingerprint, while a secret
+ * that appears or disappears (real topology drift) does. Non-secret dimensions
+ * (app env, resolved DB provider, feature flags) are hashed by value. Logging this
+ * at startup makes configuration drift between deploys of the same intended config
+ * visible — the fingerprint changes iff the config shape did — and /api/health
+ * exposes the running value for comparison against the expected one.
+ *
+ * This is a drift IDENTIFIER, not a security primitive: the fast, dependency-free,
+ * edge-safe pure-JS hash (cyrb53) is deliberate — env.ts must stay free of
+ * node:crypto so it remains importable from any runtime.
+ */
+const SECRET_CONFIG_KEYS: ReadonlySet<string> = new Set([
+  "DATABASE_URL",
+  "POSTGRES_DATABASE_URL",
+  "POSTGRES_SHADOW_DATABASE_URL",
+  "NEXTAUTH_SECRET",
+  "CRON_SECRET",
+  "MFA_ENCRYPTION_KEY",
+  "SCREENING_ADAPTER_ENCRYPTION_KEY",
+  "SCIM_SHARED_SECRET",
+  "SSO_CLIENT_SECRET",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "OPENAI_API_KEY",
+  "ANTHROPIC_API_KEY",
+  "GROK_API_KEY",
+  "SMTP_PASS",
+  "REDIS_TOKEN",
+])
+
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed
+  let h2 = 0x41c6ce57 ^ seed
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507)
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507)
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0)
+}
+
+export function getConfigFingerprint(
+  input: Partial<ParsedEnvironment> = readProcessEnvironment(),
+): string {
+  const canonical: Record<string, string> = {
+    // Derived, non-secret dimensions that matter for drift but aren't raw env keys.
+    _appEnv: resolveAppEnvironment(input),
+    _databaseProvider: getDatabaseProvider(getEffectiveDatabaseUrl(input)),
+  }
+
+  for (const key of Object.keys(input).sort()) {
+    const value = (input as Record<string, unknown>)[key]
+    if (SECRET_CONFIG_KEYS.has(key)) {
+      canonical[key] = value != null && String(value).length > 0 ? "set" : "unset"
+    } else {
+      canonical[key] = value == null ? "null" : String(value)
+    }
+  }
+
+  return cyrb53(JSON.stringify(canonical)).toString(16).padStart(14, "0")
+}
+
 export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProcessEnvironment()): RuntimeBaseline {
   const appEnv = resolveAppEnvironment(input)
   const productionBaselineRequired = shouldEnforceRuntimeRequirements(input)
@@ -273,6 +358,27 @@ export function getRuntimeBaseline(input: Partial<ParsedEnvironment> = readProce
     issues.push({
       code: "auth.test_endpoint_forbidden",
       message: "ENABLE_TEST_AUTH_ENDPOINT must be explicitly false in staging and production.",
+    })
+  }
+
+  // Emergency-override detection: these are time-boxed escape hatches that weaken
+  // secret confidentiality (accept plaintext / undecryptable secrets). Left on in
+  // a staging/production baseline they are a silent security regression, so surface
+  // them as baseline issues that the /api/status health signal and the startup
+  // instrumentation warning will report.
+  if (productionBaselineRequired && input.SCREENING_ADAPTER_ALLOW_PLAINTEXT === "true") {
+    issues.push({
+      code: "secrets.screening_plaintext_override_active",
+      message:
+        "SCREENING_ADAPTER_ALLOW_PLAINTEXT is a migration-only escape hatch and must not be 'true' in staging or production (it accepts unencrypted screening-adapter secrets).",
+    })
+  }
+
+  if (productionBaselineRequired && input.MFA_ALLOW_PLAINTEXT_FALLBACK === "true") {
+    issues.push({
+      code: "secrets.mfa_plaintext_override_active",
+      message:
+        "MFA_ALLOW_PLAINTEXT_FALLBACK is a migration-only escape hatch and must not be 'true' in staging or production (it accepts undecryptable/plaintext MFA secrets).",
     })
   }
 
@@ -412,6 +518,7 @@ const fallbackEnv: ParsedEnvironment = {
   MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
   SCREENING_ADAPTER_ENCRYPTION_KEY: process.env.SCREENING_ADAPTER_ENCRYPTION_KEY,
   SCREENING_ADAPTER_ALLOW_PLAINTEXT: parseOptionalEnum(process.env.SCREENING_ADAPTER_ALLOW_PLAINTEXT, ["true", "false"]),
+  MFA_ALLOW_PLAINTEXT_FALLBACK: parseOptionalEnum(process.env.MFA_ALLOW_PLAINTEXT_FALLBACK, ["true", "false"]),
   TENANCY_MODE: parseOptionalEnum(process.env.TENANCY_MODE, ["single", "shared", "isolated"]),
   DEFAULT_TENANT_ID: process.env.DEFAULT_TENANT_ID,
   AI_GOVERNANCE_ENFORCED: parseOptionalEnum(process.env.AI_GOVERNANCE_ENFORCED, ["true", "false"]),
@@ -426,6 +533,8 @@ const fallbackEnv: ParsedEnvironment = {
   JOB_MAX_PENDING_PER_TENANT: process.env.JOB_MAX_PENDING_PER_TENANT,
   JOB_RETENTION_HOURS: process.env.JOB_RETENTION_HOURS,
   JOB_TENANT_ID: process.env.JOB_TENANT_ID,
+  PRIVACY_EPSILON_BUDGET: process.env.PRIVACY_EPSILON_BUDGET,
+  PRIVACY_EPSILON_WINDOW_HOURS: process.env.PRIVACY_EPSILON_WINDOW_HOURS,
   ENABLE_FEDERATED_LEARNING: parseOptionalEnum(process.env.ENABLE_FEDERATED_LEARNING, ["true", "false"]),
   FL_SERVER_URL: process.env.FL_SERVER_URL,
   ENABLE_CAUSAL_SIDECAR: parseOptionalEnum(process.env.ENABLE_CAUSAL_SIDECAR, ["true", "false"]),

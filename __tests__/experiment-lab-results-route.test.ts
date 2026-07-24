@@ -6,6 +6,7 @@ const txMock = {
   candidateLabResult: { create: vi.fn() },
   experimentCandidate: { update: vi.fn() },
   experimentCandidateEvent: { create: vi.fn() },
+  auditLog: { findFirst: vi.fn(), create: vi.fn() }, // CMP-014 in-tx transition audit
 }
 const dbMock = {
   experimentCandidate: { findFirst: vi.fn() },
@@ -53,12 +54,15 @@ beforeEach(() => {
   dbMock.experimentCandidate.findFirst.mockResolvedValue({
     id: 'cand1',
     userId: 'u1',
+    tenantId: 'default',
     status: 'SENT_TO_LAB',
     displayName: 'Resveratrol',
   })
   txMock.candidateLabResult.create.mockResolvedValue(CREATED_RESULT)
   txMock.experimentCandidate.update.mockResolvedValue({})
   txMock.experimentCandidateEvent.create.mockResolvedValue({})
+  txMock.auditLog.findFirst.mockResolvedValue(null)
+  txMock.auditLog.create.mockResolvedValue({})
   dbMock.$transaction.mockImplementation(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock))
 })
 

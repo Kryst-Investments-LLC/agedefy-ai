@@ -15,6 +15,10 @@ import { applyKAnonymity, type RawRecord } from '@/lib/anonymization/k-anonymity
 import { addNoisyMean, SENSITIVITY } from '@/lib/anonymization/differential-privacy'
 import { descriptiveStats } from '@/lib/flywheel/statistics'
 import { logger } from '@/lib/logger'
+import { reserveEpsilon } from '@/lib/privacy/budget-ledger'
+
+/** DP composition-budget scope for outcome aggregation. */
+const AGGREGATION_SCOPE = 'outcome-aggregation'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -37,6 +41,8 @@ export interface AggregationRunResult {
   totalRecordsProcessed: number
   totalSuppressed: number
   runAt: string
+  /** True when the run was refused because the DP composition budget is exhausted. */
+  privacyBudgetExhausted?: boolean
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,12 +70,25 @@ interface GdprConsentEntry {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Minimum k-anonymity for any published cohort statistic (P1-GOV-013): every
+ * equivalence class released from an aggregation must contain at least this many
+ * distinct users, so a cohort can never re-identify an individual. Callers may
+ * request a HIGHER k, never a lower one.
+ */
+export const MIN_COHORT_K = 50
+
+/** Clamp a requested k-anonymity threshold up to the GOV-013 floor of 50. */
+export function resolveCohortK(configuredK?: number): number {
+  return Math.max(MIN_COHORT_K, configuredK ?? MIN_COHORT_K)
+}
+
+/**
  * Run outcome aggregation for all consented users.
  */
 export async function runOutcomeAggregation(
   config: AggregationConfig,
 ): Promise<AggregationRunResult> {
-  const k = config.k ?? 5
+  const k = resolveCohortK(config.k)
   const epsilon = config.epsilon ?? 1.0
   const tenantId = config.tenantId ?? 'default'
 
@@ -111,6 +130,28 @@ export async function runOutcomeAggregation(
   if (outcomes.length === 0) {
     logger.info('No outcome records to aggregate')
     return { protocolAggregates: 0, compoundAggregates: 0, totalRecordsProcessed: 0, totalSuppressed: 0, runAt: new Date().toISOString() }
+  }
+
+  // DP composition budget (P1-GOV-013): reserve this run's epsilon before
+  // publishing any noised statistic, so repeated/retried/joined queries can't
+  // collectively exceed the tenant's privacy budget for the window. Reserved
+  // only once there is data to publish, so empty runs don't spend budget.
+  const reservation = await reserveEpsilon(tenantId, AGGREGATION_SCOPE, epsilon)
+  if (!reservation.granted) {
+    logger.warn('Outcome aggregation refused: differential-privacy budget exhausted', {
+      tenantId,
+      requestedEpsilon: epsilon,
+      remaining: reservation.remaining,
+      budget: reservation.budget,
+    })
+    return {
+      protocolAggregates: 0,
+      compoundAggregates: 0,
+      totalRecordsProcessed: 0,
+      totalSuppressed: 0,
+      runAt: new Date().toISOString(),
+      privacyBudgetExhausted: true,
+    }
   }
 
   let totalSuppressed = 0

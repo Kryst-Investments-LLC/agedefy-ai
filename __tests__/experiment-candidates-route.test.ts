@@ -150,6 +150,20 @@ describe('POST /api/experiment/candidates', () => {
     )
   })
 
+  it('captures the creating request trace as sourceRequestId (P0-CMP-010)', async () => {
+    getServerSessionMock.mockResolvedValue(AUTHED)
+    const { POST } = await import('@/app/api/experiment/candidates/route')
+    const req = new NextRequest('http://localhost/api/experiment/candidates', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-request-id': 'req-abc-123' },
+      body: JSON.stringify(CHEMBL_BODY),
+    })
+    await POST(req)
+    expect(dbMock.experimentCandidate.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ sourceRequestId: 'req-abc-123' }) }),
+    )
+  })
+
   it('returns 500 on db error', async () => {
     getServerSessionMock.mockResolvedValue(AUTHED)
     dbMock.experimentCandidate.create.mockRejectedValue(new Error('db error'))

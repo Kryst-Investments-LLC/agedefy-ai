@@ -11,6 +11,7 @@ const dbMock = {
   },
   candidateFeedbackRun: { create: vi.fn() },
   experimentCandidateEvent: { create: vi.fn() },
+  auditLog: { findFirst: vi.fn(), create: vi.fn() }, // CMP-014 in-tx transition audit
   $transaction: vi.fn(async (fn: (tx: typeof dbMock) => Promise<unknown>) => fn(dbMock)),
 }
 
@@ -24,6 +25,7 @@ const AUTHED = { user: { id: "user-1" } }
 const CANDIDATE_RESULT_LOGGED = {
   id: "cand-1",
   userId: "user-1",
+  tenantId: "default",
   status: "RESULT_LOGGED",
   displayName: "Compound X",
   screenJson: { qed: 0.7, mol_log_p: 2.5, molecular_weight: 350 },
@@ -59,6 +61,8 @@ beforeEach(() => {
   dbMock.experimentCandidate.update.mockResolvedValue({ ...CANDIDATE_RESULT_LOGGED, status: "FED_BACK", feedbackScore: 0.42 })
   dbMock.candidateFeedbackRun.create.mockResolvedValue(FEEDBACK_RUN)
   dbMock.experimentCandidateEvent.create.mockResolvedValue({})
+  dbMock.auditLog.findFirst.mockResolvedValue(null)
+  dbMock.auditLog.create.mockResolvedValue({})
 })
 
 afterEach(() => { vi.resetModules() })
