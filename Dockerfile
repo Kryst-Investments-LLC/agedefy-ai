@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:20.19.3-bookworm-slim AS base
+FROM node:26.5.0-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@10.4.0 --activate
@@ -22,7 +22,7 @@ ENV NEXTAUTH_SECRET=build-only-nextauth-secret-material-32c
 ENV MFA_ENCRYPTION_KEY=build-only-mfa-encryption-key-material-32c
 RUN pnpm db:generate && pnpm build
 
-FROM node:20.19.3-bookworm-slim AS runtime
+FROM node:26.5.0-bookworm-slim AS runtime
 ENV NODE_ENV=production
 ENV APP_ENV=production
 ENV PORT=3000
