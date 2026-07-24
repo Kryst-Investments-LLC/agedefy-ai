@@ -626,7 +626,17 @@ items — partials are documented inline but do not increase the completed count
        structure, InChIKey, and canonical/isomeric SMILES (RDKit-class normalization,
        see CMP-020), plus explicit prompt-hash/temperature/seed capture on the record. -->
 
-- [ ] `P0-CMP-011` Preserve the raw suggestion separately from normalized fields.
+- [x] `P0-CMP-011` Preserve the raw suggestion separately from normalized fields.
+  <!-- VERIFIED against the schema (no code change needed). AI-sourced candidates:
+       AeonForgeCandidate.prompt + AeonForgeCandidate.rawResponse (the full raw
+       ÆonForge API response) are stored on the source record and linked from
+       ExperimentCandidate via aeonForgeCandidateId, kept separate from the
+       normalized ExperimentCandidate fields (smiles/displayName/...); the molecule
+       snapshot at add-time is also retained (aiMolJson). ChEMBL-sourced candidates:
+       chemblJson holds the raw LibrarySearchHit snapshot at time of add, separate
+       from the normalized fields. So the raw suggestion is preserved distinctly
+       from the normalized record in both source paths. -->
+
 - [ ] `P0-CMP-012` Deduplicate by standardized structure, stereochemistry, salt,
   tautomer policy, and known database identifiers.
 - [ ] `P0-CMP-013` Sign candidate results with the platform provenance mechanism.
